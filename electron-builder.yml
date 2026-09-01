@@ -1,0 +1,44 @@
+appId: com.athletehub.desktop
+productName: AthleteHub
+
+directories:
+  buildResources: build-resources
+  output: release
+
+# The renderer is served by the standalone Next server, so the asar only needs
+# the main process. Application dependencies ship inside the standalone bundle.
+files:
+  - electron/**/*
+  - package.json
+  - "!node_modules/**"
+
+# Kept outside the asar: the Next server resolves `.next` and `public` from the
+# real filesystem relative to server.js.
+extraResources:
+  - from: .next/standalone
+    to: standalone
+    # Without an explicit filter the default matcher drops the dot-prefixed
+    # `.next` directory. `node_modules` is stripped regardless, so afterPack
+    # restores it.
+    filter:
+      - "**/*"
+
+asar: true
+afterPack: scripts/after-pack.mjs
+
+win:
+  target: nsis
+  icon: build-resources/icon.ico
+
+nsis:
+  allowToChangeInstallationDirectory: true
+  oneClick: false
+  perMachine: false
+
+mac:
+  category: public.app-category.healthcare-fitness
+  target: dmg
+
+linux:
+  category: Utility
+  target: AppImage

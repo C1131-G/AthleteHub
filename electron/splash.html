@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AthleteHub</title>
+    <style>
+      :root {
+        --splash-background: #ffffff;
+        --splash-foreground: #0a0b0d;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --splash-background: #0a0b0d;
+          --splash-foreground: #f5f6f7;
+        }
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        align-items: center;
+        background: var(--splash-background);
+        color: var(--splash-foreground);
+        display: flex;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        justify-content: center;
+      }
+
+      .spinner {
+        animation: spin 0.7s linear infinite;
+        block-size: 28px;
+        border: 2px solid
+          color-mix(in srgb, var(--splash-foreground) 18%, transparent);
+        border-block-start-color: var(--splash-foreground);
+        border-radius: 50%;
+        inline-size: 28px;
+        opacity: 0.85;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .spinner {
+          animation-duration: 2s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div aria-label="Loading AthleteHub" class="spinner" role="status"></div>
+  </body>
+</html>
