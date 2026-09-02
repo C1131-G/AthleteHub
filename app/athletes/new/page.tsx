@@ -1,9 +1,9 @@
+import { PageTitle } from "@/components/page-title";
 import { AthleteForm } from "@/features/athlete/components/athlete-form";
-import { AthletePageTitle } from "@/features/athlete/components/athlete-page-title";
 
 const NewAthletePage = () => (
   <>
-    <AthletePageTitle marker="new-athlete-title" title="Add athlete" />
+    <PageTitle marker="new-athlete-title" title="Add athlete" />
     <AthleteForm />
   </>
 );

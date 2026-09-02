@@ -1,6 +1,10 @@
 "use client";
 
-import { PencilSimpleIcon, UserFocusIcon } from "@phosphor-icons/react";
+import {
+  PencilSimpleIcon,
+  UserFocusIcon,
+  WrenchIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,27 +19,12 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { equipmentHref } from "@/features/equipment/equipment-routes";
+import { formatDate, initials } from "@/lib/format";
 
-import type { Athlete, AthleteStatus, BowCategory } from "../athlete-types";
-import { useAthletes } from "./athlete-provider";
-
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-const statusLabel = {
-  active: "Active",
-  inactive: "Inactive",
-  "medical-leave": "Medical leave",
-} satisfies Record<AthleteStatus, string>;
-const categoryLabel = {
-  barebow: "Barebow",
-  compound: "Compound",
-  recurve: "Recurve",
-} satisfies Record<BowCategory, string>;
+import { categoryLabel, statusLabel } from "../athlete-labels";
+import type { Athlete } from "../athlete-types";
+import { useAthletes } from "../use-athletes";
 
 export const AthleteProfile = ({ athleteId }: { athleteId: string }) => {
   const { athletes, ready } = useAthletes();
@@ -90,13 +79,19 @@ export const AthleteProfile = ({ athleteId }: { athleteId: string }) => {
         >
           <PencilSimpleIcon /> Edit profile
         </Link>
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          href={equipmentHref(athlete.id)}
+        >
+          <WrenchIcon /> Equipment
+        </Link>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <ProfileCard title="Identity">
           <DefinitionList
             items={[
               ["Athlete ID", athlete.athleteId],
-              ["Date of birth", athlete.dateOfBirth],
+              ["Date of birth", formatDate(athlete.dateOfBirth)],
               ["Category", categoryLabel[athlete.category]],
               ["Status", statusLabel[athlete.status]],
             ]}

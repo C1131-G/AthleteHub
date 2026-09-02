@@ -1,12 +1,9 @@
 "use client";
 
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
-import Link from "next/link";
 import { useState } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -27,34 +24,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 
-import type { Athlete, AthleteStatus, BowCategory } from "../athlete-types";
-import { useAthletes } from "./athlete-provider";
+import { useAthletes } from "../use-athletes";
+import { AthleteCard, AthleteRow } from "./athlete-list-rows";
 
 const pageSize = 8;
 
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-const statusLabel = {
-  active: "Active",
-  inactive: "Inactive",
-  "medical-leave": "Medical leave",
-} satisfies Record<AthleteStatus, string>;
-const categoryLabel = {
-  barebow: "Barebow",
-  compound: "Compound",
-  recurve: "Recurve",
-} satisfies Record<BowCategory, string>;
 const statusFilterLabel = {
   active: "Active",
   all: "All statuses",
@@ -237,88 +216,6 @@ export const AthleteList = () => {
         </CardContent>
       </Card>
     </div>
-  );
-};
-
-const AthleteCard = ({ athlete }: { athlete: Athlete }) => (
-  <li className="flex items-start gap-3 px-6 py-4">
-    <Avatar>
-      <AvatarImage src={athlete.photoUrl} alt="" />
-      <AvatarFallback>{initials(athlete.fullName)}</AvatarFallback>
-    </Avatar>
-    <div className="min-w-0 flex-1">
-      <Link
-        className="font-medium hover:underline"
-        href={`/athletes/${athlete.id}`}
-      >
-        {athlete.fullName}
-      </Link>
-      <p className="text-muted-foreground text-xs">{athlete.athleteId}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge variant={athlete.status === "active" ? "default" : "secondary"}>
-          {statusLabel[athlete.status]}
-        </Badge>
-        <span className="text-muted-foreground text-xs">
-          {categoryLabel[athlete.category]}
-          {athlete.targetDistanceM ? ` · ${athlete.targetDistanceM} m` : ""}
-        </span>
-      </div>
-    </div>
-    <Link
-      className={buttonVariants({ size: "sm", variant: "outline" })}
-      href={`/athletes/${athlete.id}/edit`}
-    >
-      Edit
-    </Link>
-  </li>
-);
-
-const AthleteRow = ({ athlete }: { athlete: Athlete }) => {
-  return (
-    <TableRow>
-      <TableCell>
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={athlete.photoUrl} alt="" />
-            <AvatarFallback>{initials(athlete.fullName)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <Link
-              className="font-medium hover:underline"
-              href={`/athletes/${athlete.id}`}
-            >
-              {athlete.fullName}
-            </Link>
-            <p className="text-muted-foreground text-xs">{athlete.athleteId}</p>
-          </div>
-        </div>
-      </TableCell>
-      <TableCell>{categoryLabel[athlete.category]}</TableCell>
-      <TableCell>
-        <Badge variant={athlete.status === "active" ? "default" : "secondary"}>
-          {statusLabel[athlete.status]}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        {athlete.targetDistanceM ? `${athlete.targetDistanceM} m` : "Not set"}
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
-          <Link
-            className={buttonVariants({ size: "sm", variant: "ghost" })}
-            href={`/athletes/${athlete.id}`}
-          >
-            View
-          </Link>
-          <Link
-            className={buttonVariants({ size: "sm", variant: "outline" })}
-            href={`/athletes/${athlete.id}/edit`}
-          >
-            Edit
-          </Link>
-        </div>
-      </TableCell>
-    </TableRow>
   );
 };
 

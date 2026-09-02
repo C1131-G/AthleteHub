@@ -1,6 +1,6 @@
 "use client";
 
-import { UsersThreeIcon } from "@phosphor-icons/react";
+import { UsersThreeIcon, WrenchIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -21,7 +21,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-import { AthleteProvider } from "./athlete-provider";
+import { StoreHydrator } from "./store-hydrator";
 
 interface AthleteShellClientProps {
   backLink: ReactNode;
@@ -33,7 +33,8 @@ export const AthleteShellClient = ({
   children,
 }: AthleteShellClientProps) => {
   return (
-    <AthleteProvider>
+    <>
+      <StoreHydrator />
       <SidebarProvider>
         <Sidebar collapsible="icon">
           <SidebarHeader className="h-14 justify-center">
@@ -61,6 +62,18 @@ export const AthleteShellClient = ({
                       </span>
                     </Link>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <Link
+                      className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex h-9 w-full items-center gap-2 overflow-hidden rounded-lg px-3 py-2 text-left text-sm outline-hidden transition-[width,height,padding] group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2"
+                      href="/athletes/equipment"
+                      title="Equipment"
+                    >
+                      <WrenchIcon aria-hidden="true" />
+                      <span className="truncate group-data-[collapsible=icon]:hidden">
+                        Equipment
+                      </span>
+                    </Link>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -84,6 +97,6 @@ export const AthleteShellClient = ({
           </main>
         </SidebarInset>
       </SidebarProvider>
-    </AthleteProvider>
+    </>
   );
 };

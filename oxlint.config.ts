@@ -24,7 +24,7 @@ export default defineConfig({
     jsPlugins,
   ],
   ignorePatterns: [
-    ...core.ignorePatterns,
+    ...(core.ignorePatterns ?? []),
     "components/ui/**",
     "hooks/use-mobile.ts",
   ],
