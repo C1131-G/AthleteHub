@@ -22,7 +22,7 @@ const LoginForm = ({ className, ...props }: LoginFormProps) => {
             onSubmit={(event) => {
               event.preventDefault();
               setError("");
-              router.push("/athletes");
+              router.push("/dashboard");
             }}
           >
             <div className="flex flex-col items-center gap-2 text-center">

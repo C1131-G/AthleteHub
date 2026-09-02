@@ -32,6 +32,8 @@ export default defineConfig({
   rules: {
     "anti-slop/no-unknown-parameters": "off",
     "eslint/arrow-body-style": "off",
+    // https://oxc.rs/docs/guide/usage/linter/rules/eslint/complexity.html
+    "eslint/complexity": ["error", { max: 20, variant: "classic" }],
     "eslint/func-style": "off",
     "eslint/no-use-before-define": "off",
     "eslint/require-unicode-regexp": "off",

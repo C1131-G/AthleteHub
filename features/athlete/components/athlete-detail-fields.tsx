@@ -70,7 +70,7 @@ export const AthleteDetailFields = ({
                 update("category", isBowCategory(value) ? value : "recurve")
               }
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Bow category">
                 <SelectValue>{categoryLabel[values.category]}</SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -88,7 +88,7 @@ export const AthleteDetailFields = ({
                 update("status", isAthleteStatus(value) ? value : "active")
               }
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Status">
                 <SelectValue>{statusLabel[values.status]}</SelectValue>
               </SelectTrigger>
               <SelectContent>

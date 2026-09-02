@@ -2,7 +2,7 @@
  * Every athlete route is one level deeper than the one it came from, so the
  * shell derives its back target from the URL instead of each page passing one.
  */
-export type AthleteRoute = "/athletes" | `/athletes/${string}`;
+export type AthleteRoute = "/athletes" | `/athletes/${string}` | "/reports";
 
 export interface AthleteBackTarget {
   href: AthleteRoute;
@@ -17,6 +17,10 @@ export const resolveAthleteBackTarget = (
   pathname: string
 ): AthleteBackTarget | undefined => {
   const segments = pathname.split("/").filter(Boolean);
+
+  if (segments[0] === "reports" && segments.length > 1) {
+    return { href: "/reports", label: "Back to reports" };
+  }
 
   if (segments[0] !== "athletes" || segments.length < 2) {
     return undefined;

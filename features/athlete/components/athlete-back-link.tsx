@@ -24,6 +24,7 @@ export const AthleteBackLink = () => {
       />
       <Link
         className={buttonVariants({ size: "sm", variant: "ghost" })}
+        // SAFETY: resolveAthleteBackTarget only returns validated internal route shapes.
         href={backTarget.href}
       >
         <ArrowLeftIcon />

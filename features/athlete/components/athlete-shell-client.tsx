@@ -1,8 +1,8 @@
 "use client";
 
-import { UsersThreeIcon, WrenchIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
@@ -15,13 +15,17 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
+import { RouteTransition } from "./route-transition";
 import { StoreHydrator } from "./store-hydrator";
+import {
+  WorkspaceNavigation,
+  WorkspaceNavigationSkeleton,
+} from "./workspace-navigation";
 
 interface AthleteShellClientProps {
   backLink: ReactNode;
@@ -36,7 +40,11 @@ export const AthleteShellClient = ({
     <>
       <StoreHydrator />
       <SidebarProvider>
-        <Sidebar collapsible="icon">
+        {/* Sidebar renders a div it owns, so the landmark comes from the role
+            rather than a nav tag. Without it axe reports the sidebar header and
+            footer as content outside any landmark. */}
+        {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
+        <Sidebar aria-label="Workspace" collapsible="icon" role="navigation">
           <SidebarHeader className="h-14 justify-center">
             <Link
               className="truncate px-2 font-semibold group-data-[collapsible=icon]:hidden"
@@ -50,30 +58,9 @@ export const AthleteShellClient = ({
               <SidebarGroupLabel>Workspace</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem>
-                    <Link
-                      className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex h-9 w-full items-center gap-2 overflow-hidden rounded-lg px-3 py-2 text-left text-sm outline-hidden transition-[width,height,padding] group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2"
-                      href="/athletes"
-                      title="Athletes"
-                    >
-                      <UsersThreeIcon aria-hidden="true" />
-                      <span className="truncate group-data-[collapsible=icon]:hidden">
-                        Athletes
-                      </span>
-                    </Link>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <Link
-                      className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex h-9 w-full items-center gap-2 overflow-hidden rounded-lg px-3 py-2 text-left text-sm outline-hidden transition-[width,height,padding] group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2"
-                      href="/athletes/equipment"
-                      title="Equipment"
-                    >
-                      <WrenchIcon aria-hidden="true" />
-                      <span className="truncate group-data-[collapsible=icon]:hidden">
-                        Equipment
-                      </span>
-                    </Link>
-                  </SidebarMenuItem>
+                  <Suspense fallback={<WorkspaceNavigationSkeleton />}>
+                    <WorkspaceNavigation />
+                  </Suspense>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -85,14 +72,14 @@ export const AthleteShellClient = ({
           </SidebarFooter>
           <SidebarRail />
         </Sidebar>
-        <SidebarInset className="min-h-svh overflow-hidden">
+        <SidebarInset className="h-dvh overflow-hidden">
           <header className="bg-background/95 sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
             <SidebarTrigger className="-ml-1" />
             {backLink}
           </header>
           <main className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-7xl p-4 md:p-8">
-              {children}
+              <RouteTransition>{children}</RouteTransition>
             </div>
           </main>
         </SidebarInset>

@@ -84,11 +84,13 @@
   --border: oklch(0.925 0.005 214.3);
   --input: oklch(0.66 0.005 214.3);
   --ring: oklch(0.723 0.014 214.4);
-  --chart-1: oklch(0.872 0.007 219.6);
-  --chart-2: oklch(0.56 0.021 213.5);
-  --chart-3: oklch(0.45 0.017 213.2);
-  --chart-4: oklch(0.378 0.015 216);
-  --chart-5: oklch(0.275 0.011 216.9);
+  /* Categorical series colors: distinct hues, validated for CVD separation and
+     3:1 contrast against the card surface. Not a lightness ramp. */
+  --chart-1: oklch(0.55 0.14 165);
+  --chart-2: oklch(0.55 0.14 255);
+  --chart-3: oklch(0.55 0.14 65);
+  --chart-4: oklch(0.55 0.14 310);
+  --chart-5: oklch(0.55 0.14 25);
   --radius: 0.625rem;
   --sidebar: oklch(0.987 0.002 197.1);
   --sidebar-foreground: oklch(0.148 0.004 228.8);
@@ -119,11 +121,12 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 35%);
   --ring: oklch(0.56 0.021 213.5);
-  --chart-1: oklch(0.872 0.007 219.6);
-  --chart-2: oklch(0.56 0.021 213.5);
-  --chart-3: oklch(0.45 0.017 213.2);
-  --chart-4: oklch(0.378 0.015 216);
-  --chart-5: oklch(0.275 0.011 216.9);
+  /* Re-stepped for the dark surface rather than flipped. */
+  --chart-1: oklch(0.66 0.14 165);
+  --chart-2: oklch(0.66 0.14 255);
+  --chart-3: oklch(0.66 0.14 65);
+  --chart-4: oklch(0.66 0.14 310);
+  --chart-5: oklch(0.66 0.14 25);
   --sidebar: oklch(0.218 0.008 223.9);
   --sidebar-foreground: oklch(0.987 0.002 197.1);
   --sidebar-primary: oklch(0.696 0.17 162.48);
@@ -167,6 +170,43 @@
   @keyframes scale {
     to {
       mask-size: 300vmax;
+    }
+  }
+
+  ::view-transition-old(.nav-exit) {
+    animation: nav-exit 160ms ease-out both;
+  }
+
+  ::view-transition-new(.nav-enter) {
+    animation: nav-enter 180ms ease-out both;
+  }
+
+  @keyframes nav-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes nav-exit {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(.nav-exit),
+    ::view-transition-new(.nav-enter) {
+      animation: none;
     }
   }
 }

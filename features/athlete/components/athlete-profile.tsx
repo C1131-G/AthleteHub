@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChartLineUpIcon,
   PencilSimpleIcon,
   UserFocusIcon,
   WrenchIcon,
@@ -85,6 +86,12 @@ export const AthleteProfile = ({ athleteId }: { athleteId: string }) => {
         >
           <WrenchIcon /> Equipment
         </Link>
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          href={`/reports?athleteId=${athlete.id}`}
+        >
+          <ChartLineUpIcon /> Reports
+        </Link>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <ProfileCard title="Identity">
@@ -121,13 +128,13 @@ export const AthleteProfile = ({ athleteId }: { athleteId: string }) => {
         <ProfileCard title="Equipment and technical focus">
           <div className="space-y-4">
             <div>
-              <h3 className="text-muted-foreground text-sm">Equipment notes</h3>
+              <h2 className="text-muted-foreground text-sm">Equipment notes</h2>
               <p className="mt-1 whitespace-pre-wrap">
                 {athlete.equipmentNotes || "No equipment notes."}
               </p>
             </div>
             <div>
-              <h3 className="text-muted-foreground text-sm">Technical focus</h3>
+              <h2 className="text-muted-foreground text-sm">Technical focus</h2>
               <p className="mt-1 whitespace-pre-wrap">
                 {athlete.technicalFocus || "No technical focus recorded."}
               </p>
