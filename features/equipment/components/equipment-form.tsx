@@ -1,14 +1,12 @@
 "use client";
 
 import { PlusIcon } from "@phosphor-icons/react";
-import { format, parseISO } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
@@ -16,17 +14,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { Athlete } from "@/features/athlete/athlete-types";
 import { useAthletes } from "@/features/athlete/use-athletes";
@@ -99,7 +93,6 @@ const EquipmentFormFields = ({
   );
   const [coachNotes, setCoachNotes] = useState(setup?.coachNotes ?? "");
   const [errors, setErrors] = useState<FormErrors>({});
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const updateItem = (id: string, patch: Partial<EquipmentItem>) =>
@@ -189,36 +182,13 @@ const EquipmentFormFields = ({
         <CardContent>
           <Field>
             <FieldLabel htmlFor="recordedAt">Setup date</FieldLabel>
-            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    id="recordedAt"
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                    aria-invalid={Boolean(errors.recordedAt)}
-                    aria-describedby={
-                      errors.recordedAt ? "recordedAt-error" : undefined
-                    }
-                  />
-                }
-              >
-                {recordedAt
-                  ? format(parseISO(recordedAt), "PPP")
-                  : "Pick a date"}
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={recordedAt ? parseISO(recordedAt) : undefined}
-                  onSelect={(date) => {
-                    setRecordedAt(date ? format(date, "yyyy-MM-dd") : "");
-                    setDatePickerOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+            <DatePicker
+              id="recordedAt"
+              value={recordedAt}
+              onChange={setRecordedAt}
+              invalid={Boolean(errors.recordedAt)}
+              describedBy={errors.recordedAt ? "recordedAt-error" : undefined}
+            />
             {errors.recordedAt && (
               <FieldError id="recordedAt-error">{errors.recordedAt}</FieldError>
             )}
