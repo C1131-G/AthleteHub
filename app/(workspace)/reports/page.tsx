@@ -1,5 +1,9 @@
+import { PlusIcon } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
 import { Suspense } from "react";
 
+import { buttonVariants } from "@/components/ui/button";
+import { WorkspaceHeader } from "@/components/workspace-header";
 import {
   ReportsWorkspace,
   ReportsWorkspaceSkeleton,
@@ -11,9 +15,29 @@ export const metadata = {
 };
 
 const ReportsPage = () => (
-  <Suspense fallback={<ReportsWorkspaceSkeleton />}>
-    <ReportsWorkspace />
-  </Suspense>
+  <>
+    <WorkspaceHeader
+      actions={
+        <>
+          <Link
+            className={buttonVariants({ variant: "outline" })}
+            href="/reports/monthly/new"
+          >
+            <PlusIcon /> Monthly report
+          </Link>
+          <Link className={buttonVariants()} href="/reports/weekly/new">
+            <PlusIcon /> Weekly entry
+          </Link>
+        </>
+      }
+      description="Enter weekly scores and review monthly coaching reports."
+      id="reports-title"
+      title="Performance reports"
+    />
+    <Suspense fallback={<ReportsWorkspaceSkeleton />}>
+      <ReportsWorkspace />
+    </Suspense>
+  </>
 );
 
 export default ReportsPage;

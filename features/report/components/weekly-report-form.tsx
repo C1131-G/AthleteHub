@@ -44,16 +44,26 @@ const parseNumber = (value: string) => {
   return Number.isFinite(number) ? number : undefined;
 };
 
+/**
+ * Gate only. The fields below seed their state from the stores on first render,
+ * so they must not mount until those stores hold real data.
+ */
 export const WeeklyReportForm = ({ reportId }: WeeklyReportFormProps) => {
+  const { ready: athletesReady } = useAthletes();
+  const { ready: reportsReady } = useReports();
+
+  if (!(athletesReady && reportsReady)) {
+    return <WeeklyReportFormSkeleton />;
+  }
+
+  return <WeeklyReportFormBody reportId={reportId} />;
+};
+
+const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const { athletes, ready: athletesReady } = useAthletes();
-  const {
-    createWeekly,
-    getWeekly,
-    ready: reportsReady,
-    updateWeekly,
-  } = useReports();
+  const { athletes } = useAthletes();
+  const { createWeekly, getWeekly, updateWeekly } = useReports();
   const existing = reportId ? getWeekly(reportId) : undefined;
   const [form, setForm] = useState<WeeklyFormState>(() => {
     if (!existing) {
@@ -76,9 +86,6 @@ export const WeeklyReportForm = ({ reportId }: WeeklyReportFormProps) => {
   });
   const [errors, setErrors] = useState<ReportFormErrors>({});
 
-  if (!athletesReady || !reportsReady) {
-    return <WeeklyReportFormSkeleton />;
-  }
   if (reportId && !existing) {
     return (
       <Card>

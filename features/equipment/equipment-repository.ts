@@ -1,8 +1,8 @@
+import { readStoredArray, writeStored } from "@/lib/storage";
+
 import type { EquipmentSetup, EquipmentSetupInput } from "./equipment-types";
 
 const STORAGE_KEY = "athletehub.equipment.v1";
-
-const canUseStorage = () => globalThis.localStorage !== undefined;
 
 const isEquipmentSetup = (value: unknown): value is EquipmentSetup => {
   if (!value || typeof value !== "object") {
@@ -17,31 +17,12 @@ const isEquipmentSetup = (value: unknown): value is EquipmentSetup => {
   );
 };
 
-const readSetups = (): EquipmentSetup[] => {
-  if (!canUseStorage()) {
-    return [];
-  }
+// Keep every setup that still parses rather than discarding the whole history.
+const readSetups = (): EquipmentSetup[] =>
+  readStoredArray(STORAGE_KEY).filter(isEquipmentSetup);
 
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    return [];
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(stored);
-    return Array.isArray(parsed) && parsed.every(isEquipmentSetup)
-      ? parsed
-      : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeSetups = (setups: EquipmentSetup[]) => {
-  if (canUseStorage()) {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(setups));
-  }
-};
+const writeSetups = (setups: EquipmentSetup[]) =>
+  writeStored(STORAGE_KEY, setups);
 
 const sortedByRecency = (setups: EquipmentSetup[]) =>
   setups.toSorted((a, b) =>

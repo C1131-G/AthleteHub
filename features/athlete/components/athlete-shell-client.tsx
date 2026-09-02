@@ -20,6 +20,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
+import { MAIN_CONTENT_ID, RouteFocus } from "./route-focus";
 import { RouteTransition } from "./route-transition";
 import { StoreHydrator } from "./store-hydrator";
 import {
@@ -38,6 +39,10 @@ export const AthleteShellClient = ({
 }: AthleteShellClientProps) => {
   return (
     <>
+      {/* usePathname is dynamic, which a prerendered shell cannot resolve. */}
+      <Suspense fallback={null}>
+        <RouteFocus />
+      </Suspense>
       <StoreHydrator />
       <SidebarProvider>
         {/* Sidebar renders a div it owns, so the landmark comes from the role
@@ -45,6 +50,12 @@ export const AthleteShellClient = ({
             footer as content outside any landmark. */}
         {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
         <Sidebar aria-label="Workspace" collapsible="icon" role="navigation">
+          <a
+            className="bg-background focus-visible:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-xl focus:border focus:px-3 focus:py-2 focus:text-sm focus-visible:ring-2"
+            href={`#${MAIN_CONTENT_ID}`}
+          >
+            Skip to main content
+          </a>
           <SidebarHeader className="h-14 justify-center">
             <Link
               className="truncate px-2 font-semibold group-data-[collapsible=icon]:hidden"
@@ -77,7 +88,11 @@ export const AthleteShellClient = ({
             <SidebarTrigger className="-ml-1" />
             {backLink}
           </header>
-          <main className="min-h-0 flex-1 overflow-y-auto">
+          <main
+            className="min-h-0 flex-1 overflow-y-auto focus-visible:outline-none"
+            id={MAIN_CONTENT_ID}
+            tabIndex={-1}
+          >
             <div className="mx-auto w-full max-w-7xl p-4 md:p-8">
               <RouteTransition>{children}</RouteTransition>
             </div>

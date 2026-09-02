@@ -151,16 +151,15 @@
   html {
     @apply font-sans;
   }
-  ::view-transition-group(root) {
+  html:active-view-transition-type(theme)::view-transition-group(root) {
     animation-timing-function: var(--expo-out);
   }
-  ::view-transition-old(root),
-  .dark::view-transition-old(root) {
+  html:active-view-transition-type(theme)::view-transition-old(root) {
     animation: none;
     animation-fill-mode: both;
     z-index: -1;
   }
-  ::view-transition-new(root) {
+  html:active-view-transition-type(theme)::view-transition-new(root) {
     mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="m20 0 20 35H0z" fill="white"/></svg>')
       center / 0 no-repeat;
     animation: scale 0.7s;
@@ -205,8 +204,12 @@
 
   @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(.nav-exit),
-    ::view-transition-new(.nav-enter) {
+    ::view-transition-new(.nav-enter),
+    html:active-view-transition-type(theme)::view-transition-group(root),
+    html:active-view-transition-type(theme)::view-transition-old(root),
+    html:active-view-transition-type(theme)::view-transition-new(root) {
       animation: none;
+      mask: none;
     }
   }
 }

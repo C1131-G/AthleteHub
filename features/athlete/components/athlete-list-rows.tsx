@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { TableCell, TableRow } from "@/components/ui/table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { initials } from "@/lib/format";
 
 import { categoryLabel, statusLabel } from "../athlete-labels";
@@ -47,7 +47,8 @@ export const AthleteCard = ({ athlete }: { athlete: Athlete }) => (
 export const AthleteRow = ({ athlete }: { athlete: Athlete }) => {
   return (
     <TableRow>
-      <TableCell>
+      {/* The athlete names the row, so it is a header cell. */}
+      <TableHead className="h-auto p-3 font-normal" scope="row">
         <div className="flex items-center gap-3">
           <Avatar>
             <AvatarImage src={athlete.photoUrl} alt="" />
@@ -63,7 +64,7 @@ export const AthleteRow = ({ athlete }: { athlete: Athlete }) => {
             <p className="text-muted-foreground text-xs">{athlete.athleteId}</p>
           </div>
         </div>
-      </TableCell>
+      </TableHead>
       <TableCell>{categoryLabel[athlete.category]}</TableCell>
       <TableCell>
         <Badge variant={athlete.status === "active" ? "default" : "secondary"}>

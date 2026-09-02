@@ -5,10 +5,11 @@ import { pie, polar, radialArc } from "@tanstack/charts/polar";
 import { Chart } from "@tanstack/charts/react";
 import { scaleLinear } from "@tanstack/charts/scales/linear";
 import { scalePoint } from "@tanstack/charts/scales/point";
+import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { ChartCard, ChartLegend, DataTable } from "./chart-parts";
+import { ChartCard, ChartEmpty, ChartLegend, DataTable } from "./chart-parts";
 
 interface ScorePoint {
   label: string;
@@ -29,29 +30,57 @@ export interface CompletionPoint {
   label: string;
   value: number;
 }
+export interface ScoreSeries {
+  distanceM: number;
+  points: ScorePoint[];
+}
 
 const chartOptions = {
   focus: "group-x" as const,
   keyboard: true,
 };
 
-export const ScoreTrendChart = ({ points }: { points: ScorePoint[] }) => {
-  const definition = defineChart(
-    {
-      marks: [
-        lineY(points, {
-          points: true,
-          stroke: () => "var(--chart-1)",
-          x: "label",
-          y: "value",
-        }),
-      ],
-      scales: {
-        x: { scale: scalePoint },
-        y: { scale: scaleLinear },
-      },
-    },
-    chartOptions
+const seriesColor = (index: number) => `var(--chart-${(index % 5) + 1})`;
+
+export const ScoreTrendChart = ({
+  month,
+  series,
+}: {
+  month: string;
+  series: ScoreSeries[];
+}) => {
+  const definition = useMemo(
+    () =>
+      defineChart(
+        {
+          marks: series.map((entry, index) =>
+            lineY(
+              // A stable id per point so redraws retarget geometry by identity
+              // instead of by list position.
+              entry.points.map((point) => ({
+                ...point,
+                id: `${entry.distanceM}-${point.label}`,
+              })),
+              {
+                key: "id",
+                points: true,
+                stroke: () => seriesColor(index),
+                x: "label",
+                y: "value",
+              }
+            )
+          ),
+          scales: {
+            x: { scale: scalePoint },
+            y: {
+              axis: { label: "Average score (points)" },
+              scale: scaleLinear,
+            },
+          },
+        },
+        chartOptions
+      ),
+    [series]
   );
 
   return (
@@ -60,25 +89,32 @@ export const ScoreTrendChart = ({ points }: { points: ScorePoint[] }) => {
         <CardTitle>Score trend</CardTitle>
       </CardHeader>
       <CardContent>
-        {points.length ? (
+        {series.length ? (
           <>
             <Chart
-              ariaLabel="Monthly average score trend"
+              ariaLabel={`Weekly average score per round by shooting distance${month ? ` for ${month}` : ""}, one line per distance in points`}
               definition={definition}
               height={240}
             />
+            <ChartLegend
+              series={series.map((entry, index) => ({
+                color: seriesColor(index),
+                label: `${entry.distanceM} m`,
+              }))}
+            />
             <DataTable
-              headers={["Session", "Average"]}
-              rows={points.map((point) => [
-                point.label,
-                point.value.toFixed(2),
-              ])}
+              headers={["Week", "Distance", "Average score (points)"]}
+              rows={series.flatMap((entry) =>
+                entry.points.map((point) => [
+                  point.label,
+                  `${entry.distanceM} m`,
+                  point.value.toFixed(2),
+                ])
+              )}
             />
           </>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            Add weekly scores to see a trend.
-          </p>
+          <ChartEmpty label="Add weekly scores to see a trend." />
         )}
       </CardContent>
     </Card>
@@ -86,28 +122,47 @@ export const ScoreTrendChart = ({ points }: { points: ScorePoint[] }) => {
 };
 
 export const ArrowLoadChart = ({ points }: { points: LoadPoint[] }) => {
-  const chartRows = points.flatMap((point) => [
-    { label: point.label, series: "planned", value: point.planned },
-    { label: point.label, series: "shot", value: point.shot },
-  ]);
-  const definition = defineChart(
-    {
-      marks: [
-        barY(chartRows, {
-          color: "series",
-          fill: (row) =>
-            row.series === "planned" ? "var(--chart-2)" : "var(--chart-1)",
-          x: "label",
-          y: "value",
-          z: "series",
-        }),
-      ],
-      scales: {
-        x: { scale: scalePoint },
-        y: { scale: scaleLinear },
-      },
-    },
-    chartOptions
+  const chartRows = useMemo(
+    () =>
+      points.flatMap((point) => [
+        {
+          id: `${point.label}-planned`,
+          label: point.label,
+          series: "planned",
+          value: point.planned,
+        },
+        {
+          id: `${point.label}-shot`,
+          label: point.label,
+          series: "shot",
+          value: point.shot,
+        },
+      ]),
+    [points]
+  );
+  const definition = useMemo(
+    () =>
+      defineChart(
+        {
+          marks: [
+            barY(chartRows, {
+              color: "series",
+              fill: (row) =>
+                row.series === "planned" ? "var(--chart-2)" : "var(--chart-1)",
+              key: "id",
+              x: "label",
+              y: "value",
+              z: "series",
+            }),
+          ],
+          scales: {
+            x: { scale: scalePoint },
+            y: { axis: { label: "Arrows" }, scale: scaleLinear },
+          },
+        },
+        chartOptions
+      ),
+    [chartRows]
   );
 
   return (
@@ -138,9 +193,7 @@ export const ArrowLoadChart = ({ points }: { points: LoadPoint[] }) => {
             />
           </>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            Add weekly load values to see progress.
-          </p>
+          <ChartEmpty label="Add weekly load values to see progress." />
         )}
       </CardContent>
     </Card>
@@ -154,33 +207,50 @@ export const AthleteRankingChart = ({
   points: RankingPoint[];
   distanceM: number;
 }) => {
-  const definition = defineChart(
-    {
-      marks: [
-        barX(points, {
-          fill: () => "var(--chart-1)",
-          x: "value",
-          y: "label",
-        }),
-      ],
-      scales: { x: { scale: scaleLinear }, y: { scale: scalePoint } },
-    },
-    chartOptions
+  const definition = useMemo(
+    () =>
+      defineChart(
+        {
+          marks: [
+            barX(points, {
+              fill: () => "var(--chart-1)",
+              key: "label",
+              x: "value",
+              y: "label",
+            }),
+          ],
+          scales: {
+            x: {
+              axis: { label: "Average score (points)" },
+              scale: scaleLinear,
+            },
+            y: { scale: scalePoint },
+          },
+        },
+        chartOptions
+      ),
+    [points]
   );
   return (
     <ChartCard
-      title={`Athlete ranking at ${distanceM} m`}
       label="Athlete ranking by average score"
+      title={`Athlete ranking at ${distanceM} m`}
     >
-      <Chart
-        definition={definition}
-        ariaLabel="Athlete ranking by average score"
-        height={240}
-      />
-      {points.length > 0 && (
-        <DataTable
-          headers={["Athlete", "Average"]}
-          rows={points.map((point) => [point.label, point.value.toFixed(2)])}
+      {points.length ? (
+        <>
+          <Chart
+            ariaLabel={`Athlete ranking by average score at ${distanceM} m, in points`}
+            definition={definition}
+            height={240}
+          />
+          <DataTable
+            headers={["Athlete", "Average score (points)"]}
+            rows={points.map((point) => [point.label, point.value.toFixed(2)])}
+          />
+        </>
+      ) : (
+        <ChartEmpty
+          label={`No scored rounds at ${distanceM} m yet. Add weekly scores at this distance to compare athletes.`}
         />
       )}
     </ChartCard>
@@ -192,54 +262,59 @@ export const ReportCompletionChart = ({
 }: {
   points: CompletionPoint[];
 }) => {
-  const slices = pie(points, { value: "value" });
-  const definition = defineChart(
-    {
-      color: {
-        domain: points.map((point) => point.label),
-        range: ["var(--chart-1)", "var(--chart-3)", "var(--chart-5)"],
-      },
-      marks: [
-        polar({
-          inset: 8,
+  const definition = useMemo(
+    () =>
+      defineChart(
+        {
+          color: {
+            domain: points.map((point) => point.label),
+            range: ["var(--chart-1)", "var(--chart-3)", "var(--chart-5)"],
+          },
           marks: [
-            radialArc(slices, {
-              color: "label",
-              innerRadius: ({ radius }) => radius * 0.58,
-              key: "label",
+            polar({
+              inset: 8,
+              marks: [
+                radialArc(pie(points, { value: "value" }), {
+                  color: "label",
+                  innerRadius: ({ radius }) => radius * 0.58,
+                  key: "label",
+                }),
+              ],
+              radiusRatio: 0.82,
+              scales: { angle: null, radius: null },
             }),
           ],
-          radiusRatio: 0.82,
-          scales: { angle: null, radius: null },
-        }),
-      ],
-      scales: { x: null, y: null },
-    },
-    chartOptions
+          scales: { x: null, y: null },
+        },
+        chartOptions
+      ),
+    [points]
   );
   return (
     <ChartCard
-      title="Monthly report completion"
       label="Complete, draft, and missing monthly reports"
+      title="Monthly report completion"
     >
-      <Chart
-        definition={definition}
-        ariaLabel="Monthly report completion"
-        height={240}
-      />
-      {points.length > 0 && (
-        <ChartLegend
-          series={points.map((point, index) => ({
-            color: `var(--chart-${[1, 3, 5][index] ?? 1})`,
-            label: point.label,
-          }))}
-        />
-      )}
-      {points.length > 0 && (
-        <DataTable
-          headers={["Status", "Reports"]}
-          rows={points.map((point) => [point.label, String(point.value)])}
-        />
+      {points.length ? (
+        <>
+          <Chart
+            ariaLabel="Monthly report completion, counted as reports per status"
+            definition={definition}
+            height={240}
+          />
+          <ChartLegend
+            series={points.map((point, index) => ({
+              color: `var(--chart-${[1, 3, 5][index] ?? 1})`,
+              label: point.label,
+            }))}
+          />
+          <DataTable
+            headers={["Status", "Reports"]}
+            rows={points.map((point) => [point.label, String(point.value)])}
+          />
+        </>
+      ) : (
+        <ChartEmpty label="No monthly reports for this period yet." />
       )}
     </ChartCard>
   );

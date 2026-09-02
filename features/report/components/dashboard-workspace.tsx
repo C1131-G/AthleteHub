@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -31,8 +30,6 @@ import {
 
 export { DashboardWorkspaceSkeleton } from "./dashboard-parts";
 
-// The workspace coordinates independent filters, derived metrics, and chart datasets.
-// oxlint-disable-next-line complexity
 const DASHBOARD_PATH = "/dashboard";
 
 export const DashboardWorkspace = () => {
@@ -57,7 +54,7 @@ export const DashboardWorkspace = () => {
     openRequirements,
     rankingPoints,
     scopedAthletes,
-    scorePoints,
+    scoreSeries,
     statusCounts,
   } = dashboardMetrics({
     athletes,
@@ -87,19 +84,6 @@ export const DashboardWorkspace = () => {
   };
   return (
     <section className="space-y-6" aria-labelledby="dashboard-title">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h1 id="dashboard-title" className="text-3xl font-semibold">
-            Performance dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            A quick view of training, scores, and reports for {month}.
-          </p>
-        </div>
-        <Link className={buttonVariants()} href="/reports/weekly/new">
-          Add weekly entry
-        </Link>
-      </div>
       <DashboardFilters
         athleteFilter={athleteFilter}
         athletes={athletes}
@@ -140,7 +124,7 @@ export const DashboardWorkspace = () => {
         />
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
-        <ScoreTrendChart points={scorePoints} />
+        <ScoreTrendChart month={month} series={scoreSeries} />
         <ArrowLoadChart points={loadPoints} />
         <AthleteRankingChart
           points={rankingPoints}

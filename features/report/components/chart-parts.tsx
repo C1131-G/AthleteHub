@@ -20,6 +20,11 @@ export const ChartCard = ({
     <CardContent aria-label={label}>{children}</CardContent>
   </Card>
 );
+/** Every chart shows this instead of an empty plot area. */
+export const ChartEmpty = ({ label }: { label: string }) => (
+  <p className="text-muted-foreground py-8 text-center text-sm">{label}</p>
+);
+
 export const ChartLegend = ({
   series,
 }: {
@@ -69,12 +74,24 @@ export const DataTable = ({
           // Rows and cells carry no ids; position is the only stable identity.
           // biome-ignore lint/suspicious/noArrayIndexKey: table data is positional
           <tr key={rowIndex}>
-            {row.map((cell, cellIndex) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: table data is positional
-              <td className="p-1" key={cellIndex}>
-                {cell}
-              </td>
-            ))}
+            {row.map((cell, cellIndex) =>
+              cellIndex === 0 ? (
+                // The first column names the row, so it is a header cell.
+                // biome-ignore lint/suspicious/noArrayIndexKey: table data is positional
+                <th
+                  className="p-1 text-left font-normal"
+                  key={cellIndex}
+                  scope="row"
+                >
+                  {cell}
+                </th>
+              ) : (
+                // biome-ignore lint/suspicious/noArrayIndexKey: table data is positional
+                <td className="p-1" key={cellIndex}>
+                  {cell}
+                </td>
+              )
+            )}
           </tr>
         ))}
       </tbody>

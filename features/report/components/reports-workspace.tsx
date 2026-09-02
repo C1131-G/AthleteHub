@@ -1,12 +1,17 @@
 "use client";
 
-import { PlusIcon } from "@phosphor-icons/react";
-import Link from "next/link";
+import { XIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -19,9 +24,25 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAthletes } from "@/features/athlete/use-athletes";
 
 import { useReports } from "../use-reports";
-import { MonthlyReportTable, WeeklyReportTable } from "./report-tables";
+import { MonthlyReportTable } from "./monthly-report-table";
+import { WeeklyReportTable } from "./weekly-report-table";
 
 const REPORTS_PATH = "/reports";
+/** Select cannot hold an empty value, so "all" stands in for "no filter". */
+const ALL = "all";
+
+const weeklyStatusOptions = [
+  { label: "Completed", value: "completed" },
+  { label: "Competition", value: "competition" },
+  { label: "Medical leave", value: "medical-leave" },
+  { label: "Absent", value: "absent" },
+];
+const monthlyStatusOptions = [
+  { label: "Draft", value: "draft" },
+  { label: "Complete", value: "complete" },
+];
+
+const labelClass = "mb-1.5 block text-sm font-medium";
 
 export const ReportsWorkspace = () => {
   const router = useRouter();
@@ -32,7 +53,18 @@ export const ReportsWorkspace = () => {
   const tab = params.get("tab") === "monthly" ? "monthly" : "weekly";
   const athleteId = params.get("athleteId") ?? "";
   const month = params.get("month") ?? "";
-  const status = params.get("status") ?? "";
+  const statusOptions =
+    tab === "monthly" ? monthlyStatusOptions : weeklyStatusOptions;
+  const requestedStatus = params.get("status") ?? "";
+  // A status carried over from the other tab can never match, so ignore it.
+  const status = statusOptions.some(
+    (option) => option.value === requestedStatus
+  )
+    ? requestedStatus
+    : "";
+  const statusLabel =
+    statusOptions.find((option) => option.value === status)?.label ??
+    "All statuses";
   const athleteById = useMemo(
     () => new Map(athletes.map((athlete) => [athlete.id, athlete])),
     [athletes]
@@ -57,69 +89,77 @@ export const ReportsWorkspace = () => {
       (!status || report.status === status) &&
       (!query || matches(report.athleteId, query))
   );
+  const replaceParams = (next: URLSearchParams) => {
+    const search = next.toString();
+    router.replace(search ? `${REPORTS_PATH}?${search}` : REPORTS_PATH);
+  };
   const setFilter = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());
-    if (value) {
+    if (value && value !== ALL) {
       next.set(key, value);
     } else {
       next.delete(key);
     }
-    router.replace(`${REPORTS_PATH}?${next.toString()}`);
+    replaceParams(next);
   };
-  if (!athletesReady || !reportsReady) {
+  const setTab = (value: string) => {
+    const next = new URLSearchParams(params.toString());
+    next.set("tab", value);
+    // Statuses are tab-specific; keeping one across tabs hides every row.
+    next.delete("status");
+    replaceParams(next);
+  };
+  const clearFilters = () => {
+    setQuery("");
+    replaceParams(new URLSearchParams({ tab }));
+  };
+  const hasFilters = Boolean(athleteId || month || status || query);
+
+  if (!(athletesReady && reportsReady)) {
     return <ReportsWorkspaceSkeleton />;
   }
+
   return (
-    <section className="space-y-6" aria-labelledby="reports-title">
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h1 id="reports-title" className="text-3xl font-semibold">
-            Performance reports
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Enter weekly scores and review monthly coaching reports.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            className={buttonVariants({ variant: "outline" })}
-            href="/reports/monthly/new"
-          >
-            <PlusIcon /> Monthly report
-          </Link>
-          <Link className={buttonVariants()} href="/reports/weekly/new">
-            <PlusIcon /> Weekly entry
-          </Link>
-        </div>
-      </header>
+    <section aria-labelledby="reports-title" className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Find reports</CardTitle>
+          {hasFilters ? (
+            <CardAction>
+              <Button onClick={clearFilters} size="sm" variant="ghost">
+                <XIcon aria-hidden="true" />
+                Clear filters
+              </Button>
+            </CardAction>
+          ) : null}
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-4">
           <div>
-            <label className="text-sm font-medium" htmlFor="report-search">
+            <label className={labelClass} htmlFor="report-search">
               Search athlete
             </label>
             <Input
               id="report-search"
-              value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Name or athlete ID"
+              value={query}
             />
           </div>
           <div>
-            <label className="text-sm font-medium" htmlFor="report-athlete">
+            <label className={labelClass} htmlFor="report-athlete">
               Athlete
             </label>
             <Select
-              value={athleteId}
-              onValueChange={(value) => setFilter("athleteId", value ?? "")}
+              onValueChange={(value) => setFilter("athleteId", value ?? ALL)}
+              value={athleteId || ALL}
             >
-              <SelectTrigger id="report-athlete" className="w-full">
-                <SelectValue placeholder="All athletes" />
+              <SelectTrigger className="w-full" id="report-athlete">
+                <SelectValue>
+                  {athleteById.get(athleteId)?.fullName ?? "All athletes"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value={ALL}>All athletes</SelectItem>
                 {athletes.map((athlete) => (
                   <SelectItem key={athlete.id} value={athlete.id}>
                     {athlete.fullName}
@@ -129,38 +169,40 @@ export const ReportsWorkspace = () => {
             </Select>
           </div>
           <div>
-            <label className="text-sm font-medium" htmlFor="report-month">
+            <label className={labelClass} htmlFor="report-month">
               Month
             </label>
             <Input
               id="report-month"
+              onChange={(event) => setFilter("month", event.target.value)}
               type="month"
               value={month}
-              onChange={(event) => setFilter("month", event.target.value)}
             />
           </div>
           <div>
-            <label className="text-sm font-medium" htmlFor="report-status">
+            <label className={labelClass} htmlFor="report-status">
               Status
             </label>
             <Select
-              value={status}
-              onValueChange={(value) => setFilter("status", value ?? "")}
+              onValueChange={(value) => setFilter("status", value ?? ALL)}
+              value={status || ALL}
             >
-              <SelectTrigger id="report-status" className="w-full">
-                <SelectValue placeholder="All statuses" />
+              <SelectTrigger className="w-full" id="report-status">
+                <SelectValue>{statusLabel}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="competition">Competition</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value={ALL}>All statuses</SelectItem>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
-      <Tabs value={tab} onValueChange={(value) => setFilter("tab", value)}>
+      <Tabs onValueChange={setTab} value={tab}>
         <TabsList aria-label="Report type">
           <TabsTrigger value="weekly">
             Weekly entries ({weeklyRows.length})
@@ -171,12 +213,12 @@ export const ReportsWorkspace = () => {
         </TabsList>
       </Tabs>
       {tab === "weekly" ? (
-        <WeeklyReportTable rows={weeklyRows} athleteById={athleteById} />
+        <WeeklyReportTable athleteById={athleteById} rows={weeklyRows} />
       ) : (
         <MonthlyReportTable
-          rows={monthlyRows}
           athleteById={athleteById}
           month={month}
+          rows={monthlyRows}
         />
       )}
     </section>

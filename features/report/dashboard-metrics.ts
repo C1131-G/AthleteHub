@@ -48,6 +48,37 @@ const averageOf = (values: number[]) =>
     ? values.reduce((total, value) => total + value, 0) / values.length
     : 0;
 
+/** Scores at 18 m and 70 m are different scales and are never comparable. */
+const byDistance = (reports: WeeklyPerformanceReport[]) => {
+  const grouped = new Map<number, WeeklyPerformanceReport[]>();
+  for (const report of reports) {
+    if (!(report.distanceM && report.scores.length)) {
+      continue;
+    }
+    grouped.set(report.distanceM, [
+      ...(grouped.get(report.distanceM) ?? []),
+      report,
+    ]);
+  }
+  return grouped;
+};
+
+/** One delta per distance: the last week's average minus the first week's. */
+const scoreChangesFor = (reports: WeeklyPerformanceReport[]) => {
+  const deltas: number[] = [];
+  for (const group of byDistance(reports).values()) {
+    const sorted = group.toSorted((a, b) =>
+      a.weekStart.localeCompare(b.weekStart)
+    );
+    const [first] = sorted;
+    const last = sorted.at(-1);
+    if (first && last && first !== last) {
+      deltas.push(averageOf(last.scores) - averageOf(first.scores));
+    }
+  }
+  return deltas;
+};
+
 const attentionFor = (
   athlete: Athlete,
   weekly: WeeklyPerformanceReport[],
@@ -68,10 +99,7 @@ const attentionFor = (
   if (weekly.some((report) => report.status === "medical-leave")) {
     add("Medical leave", `/reports?athleteId=${athlete.id}`);
   }
-  const scores = weekly.flatMap((report) => report.scores);
-  const [first] = scores;
-  const last = scores.at(-1);
-  if (first !== undefined && last !== undefined && last < first) {
+  if (scoreChangesFor(weekly).some((delta) => delta < 0)) {
     add("Score decline", `/reports?athleteId=${athlete.id}`);
   }
   if (monthly.some((report) => report.status === "draft")) {
@@ -108,15 +136,15 @@ export const dashboardMetrics = ({
       (!category || athlete.category === category) &&
       (!status || athlete.status === status)
   );
+  const inScope = new Set(scopedAthletes.map((athlete) => athlete.id));
   const monthWeekly = weekly.filter(
     (report) =>
       (!month || report.weekStart.startsWith(month)) &&
-      (!athleteId || report.athleteId === athleteId)
+      inScope.has(report.athleteId)
   );
   const monthMonthly = monthly.filter(
     (report) =>
-      (!month || report.month === month) &&
-      (!athleteId || report.athleteId === athleteId)
+      (!month || report.month === month) && inScope.has(report.athleteId)
   );
 
   const missingReports = scopedAthletes.filter(
@@ -146,19 +174,11 @@ export const dashboardMetrics = ({
     })
     .toSorted((a, b) => b.value - a.value);
 
-  const scoreChanges = scopedAthletes.flatMap((athlete) => {
-    const reports = monthWeekly
-      .filter(
-        (report) => report.athleteId === athlete.id && report.scores.length
-      )
-      .toSorted((a, b) => a.weekStart.localeCompare(b.weekStart));
-    if (reports.length < 2) {
-      return [];
-    }
-    const first = reports[0]?.scores[0];
-    const last = reports.at(-1)?.scores.at(-1);
-    return first !== undefined && last !== undefined ? [last - first] : [];
-  });
+  const scoreChanges = scopedAthletes.flatMap((athlete) =>
+    scoreChangesFor(
+      monthWeekly.filter((report) => report.athleteId === athlete.id)
+    )
+  );
 
   let openRequirements = 0;
   const attentionRows: AttentionRow[] = [];
@@ -188,7 +208,7 @@ export const dashboardMetrics = ({
       { label: "Draft", value: statusCounts.draft },
       { label: "Missing", value: statusCounts.missing },
     ],
-    load: loadSummary(weekly, month),
+    load: loadSummary(monthWeekly, month),
     loadPoints: chronological.map((report) => ({
       label: report.weekStart.slice(5),
       planned: report.arrowsPlanned ?? 0,
@@ -200,16 +220,15 @@ export const dashboardMetrics = ({
     rankingPoints,
     scopedAthletes,
     scoreGroups: scoreSummary(monthWeekly, month),
-    scorePoints: chronological.flatMap((report) =>
-      report.scores.length && report.distanceM
-        ? [
-            {
-              label: `${report.weekStart.slice(5)} · ${report.distanceM}m`,
-              value: averageOf(report.scores),
-            },
-          ]
-        : []
-    ),
+    scoreSeries: [...byDistance(chronological).entries()]
+      .map(([distanceM, reports]) => ({
+        distanceM,
+        points: reports.map((report) => ({
+          label: report.weekStart.slice(5),
+          value: averageOf(report.scores),
+        })),
+      }))
+      .toSorted((a, b) => a.distanceM - b.distanceM),
     statusCounts,
   };
 };

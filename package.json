@@ -9,7 +9,7 @@
     "build": "next build",
     "instant:server": "node scripts/instant-nav-server.mjs",
     "test:instant": "playwright test",
-    "test": "bun test features",
+    "test": "bun test features lib",
     "start": "next start",
     "electron:dev": "electronmon electron/main.cjs",
     "electron:preview": "bun run build && bun run standalone && electron electron/main.cjs --production",

@@ -1,3 +1,5 @@
+import { readStoredArray, writeStored } from "@/lib/storage";
+
 import type { Athlete, AthleteInput } from "./athlete-types";
 
 const STORAGE_KEY = "athletehub.athletes.v1";
@@ -34,8 +36,6 @@ const seedAthletes: Athlete[] = [
   };
 });
 
-const canUseStorage = () => globalThis.localStorage !== undefined;
-
 const isAthlete = (value: unknown): value is Athlete => {
   if (!value || typeof value !== "object") {
     return false;
@@ -44,32 +44,20 @@ const isAthlete = (value: unknown): value is Athlete => {
 };
 
 const readAthletes = (): Athlete[] => {
-  if (!canUseStorage()) {
+  const stored = readStoredArray(STORAGE_KEY);
+  if (stored.length === 0) {
+    writeStored(STORAGE_KEY, seedAthletes);
     return seedAthletes;
   }
 
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seedAthletes));
-    return seedAthletes;
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(stored);
-    return Array.isArray(parsed) && parsed.every(isAthlete)
-      ? parsed
-      : seedAthletes;
-  } catch {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seedAthletes));
-    return seedAthletes;
-  }
+  // Keep every record that still parses: one corrupt entry must not discard
+  // the rest of the roster.
+  const athletes = stored.filter(isAthlete);
+  return athletes.length > 0 ? athletes : seedAthletes;
 };
 
-const writeAthletes = (athletes: Athlete[]) => {
-  if (canUseStorage()) {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(athletes));
-  }
-};
+const writeAthletes = (athletes: Athlete[]) =>
+  writeStored(STORAGE_KEY, athletes);
 
 export interface AthleteRepository {
   list: () => Athlete[];

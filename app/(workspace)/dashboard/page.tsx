@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { Suspense } from "react";
 
+import { buttonVariants } from "@/components/ui/button";
+import { WorkspaceHeader } from "@/components/workspace-header";
 import {
   DashboardWorkspace,
   DashboardWorkspaceSkeleton,
@@ -11,9 +14,21 @@ export const metadata = {
 };
 
 const DashboardPage = () => (
-  <Suspense fallback={<DashboardWorkspaceSkeleton />}>
-    <DashboardWorkspace />
-  </Suspense>
+  <>
+    <WorkspaceHeader
+      actions={
+        <Link className={buttonVariants()} href="/reports/weekly/new">
+          Add weekly entry
+        </Link>
+      }
+      description="A quick view of training, scores, and reports."
+      id="dashboard-title"
+      title="Performance dashboard"
+    />
+    <Suspense fallback={<DashboardWorkspaceSkeleton />}>
+      <DashboardWorkspace />
+    </Suspense>
+  </>
 );
 
 export default DashboardPage;

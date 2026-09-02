@@ -53,16 +53,32 @@ export const MonthlyReportForm = ({
   initialAthleteId,
   initialMonth,
 }: MonthlyReportFormProps) => {
+  const { ready: athletesReady } = useAthletes();
+  const { ready: reportsReady } = useReports();
+
+  if (!(athletesReady && reportsReady)) {
+    return <MonthlyReportFormSkeleton />;
+  }
+
+  return (
+    <MonthlyReportFormBody
+      initialAthleteId={initialAthleteId}
+      initialMonth={initialMonth}
+      reportId={reportId}
+    />
+  );
+};
+
+const MonthlyReportFormBody = ({
+  reportId,
+  initialAthleteId,
+  initialMonth,
+}: MonthlyReportFormProps) => {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const { athletes, ready: athletesReady } = useAthletes();
-  const {
-    createMonthly,
-    getMonthly,
-    listMonthly,
-    ready: reportsReady,
-    updateMonthly,
-  } = useReports();
+  const { athletes } = useAthletes();
+  const { createMonthly, getMonthly, listMonthly, updateMonthly } =
+    useReports();
   const existing = reportId ? getMonthly(reportId) : undefined;
   const [form, setForm] = useState<MonthlyFormState>(() =>
     toState(
@@ -74,9 +90,6 @@ export const MonthlyReportForm = ({
     )
   );
   const [errors, setErrors] = useState<ReportFormErrors>({});
-  if (!athletesReady || !reportsReady) {
-    return <MonthlyReportFormSkeleton />;
-  }
   if (reportId && !existing) {
     return (
       <Card>

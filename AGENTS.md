@@ -10,27 +10,44 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Which skill to load
 
-Load the skill before writing the code, not after. Two or more rows can apply at once. Load all matching rows.
+Load the skill before writing the code, not after. Two or more rows can apply at once. Load all matching rows. Every skill named here is installed — verify with `ls ~/.claude/skills` before adding a row, and do not reference a skill that does not resolve.
 
 | When | Load |
 | --- | --- |
 | Any code change, in any language | `enforce-code-quality` |
 | Editing a `.ts` or `.tsx` file | `enforce-typescript-strict` |
-| Writing or reviewing HTML, JSX, forms, tables, or interactive controls | `accessible-html` |
-| Choosing feature folders or reviewing React structure | `nextjs-app-architecture` |
+| Parsing, validating, or narrowing untrusted data | `type-safety-validation` |
+| Choosing feature folders or reviewing React structure | `design-frontend-architecture` |
+| Any Next.js App Router page, layout, cache, or server/client boundary | `nextjs-react-typescript` |
 | About to write or edit a `useEffect` | `audit-react-effects` |
-| An interaction has pending, loading, transition, or Suspense behavior | `route-react-async-ui` |
-| The task uses TanStack Query, Router, Form, or Table | `route-tanstack` |
+| An interaction has pending, loading, or transition behavior | `apply-react-async-ui` |
+| Adding or moving a Suspense boundary | `apply-react-suspense` |
+| A route or view transition, or `ViewTransition` | `apply-react-transitions` |
+| A mutation that should feel instant | `apply-react-optimistic` |
 | Showing the user a message about something that happened | `apply-toasts` |
 | Route transitions, gestures, tap feedback, safe areas, or mobile viewport | `apply-native-feel-nav` |
 | A Next.js layout shell, sidebar, private session chrome, or streaming boundary | `apply-next-shell-nav` |
-| Any Next.js App Router page, layout, cache, or server/client boundary | `nextjs-app-architecture` |
-| Upgrading Next.js, TypeScript, or another dependency | `next-upgrade` and `upgrade-dependencies` |
-| Adding or changing a feature that needs user documentation | `docs` |
+| Writing a unit test | `vitest` |
+| Auditing existing code against the installed skills | `audit-with-skills` |
+| A broad quality pass over a feature | `impeccable` |
 | Onboarding a repository, or this table needs updating | `setup-agent-rules` |
-| Working with Supabase | `supabase` |
 | Reading or reviewing a research paper | `read-research-paper` |
-| Every written response and user-facing text | `unslop` |
+
+There is no installed accessibility skill. Accessibility is enforced here by the `@axe-core/playwright` scans in `e2e/` — add a scan when you add a route, and keep `bun run test:instant` at zero violations.
+
+### TanStack skills ship inside `node_modules`
+
+These installed packages carry their own agent skills (the `tanstack-intent` keyword in their `package.json` marks them). Read the relevant skill from disk before writing TanStack code — it describes the installed version, which the public examples often do not:
+
+| Package                 | Skills                                       |
+| ----------------------- | -------------------------------------------- |
+| `@tanstack/react-table` | `node_modules/@tanstack/react-table/skills/` |
+| `@tanstack/table-core`  | `node_modules/@tanstack/table-core/skills/`  |
+| `@tanstack/charts`      | `node_modules/@tanstack/charts/skills/`      |
+
+`use-tanstack-table`, `use-tanstack-query`, `use-tanstack-router`, and `use-tanstack-form` are installed as leaf skills; load the matching one alongside the package's own skills.
+
+This repo is on Table **v9**, whose API differs from the v8 examples that most documentation and the shadcn data-table recipe still show: `useTable` not `useReactTable`, a `features` option not row-model options, `table.state` not `getState()`, and `<table.FlexRender />` not a bare `flexRender` call. Charts follow `@tanstack/charts` v0.16: `defineChart` definitions must be memoized, and marks need a stable `key`.
 
 # Ultracite Code Standards
 

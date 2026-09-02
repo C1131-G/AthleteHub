@@ -1,4 +1,6 @@
 import "client-only";
+import { readStoredArray, writeStored } from "@/lib/storage";
+
 import {
   monthlyReportInputSchema,
   monthlyReportSchema,
@@ -17,8 +19,6 @@ import type {
 const WEEKLY_KEY = "athletehub.weekly-reports.v1";
 const MONTHLY_KEY = "athletehub.monthly-reports.v1";
 
-const canUseStorage = () => globalThis.localStorage !== undefined;
-
 interface ParseSchema<T> {
   safeParse: (value: unknown) =>
     | { data: T; success: true }
@@ -28,33 +28,13 @@ interface ParseSchema<T> {
       };
 }
 
-const read = <T>(key: string, schema: ParseSchema<T>) => {
-  if (!canUseStorage()) {
-    return [];
-  }
-  const raw = window.localStorage.getItem(key);
-  if (!raw) {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.flatMap((value) => {
-      const result = schema.safeParse(value);
-      return result.success ? [result.data] : [];
-    });
-  } catch {
-    return [];
-  }
-};
+const read = <T>(key: string, schema: ParseSchema<T>) =>
+  readStoredArray(key).flatMap((value) => {
+    const result = schema.safeParse(value);
+    return result.success ? [result.data] : [];
+  });
 
-const write = (key: string, value: unknown[]) => {
-  if (canUseStorage()) {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  }
-};
+const write = (key: string, value: unknown[]) => writeStored(key, value);
 
 const sortByDate = <T extends { createdAt: string }>(
   records: T[],

@@ -30,7 +30,9 @@ const ThemeHotkey = () => {
         return;
       }
 
-      if (event.metaKey || event.ctrlKey || event.altKey) {
+      // WCAG 2.1.4 forbids an always-on single-character shortcut with no way
+      // to disable or remap it, so this requires a non-printing modifier.
+      if (!event.altKey || event.metaKey || event.ctrlKey) {
         return;
       }
 
@@ -41,6 +43,8 @@ const ThemeHotkey = () => {
       if (isTypingTarget(event.target)) {
         return;
       }
+
+      event.preventDefault();
 
       runThemeTransition(() =>
         setTheme(resolvedTheme === "dark" ? "light" : "dark")
