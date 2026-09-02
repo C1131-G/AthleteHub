@@ -24,8 +24,11 @@ export const EquipmentEditor = ({
   athleteId: string;
   setupId: string;
 }) => {
-  const { getSetup, ready } = useEquipment();
+  const { getSetup, listByAthlete, ready } = useEquipment();
   const setup = getSetup(setupId);
+  const setups = listByAthlete(athleteId);
+  const setupIndex = setups.findIndex((item) => item.id === setupId);
+  const previousSetup = setupIndex === -1 ? undefined : setups[setupIndex + 1];
 
   if (!ready) {
     return <EquipmentSkeleton />;
@@ -49,5 +52,11 @@ export const EquipmentEditor = ({
       </Empty>
     );
   }
-  return <EquipmentForm athleteId={athleteId} setup={setup} />;
+  return (
+    <EquipmentForm
+      athleteId={athleteId}
+      previousSetup={previousSetup}
+      setup={setup}
+    />
+  );
 };

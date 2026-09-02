@@ -35,6 +35,7 @@ import { EquipmentSkeleton } from "./equipment-skeleton";
 
 interface EquipmentFormProps {
   athleteId: string;
+  previousSetup?: EquipmentSetup;
   setup?: EquipmentSetup;
 }
 
@@ -42,7 +43,11 @@ type FormErrors = Partial<
   Record<"recordedAt" | "items" | "labels" | "form", string>
 >;
 
-export const EquipmentForm = ({ athleteId, setup }: EquipmentFormProps) => {
+export const EquipmentForm = ({
+  athleteId,
+  previousSetup,
+  setup,
+}: EquipmentFormProps) => {
   const { athletes, ready: athletesReady } = useAthletes();
   const { listByAthlete, ready: equipmentReady } = useEquipment();
 
@@ -62,10 +67,12 @@ export const EquipmentForm = ({ athleteId, setup }: EquipmentFormProps) => {
     );
   }
 
+  const carriedFrom = setup ? undefined : listByAthlete(athleteId)[0];
   return (
     <EquipmentFormFields
       athlete={athlete}
-      carriedFrom={setup ? undefined : listByAthlete(athleteId)[0]}
+      carriedFrom={carriedFrom}
+      previousSetup={previousSetup ?? carriedFrom}
       setup={setup}
     />
   );
@@ -74,10 +81,12 @@ export const EquipmentForm = ({ athleteId, setup }: EquipmentFormProps) => {
 const EquipmentFormFields = ({
   athlete,
   carriedFrom,
+  previousSetup,
   setup,
 }: {
   athlete: Athlete;
   carriedFrom: EquipmentSetup | undefined;
+  previousSetup: EquipmentSetup | undefined;
   setup?: EquipmentSetup;
 }) => {
   const athleteId = athlete.id;
@@ -214,6 +223,11 @@ const EquipmentFormFields = ({
                   item={item}
                   invalidLabel={Boolean(errors.labels)}
                   invalidValue={Boolean(errors.items)}
+                  previousValue={
+                    previousSetup?.items.find(
+                      (previousItem) => previousItem.key === item.key
+                    )?.value
+                  }
                   onChange={updateItem}
                   onRemove={removeCustomItem}
                 />

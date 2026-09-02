@@ -13,16 +13,18 @@ export const EquipmentItemField = ({
   item,
   invalidLabel,
   invalidValue,
+  previousValue,
   onChange,
   onRemove,
 }: {
   item: EquipmentItem;
   invalidLabel: boolean;
   invalidValue: boolean;
+  previousValue: string | undefined;
   onChange: (id: string, patch: Partial<EquipmentItem>) => void;
   onRemove: (id: string) => void;
 }) => (
-  <div className="grid gap-3 rounded-xl border p-4 md:grid-cols-[minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(12rem,1fr)_auto] md:items-end">
+  <div className="grid gap-3 rounded-xl border p-4 md:grid-cols-[minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(12rem,1fr)_minmax(12rem,1fr)_auto] md:items-end">
     <Field>
       <FieldLabel htmlFor={`${item.id}-label`}>
         {item.custom ? "Custom item label" : "Equipment"}
@@ -43,6 +45,15 @@ export const EquipmentItemField = ({
           {item.label}
         </p>
       )}
+    </Field>
+    <Field>
+      <FieldLabel htmlFor={`${item.id}-previous`}>Previous value</FieldLabel>
+      <p
+        id={`${item.id}-previous`}
+        className="bg-muted/50 flex min-h-9 items-center rounded-md border px-3 text-sm"
+      >
+        {previousValue || "Not recorded"}
+      </p>
     </Field>
     <Field>
       <FieldLabel htmlFor={`${item.id}-value`}>Current value</FieldLabel>

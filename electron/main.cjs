@@ -1,6 +1,7 @@
 const { app, BrowserWindow, nativeTheme, shell } = require("electron");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
+const { existsSync, readFileSync } = require("node:fs");
 const { createServer } = require("node:net");
 const path = require("node:path");
 const { setTimeout: delay } = require("node:timers/promises");
@@ -25,6 +26,28 @@ const findFreePort = async () => {
   await once(probe, "close");
 
   return port;
+};
+
+const findExistingDevServer = async () => {
+  const lockPath = path.join(PROJECT_ROOT, ".next", "dev", "lock");
+  if (!existsSync(lockPath)) {
+    return null;
+  }
+
+  try {
+    const lock = JSON.parse(readFileSync(lockPath, "utf-8"));
+    const { appUrl } = lock;
+    const parsedUrl = new URL(appUrl);
+    if (parsedUrl.hostname !== HOST) {
+      return null;
+    }
+
+    const { origin } = parsedUrl;
+    await fetch(origin);
+    return origin;
+  } catch {
+    return null;
+  }
 };
 
 /**
@@ -111,6 +134,14 @@ const stopServer = () => {
 const ensureServer = async () => {
   if (isServerRunning() && serverOrigin) {
     return serverOrigin;
+  }
+
+  if (!isProduction) {
+    const existingDevServer = await findExistingDevServer();
+    if (existingDevServer) {
+      serverOrigin = existingDevServer;
+      return serverOrigin;
+    }
   }
 
   const port = await findFreePort();
