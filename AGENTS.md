@@ -2,8 +2,35 @@
 
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
 <!-- END:nextjs-agent-rules -->
+
+## Which skill to load
+
+Load the skill before writing the code, not after. Two or more rows can apply at once. Load all matching rows.
+
+| When | Load |
+| --- | --- |
+| Any code change, in any language | `enforce-code-quality` |
+| Editing a `.ts` or `.tsx` file | `enforce-typescript-strict` |
+| Writing or reviewing HTML, JSX, forms, tables, or interactive controls | `accessible-html` |
+| Choosing feature folders or reviewing React structure | `nextjs-app-architecture` |
+| About to write or edit a `useEffect` | `audit-react-effects` |
+| An interaction has pending, loading, transition, or Suspense behavior | `route-react-async-ui` |
+| The task uses TanStack Query, Router, Form, or Table | `route-tanstack` |
+| Showing the user a message about something that happened | `apply-toasts` |
+| Route transitions, gestures, tap feedback, safe areas, or mobile viewport | `apply-native-feel-nav` |
+| A Next.js layout shell, sidebar, private session chrome, or streaming boundary | `apply-next-shell-nav` |
+| Any Next.js App Router page, layout, cache, or server/client boundary | `nextjs-app-architecture` |
+| Upgrading Next.js, TypeScript, or another dependency | `next-upgrade` and `upgrade-dependencies` |
+| Adding or changing a feature that needs user documentation | `docs` |
+| Onboarding a repository, or this table needs updating | `setup-agent-rules` |
+| Working with Supabase | `supabase` |
+| Reading or reviewing a research paper | `read-research-paper` |
+| Every written response and user-facing text | `unslop` |
 
 # Ultracite Code Standards
 
@@ -131,3 +158,14 @@ Oxlint + Oxfmt's linter will catch most issues automatically. Focus your attenti
 ---
 
 Most formatting and common issues are automatically fixed by Oxlint + Oxfmt. Run `bun x ultracite fix` before committing to ensure compliance.
+
+## Verification
+
+Run the project scripts for the affected change:
+
+- `bun run check`
+- `bun run typecheck`
+- `bun run build`
+- `bun run standalone` for Electron packaging changes
+
+Official shadcn-generated files live under `components/ui`. Review them against the project rules after generation. Do not silently ignore new violations. If generated code conflicts with Ultracite, fix the affected code or record the exact exception in the final report.

@@ -4,6 +4,8 @@ import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import { useEffect } from "react";
 import type { ComponentProps } from "react";
 
+import { runThemeTransition } from "@/lib/theme-transition";
+
 const isTypingTarget = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -40,7 +42,9 @@ const ThemeHotkey = () => {
         return;
       }
 
-      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+      runThemeTransition(() =>
+        setTheme(resolvedTheme === "dark" ? "light" : "dark")
+      );
     };
 
     window.addEventListener("keydown", onKeyDown);
