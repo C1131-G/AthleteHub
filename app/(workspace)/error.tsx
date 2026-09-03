@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,10 +12,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 
-/**
- * Without this, one throw inside a workspace route replaces the whole app with
- * the root error page and loses the shell.
- */
 const WorkspaceError = ({
   retry,
 }: {
@@ -30,9 +27,17 @@ const WorkspaceError = ({
       <EmptyDescription>
         This view could not be displayed. Your saved data has not been changed.
       </EmptyDescription>
-      <Button onClick={retry} type="button">
-        Try again
-      </Button>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button onClick={retry} type="button">
+          Try again
+        </Button>
+        <Link
+          className="border-input rounded-md border px-4 py-2"
+          href="/dashboard"
+        >
+          Return to dashboard
+        </Link>
+      </div>
     </EmptyHeader>
   </Empty>
 );

@@ -9,6 +9,7 @@ import { desktopAuth } from "@/lib/desktop-auth";
 
 export const RecoveryForm = () => {
   const [complete, setComplete] = useState(false);
+  const [replacementCode, setReplacementCode] = useState<string>();
   const queryClient = useQueryClient();
   const recoveryMutation = useMutation({
     mutationFn: (input: {
@@ -22,8 +23,9 @@ export const RecoveryForm = () => {
       }
       return auth.recover(input);
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["auth"] });
+      setReplacementCode(result.recoveryCode);
       setComplete(true);
     },
   });
@@ -92,7 +94,8 @@ export const RecoveryForm = () => {
         </Button>
         {complete ? (
           <output className="text-sm">
-            Access restored.{" "}
+            Access restored. Your new recovery code is{" "}
+            <strong>{replacementCode}</strong>.{" "}
             <Link className="underline underline-offset-4" href="/dashboard">
               Continue
             </Link>

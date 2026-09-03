@@ -1,4 +1,4 @@
-import { readStoredArray, writeStored } from "@/lib/storage";
+import { readStoredArray, StorageWriteError, writeStored } from "@/lib/storage";
 
 import { athleteSchema } from "./athlete-types";
 import type { Athlete, AthleteInput } from "./athlete-types";
@@ -53,8 +53,11 @@ const readAthletes = (): Athlete[] => {
   return athletes.length > 0 ? athletes : seedAthletes;
 };
 
-const writeAthletes = (athletes: Athlete[]) =>
-  writeStored(STORAGE_KEY, athletes);
+const writeAthletes = (athletes: Athlete[]): void => {
+  if (!writeStored(STORAGE_KEY, athletes)) {
+    throw new StorageWriteError(STORAGE_KEY);
+  }
+};
 
 export interface AthleteRepository {
   list: () => Athlete[];

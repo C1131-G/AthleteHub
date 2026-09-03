@@ -13,9 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AthletePicker } from "@/features/athlete/athlete-picker";
 import { trainingPlanHref } from "@/features/training-plan/training-plan-routes";
 
-import { AthletePicker } from "./athlete-picker";
 import { errorId, fieldProps } from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
 

@@ -2,6 +2,7 @@
 
 import { CalendarDotsIcon } from "@phosphor-icons/react";
 import { format, parseISO } from "date-fns";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -27,8 +28,9 @@ export const DatePicker = ({
   describedBy?: string | undefined;
   errorMessageId?: string | undefined;
 }) => {
+  const [open, setOpen] = useState(false);
   return (
-    <Popover>
+    <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger
         render={
           <Button
@@ -52,7 +54,10 @@ export const DatePicker = ({
         <Calendar
           mode="single"
           selected={value ? parseISO(value) : undefined}
-          onSelect={(date) => onChange(date ? format(date, "yyyy-MM-dd") : "")}
+          onSelect={(date) => {
+            onChange(date ? format(date, "yyyy-MM-dd") : "");
+            setOpen(false);
+          }}
         />
       </PopoverContent>
     </Popover>

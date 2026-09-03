@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CYCLE_NAVIGATION_REQUEST } from "@/lib/cycle-navigation";
 
 const beforeUnload = (event: BeforeUnloadEvent) => {
   event.preventDefault();
@@ -72,12 +73,29 @@ export const CycleGuardProvider = ({ children }: { children: ReactNode }) => {
   const discardAndContinue = useCallback(() => {
     dirtyRef.current = false;
     setIsDirty(false);
+    window.removeEventListener("beforeunload", beforeUnload);
     const action = pendingAction;
     setPendingAction(undefined);
     action?.();
   }, [pendingAction]);
 
   useEffect(() => warnBeforeLeavingCycle(isDirty), [isDirty]);
+
+  useEffect(() => {
+    const handleNavigationRequest = (event: Event) => {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+      event.preventDefault();
+      confirmNavigation(event.detail);
+    };
+    window.addEventListener(CYCLE_NAVIGATION_REQUEST, handleNavigationRequest);
+    return () =>
+      window.removeEventListener(
+        CYCLE_NAVIGATION_REQUEST,
+        handleNavigationRequest
+      );
+  }, [confirmNavigation]);
 
   const value = useMemo(
     () => ({ confirmNavigation, setDirty }),

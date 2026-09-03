@@ -25,6 +25,15 @@ export const readStoredArray = (key: string): unknown[] => {
   }
 };
 
+export class StorageWriteError extends Error {
+  constructor(key: string) {
+    super(
+      `Could not save data for ${key}. Check available browser storage and try again.`
+    );
+    this.name = "StorageWriteError";
+  }
+}
+
 /** Returns false when the value could not be persisted, never throws. */
 export const writeStored = (key: string, value: unknown) => {
   try {

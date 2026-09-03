@@ -32,7 +32,7 @@ import {
   conditioningTableInitialState,
 } from "./conditioning-table-config";
 
-interface ProgrammeRow {
+export interface ProgrammeRow {
   athleteName: string;
   customPhase: string;
   endsOn: string;
@@ -43,6 +43,15 @@ interface ProgrammeRow {
   title: string;
 }
 
+const programmeStatusVariant = {
+  active: "default",
+  completed: "secondary",
+  draft: "outline",
+} as const satisfies Record<
+  ProgrammeRow["status"],
+  "outline" | "default" | "secondary"
+>;
+
 type ProgrammeCell<TValue> = CellContext<
   typeof conditioningTableFeatures,
   ProgrammeRow,
@@ -52,7 +61,7 @@ type ProgrammeCell<TValue> = CellContext<
 const StatusCell = ({ getValue }: ProgrammeCell<ProgrammeRow["status"]>) => {
   const status = getValue();
   return (
-    <Badge variant={status === "active" ? "default" : "secondary"}>
+    <Badge variant={programmeStatusVariant[status]}>
       {programmeStatusLabel[status]}
     </Badge>
   );

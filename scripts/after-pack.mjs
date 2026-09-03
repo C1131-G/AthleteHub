@@ -15,4 +15,10 @@ export default async function afterPack(context) {
     path.join(resourcesDir, "standalone", "node_modules"),
     { recursive: true }
   );
+
+  await cp(
+    path.join(projectRoot, "node_modules", "@libsql"),
+    path.join(resourcesDir, "backend", "node_modules", "@libsql"),
+    { recursive: true }
+  );
 }

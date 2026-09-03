@@ -7,7 +7,7 @@ interface ElectronAuthApi {
   login: (input: {
     email: string;
     password: string;
-  }) => Promise<{ authenticated: true }>;
+  }) => Promise<{ authenticated: true; recoveryCode: string }>;
   logout: () => Promise<void>;
   recover: (input: {
     email: string;

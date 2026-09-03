@@ -4,8 +4,14 @@ import { AthleteShell } from "@/features/athlete/components/athlete-shell";
 
 const NotFound = () => (
   <AthleteShell>
-    <main className="flex min-h-96 flex-col items-center justify-center gap-4 text-center">
-      <h1 className="text-2xl font-semibold">Page not found</h1>
+    <section
+      aria-labelledby="not-found-title"
+      className="flex min-h-96 flex-col items-center justify-center gap-4 text-center"
+    >
+      <title>Page not found | AthleteHub</title>
+      <h1 className="text-2xl font-semibold" id="not-found-title">
+        Page not found
+      </h1>
       <p className="text-muted-foreground">
         The page you requested does not exist.
       </p>
@@ -15,7 +21,7 @@ const NotFound = () => (
       >
         Return to dashboard
       </Link>
-    </main>
+    </section>
   </AthleteShell>
 );
 

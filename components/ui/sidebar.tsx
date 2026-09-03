@@ -557,6 +557,11 @@ function SidebarMenuButton({
         className="relative block"
         onBlur={() => setTooltipOpen(false)}
         onFocus={() => setTooltipOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setTooltipOpen(false);
+          }
+        }}
         onMouseEnter={() => setTooltipOpen(true)}
         onMouseLeave={() => setTooltipOpen(false)}
         onPointerEnter={() => setTooltipOpen(true)}

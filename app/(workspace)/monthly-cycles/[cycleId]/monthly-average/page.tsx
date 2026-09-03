@@ -11,14 +11,11 @@ export const metadata = {
 };
 
 const Page = ({ params }: { params: Promise<{ cycleId: string }> }) => (
-  <>
-    <h1 className="text-2xl font-semibold tracking-tight">Monthly average</h1>
-    <Suspense fallback={<CycleStepSkeleton />}>
-      {params.then(({ cycleId }) => (
-        <CycleStepGate cycleId={cycleId} step="monthly-average" />
-      ))}
-    </Suspense>
-  </>
+  <Suspense fallback={<CycleStepSkeleton />}>
+    {params.then(({ cycleId }) => (
+      <CycleStepGate cycleId={cycleId} step="monthly-average" />
+    ))}
+  </Suspense>
 );
 
 export default Page;

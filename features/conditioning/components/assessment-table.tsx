@@ -52,7 +52,10 @@ const statusVariant = {
   completed: "default",
   "medical-exemption": "outline",
   partial: "secondary",
-} as const;
+} as const satisfies Record<
+  AssessmentRow["status"],
+  "outline" | "default" | "secondary"
+>;
 
 const StatusCell = ({ getValue }: AssessmentCell<AssessmentRow["status"]>) => {
   const status = getValue();

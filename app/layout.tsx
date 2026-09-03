@@ -6,6 +6,13 @@ import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
+export const metadata = {
+  title: {
+    default: "AthleteHub",
+    template: "%s | AthleteHub",
+  },
+};
+
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const fontMono = Geist_Mono({

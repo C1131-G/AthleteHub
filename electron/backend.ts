@@ -268,6 +268,9 @@ export const createDatabaseContext = async ({
         where: { id: input.id },
       });
       if (existing) {
+        if (existing.athleteId !== input.athleteId) {
+          throw new Error("A session cannot be moved to another athlete.");
+        }
         await transaction.archerySession.update({
           data: {
             actualArrows: input.actualArrows,
@@ -415,6 +418,16 @@ export const createDatabaseContext = async ({
                 where: { id: input.id },
               });
               if (existing) {
+                const existingSession =
+                  await transaction.archerySession.findUnique({
+                    select: { athleteId: true },
+                    where: { id: input.id },
+                  });
+                if (existingSession?.athleteId !== input.athleteId) {
+                  throw new Error(
+                    "A session cannot be moved to another athlete."
+                  );
+                }
                 await transaction.archeryEnd.deleteMany({
                   where: { sessionId: input.id },
                 });

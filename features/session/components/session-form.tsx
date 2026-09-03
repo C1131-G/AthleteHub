@@ -1,12 +1,13 @@
 "use client";
 
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AthletePicker } from "@/features/athlete/athlete-picker";
 
 import type { SessionEndInput, SessionFormat } from "../session-types";
 import { useSessions } from "../use-sessions";
@@ -21,8 +22,8 @@ const defaultFormat: SessionFormat = {
 };
 
 type DraftEnd = SessionEndInput & { key: string };
-const newEnd = (key: string): DraftEnd => ({
-  arrowCount: 6,
+const newEnd = (key: string, arrowCount: number): DraftEnd => ({
+  arrowCount,
   key,
   score: 0,
 });
@@ -32,12 +33,22 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
     athleteId === "unassigned" ? "" : athleteId
   );
   const [date, setDate] = useState("");
-  const [ends, setEnds] = useState<DraftEnd[]>([newEnd("end-1")]);
+  const [ends, setEnds] = useState<DraftEnd[]>([
+    newEnd("end-1", defaultFormat.arrowsPerEnd),
+  ]);
+  const sessionIdRef = useRef<string | undefined>("");
   const [format, setFormat] = useState(defaultFormat);
   const [notes, setNotes] = useState("");
   const [technicalFocus, setTechnicalFocus] = useState("");
   const [error, setError] = useState<string | undefined>();
   const { save } = useSessions(athleteId);
+  const desktopAvailable = globalThis.window?.electronAPI !== undefined;
+
+  useEffect(() => {
+    if (!desktopAvailable) {
+      setError("Session recording is available in the AthleteHub desktop app.");
+    }
+  }, [desktopAvailable]);
 
   const updateEnd = (
     index: number,
@@ -53,6 +64,9 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
   };
 
   const submit = (complete: boolean) => {
+    if (!sessionIdRef.current) {
+      sessionIdRef.current = crypto.randomUUID();
+    }
     setError(undefined);
     save.mutate(
       {
@@ -62,7 +76,7 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           date,
           ends: ends.map(({ key: _key, ...end }) => end),
           format,
-          id: crypto.randomUUID(),
+          id: sessionIdRef.current,
           kind: "practice",
           notes,
           technicalFocus,
@@ -98,11 +112,10 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="session-athlete">Athlete ID</Label>
-            <Input
+            <Label htmlFor="session-athlete">Athlete</Label>
+            <AthletePicker
               id="session-athlete"
-              onChange={(event) => setSelectedAthleteId(event.target.value)}
-              placeholder="Select or enter an athlete ID"
+              onChange={setSelectedAthleteId}
               value={selectedAthleteId}
             />
           </div>
@@ -206,7 +219,10 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           ))}
           <Button
             onClick={() =>
-              setEnds((current) => [...current, newEnd(crypto.randomUUID())])
+              setEnds((current) => [
+                ...current,
+                newEnd(crypto.randomUUID(), format.arrowsPerEnd),
+              ])
             }
             type="button"
             variant="outline"
@@ -238,14 +254,14 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
       ) : null}
       <div className="flex flex-wrap justify-end gap-3">
         <Button
-          disabled={save.isPending}
+          disabled={save.isPending || !desktopAvailable}
           onClick={() => submit(false)}
           type="button"
           variant="outline"
         >
           Save draft
         </Button>
-        <Button disabled={save.isPending} type="submit">
+        <Button disabled={save.isPending || !desktopAvailable} type="submit">
           {save.isPending ? "Saving…" : "Complete session"}
         </Button>
       </div>

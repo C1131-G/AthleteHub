@@ -1,4 +1,4 @@
-import { readStoredArray, writeStored } from "@/lib/storage";
+import { readStoredArray, StorageWriteError, writeStored } from "@/lib/storage";
 
 import { equipmentSetupSchema } from "./equipment-types";
 import type { EquipmentSetup, EquipmentSetupInput } from "./equipment-types";
@@ -12,8 +12,11 @@ const readSetups = (): EquipmentSetup[] =>
     return result.success ? [result.data] : [];
   });
 
-const writeSetups = (setups: EquipmentSetup[]) =>
-  writeStored(STORAGE_KEY, setups);
+const writeSetups = (setups: EquipmentSetup[]): void => {
+  if (!writeStored(STORAGE_KEY, setups)) {
+    throw new StorageWriteError(STORAGE_KEY);
+  }
+};
 
 const sortedByRecency = (setups: EquipmentSetup[]) =>
   setups.toSorted((a, b) =>

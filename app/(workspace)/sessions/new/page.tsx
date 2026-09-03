@@ -1,5 +1,7 @@
 import { SessionForm } from "@/features/session/components/session-form";
 
+export const metadata = { title: "Record archery session | AthleteHub" };
+
 export default function NewSessionPage() {
   const athleteId = "unassigned";
   return (
@@ -13,8 +15,7 @@ export default function NewSessionPage() {
           Record archery session
         </h1>
         <p className="text-muted-foreground mt-2">
-          Enter each end once. The saved record becomes available to reports and
-          comparisons.
+          Save a draft and return to it from the desktop app.
         </p>
       </div>
       <SessionForm athleteId={athleteId} />

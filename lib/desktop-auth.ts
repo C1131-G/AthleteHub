@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 const loginResponseSchema = z.object({ authenticated: z.literal(true) });
+const recoveryResponseSchema = loginResponseSchema.extend({
+  recoveryCode: z.string(),
+});
 
 export const desktopAuth = () => {
   const electronApi = globalThis.window?.electronAPI;
@@ -17,7 +20,7 @@ export const desktopAuth = () => {
       email: string;
       newPassword: string;
       recoveryCode: string;
-    }) => loginResponseSchema.parse(await auth.recover(input)),
+    }) => recoveryResponseSchema.parse(await auth.recover(input)),
     setup: async (input: { email: string; password: string }) =>
       z.object({ recoveryCode: z.string() }).parse(await auth.setup(input)),
     status: async () =>

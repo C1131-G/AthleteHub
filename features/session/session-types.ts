@@ -79,3 +79,9 @@ export interface ArcherySession extends SessionInput {
 export type SessionMutationResult =
   | { session: ArcherySession; status: "saved" }
   | { fieldErrors: Record<string, string>; status: "invalid" };
+
+export const sessionResponseSchema = sessionInputSchema.extend({
+  createdAt: z.iso.datetime(),
+  status: z.enum(sessionStatuses),
+  updatedAt: z.iso.datetime(),
+});

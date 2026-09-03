@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
-const { existsSync, readFileSync } = require("node:fs");
+const { existsSync, readFileSync, writeFileSync } = require("node:fs");
 const { createServer } = require("node:net");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
@@ -30,6 +30,35 @@ const findFreePort = async () => {
   await once(probe, "close");
 
   return port;
+};
+
+const persistedPortPath = () =>
+  path.join(app.getPath("userData"), "server-port.json");
+
+const readPersistedPort = () => {
+  try {
+    const parsed = JSON.parse(readFileSync(persistedPortPath(), "utf-8"));
+    return Number.isInteger(parsed.port) && parsed.port > 0
+      ? parsed.port
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const isPortAvailable = async (port) => {
+  const probe = createServer();
+  try {
+    await new Promise((resolve, reject) => {
+      probe.once("error", reject);
+      probe.listen(port, HOST, resolve);
+    });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    probe.close();
+  }
 };
 
 const findExistingDevServer = async () => {
@@ -148,7 +177,14 @@ const ensureServer = async () => {
     }
   }
 
-  const port = await findFreePort();
+  const savedPort = readPersistedPort();
+  if (savedPort !== null && !(await isPortAvailable(savedPort))) {
+    throw new Error(`AthleteHub server port ${savedPort} is already in use.`);
+  }
+  const port = savedPort ?? (await findFreePort());
+  if (savedPort === null) {
+    writeFileSync(persistedPortPath(), JSON.stringify({ port }), "utf-8");
+  }
 
   serverOrigin = `http://${HOST}:${port}`;
 

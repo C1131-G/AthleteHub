@@ -9,26 +9,48 @@ const GlobalError = ({
   retry: () => void;
 }) => (
   <html lang="en">
-    <body className="bg-background text-foreground flex min-h-svh items-center justify-center p-6 font-sans">
-      <main className="flex max-w-lg flex-col items-center gap-4 text-center">
-        <h1 className="text-2xl font-semibold">Something went wrong</h1>
-        <p className="text-muted-foreground">
-          AthleteHub could not load this page.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <button
-            className="bg-primary text-primary-foreground rounded-md px-4 py-2"
-            onClick={retry}
-            type="button"
-          >
-            Try again
-          </button>
-          <Link
-            className="border-input rounded-md border px-4 py-2"
-            href="/dashboard"
-          >
-            Return to dashboard
-          </Link>
+    <head>
+      <title>AthleteHub error</title>
+    </head>
+    <body style={{ fontFamily: "system-ui, sans-serif", margin: 0 }}>
+      <main
+        style={{
+          display: "grid",
+          minHeight: "100vh",
+          padding: "1.5rem",
+          placeItems: "center",
+          textAlign: "center",
+        }}
+      >
+        <div style={{ maxWidth: "32rem" }}>
+          <h1 style={{ fontSize: "1.5rem" }}>Something went wrong</h1>
+          <p>AthleteHub could not load this page.</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              style={{
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+                margin: "0.5rem",
+                padding: "0.75rem 1rem",
+              }}
+              onClick={retry}
+              type="button"
+            >
+              Try again
+            </button>
+            <Link
+              style={{
+                border: "1px solid currentColor",
+                borderRadius: "0.5rem",
+                display: "inline-block",
+                margin: "0.5rem",
+                padding: "0.75rem 1rem",
+              }}
+              href="/dashboard"
+            >
+              Return to dashboard
+            </Link>
+          </div>
         </div>
       </main>
     </body>

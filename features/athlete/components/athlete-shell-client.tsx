@@ -79,7 +79,9 @@ export const AthleteShellClient = ({
               </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
-              <WorkspaceLogout />
+              <SidebarMenu>
+                <WorkspaceLogout />
+              </SidebarMenu>
             </SidebarFooter>
             <SidebarRail />
           </Sidebar>

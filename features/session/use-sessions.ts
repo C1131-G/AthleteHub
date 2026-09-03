@@ -4,14 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import "../../types/electron";
-import { sessionInputSchema } from "./session-types";
 import type { ArcherySession, SessionMutationResult } from "./session-types";
+import { sessionResponseSchema } from "./session-types";
 
-const sessionResponseSchema = sessionInputSchema.extend({
-  createdAt: z.string(),
-  status: z.enum(["draft", "complete"]),
-  updatedAt: z.string(),
-});
 const mutationResponseSchema = z.union([
   z.object({ session: sessionResponseSchema, status: z.literal("saved") }),
   z.object({
@@ -46,9 +41,13 @@ export const useSessions = (athleteId: string) => {
       complete: boolean;
       input: unknown;
     }): Promise<SessionMutationResult> => {
+      const backend = api();
+      if (!backend) {
+        throw new Error("Open the AthleteHub desktop app to save sessions.");
+      }
       const result = await (complete
-        ? api()?.complete(input)
-        : api()?.saveDraft(input));
+        ? backend.complete(input)
+        : backend.saveDraft(input));
       return mutationResponseSchema.parse(result);
     },
     onSuccess: async (result) => {

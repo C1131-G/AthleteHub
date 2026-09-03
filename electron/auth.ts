@@ -46,7 +46,9 @@ export interface AuthService {
   isAuthenticated: () => boolean;
   login: (input: unknown) => Promise<{ authenticated: true }>;
   logout: () => Promise<void>;
-  recover: (input: unknown) => Promise<{ authenticated: true }>;
+  recover: (
+    input: unknown
+  ) => Promise<{ authenticated: true; recoveryCode: string }>;
   requireSession: () => Promise<void>;
   setup: (input: unknown) => Promise<{ recoveryCode: string }>;
   status: () => Promise<{ authenticated: boolean; configured: boolean }>;
@@ -132,16 +134,31 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
     }
     const credentials = parsed.data;
     validateCredentials(credentials.email, credentials.password);
-    if (await getOwner()) {
+    const recoveryCode = createRecoveryCode();
+    try {
+      const ownerRecord = await ownerInput(
+        credentials.email,
+        credentials.password,
+        recoveryCode
+      );
+      await database.runTransaction(async (transaction) => {
+        if (await transaction.owner.get()) {
+          throw new AuthError(
+            "ALREADY_CONFIGURED",
+            "This installation already has an owner."
+          );
+        }
+        await transaction.owner.create(ownerRecord);
+      });
+    } catch (error) {
+      if (error instanceof AuthError) {
+        throw error;
+      }
       throw new AuthError(
         "ALREADY_CONFIGURED",
         "This installation already has an owner."
       );
     }
-    const recoveryCode = createRecoveryCode();
-    await database.owner.create(
-      await ownerInput(credentials.email, credentials.password, recoveryCode)
-    );
     authenticated = true;
     return { recoveryCode };
   };
@@ -237,7 +254,7 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
       updatedAt: new Date(),
     });
     authenticated = true;
-    return { authenticated: true as const };
+    return { authenticated: true as const, recoveryCode: nextRecoveryCode };
   };
 
   return {
