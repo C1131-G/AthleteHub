@@ -10,6 +10,14 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ReportActionsProps {
   title: string;
@@ -51,6 +59,14 @@ export const ReportActions = ({ title, summary }: ReportActionsProps) => {
     setMessage("Device sharing is unavailable. Use Download or Print instead.");
   };
 
+  const shareText = `${title}\n${summary}`;
+  const gmailHref = `https://mail.google.com/mail/?view=cm&fs=1&su=${encoded(title)}&body=${encoded(summary)}`;
+  const outlookHref = `https://outlook.office.com/mail/deeplink/compose?subject=${encoded(title)}&body=${encoded(summary)}`;
+  const copySummary = async () => {
+    await navigator.clipboard.writeText(shareText);
+    setMessage("Summary copied.");
+  };
+
   return (
     <div
       className="flex flex-wrap items-center gap-2"
@@ -63,28 +79,64 @@ export const ReportActions = ({ title, summary }: ReportActionsProps) => {
         <Button onClick={download} type="button" variant="outline">
           <DownloadSimpleIcon aria-hidden="true" /> Download report
         </Button>
-        <Button onClick={share} type="button" variant="outline">
-          <ShareNetworkIcon aria-hidden="true" /> Share
-        </Button>
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button type="button" variant="outline">
+                <ShareNetworkIcon aria-hidden="true" /> Share
+              </Button>
+            }
+          />
+          <PopoverContent align="end">
+            <PopoverHeader>
+              <PopoverTitle>Share report</PopoverTitle>
+              <PopoverDescription>
+                Choose where to send or open this report.
+              </PopoverDescription>
+            </PopoverHeader>
+            <div className="grid gap-2">
+              <Button onClick={share} type="button" variant="outline">
+                Device share
+              </Button>
+              <a
+                className="border-input rounded-md border px-3 py-2 text-center text-sm"
+                href={gmailHref}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Gmail
+              </a>
+              <a
+                className="border-input rounded-md border px-3 py-2 text-center text-sm"
+                href={outlookHref}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Outlook
+              </a>
+              <a
+                className="border-input rounded-md border px-3 py-2 text-center text-sm"
+                href={`https://wa.me/?text=${encoded(shareText)}`}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                WhatsApp
+              </a>
+              <a
+                className="border-input rounded-md border px-3 py-2 text-center text-sm"
+                href={`https://t.me/share/url?url=&text=${encoded(shareText)}`}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Telegram
+              </a>
+              <Button onClick={copySummary} type="button" variant="ghost">
+                Copy summary
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </ButtonGroup>
-      <a
-        className="text-muted-foreground text-sm underline"
-        href={`mailto:?subject=${encoded(title)}&body=${encoded(summary)}`}
-      >
-        Gmail / Outlook
-      </a>
-      <a
-        className="text-muted-foreground text-sm underline"
-        href={`https://wa.me/?text=${encoded(`${title}\n${summary}`)}`}
-      >
-        WhatsApp
-      </a>
-      <a
-        className="text-muted-foreground text-sm underline"
-        href={`https://t.me/share/url?url=&text=${encoded(`${title}\n${summary}`)}`}
-      >
-        Telegram
-      </a>
       {message ? (
         <p
           aria-live="polite"
