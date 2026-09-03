@@ -1,15 +1,30 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  isServer,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { useState } from "react";
+
+let browserQueryClient: QueryClient | undefined;
+
+/**
+ * Module scope is shared between requests on the server, so a render there
+ * always gets its own client. The browser keeps one for the session.
+ */
+const getQueryClient = () => {
+  if (isServer) {
+    return new QueryClient();
+  }
+  browserQueryClient ??= new QueryClient();
+  return browserQueryClient;
+};
 
 export const QueryProvider = ({
   children,
-}: Readonly<{ children: ReactNode }>) => {
-  const [queryClient, setQueryClient] = useState(() => new QueryClient());
-  void setQueryClient;
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-};
+}: Readonly<{ children: ReactNode }>) => (
+  <QueryClientProvider client={getQueryClient()}>
+    {children}
+  </QueryClientProvider>
+);

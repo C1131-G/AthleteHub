@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -15,8 +15,8 @@ type LoginFormProps = React.ComponentProps<"div">;
 
 const LoginForm = ({ className, ...props }: LoginFormProps) => {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [error, setError] = useState("");
+  // oxlint-disable-next-line react-doctor/query-mutation-missing-invalidation -- no query reads the auth status, so there is no cache entry to update.
   const loginMutation = useMutation({
     mutationFn: (input: { password: string; username: string }) => {
       const auth = desktopAuth();
@@ -25,8 +25,7 @@ const LoginForm = ({ className, ...props }: LoginFormProps) => {
       }
       return auth.login(input);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["auth"] });
+    onSuccess: () => {
       router.push("/dashboard");
     },
   });

@@ -16,6 +16,11 @@ const mutationResponseSchema = z.union([
 ]);
 const listResponseSchema = z.array(sessionResponseSchema);
 
+/** One definition, so the query and its invalidation cannot drift apart. */
+const sessionKeys = {
+  byAthlete: (athleteId: string) => ["sessions", "athlete", athleteId] as const,
+};
+
 const api = () => {
   const electronApi = globalThis.window?.electronAPI;
   if (!electronApi) {
@@ -30,7 +35,7 @@ export const useSessions = (athleteId: string) => {
     enabled: Boolean(api() && athleteId),
     queryFn: async (): Promise<ArcherySession[]> =>
       listResponseSchema.parse(await api()?.listByAthlete(athleteId)),
-    queryKey: ["sessions", "athlete", athleteId],
+    queryKey: sessionKeys.byAthlete(athleteId),
     staleTime: 30_000,
   });
   const save = useMutation({
@@ -53,7 +58,7 @@ export const useSessions = (athleteId: string) => {
     onSuccess: async (result) => {
       if (result.status === "saved") {
         await queryClient.invalidateQueries({
-          queryKey: ["sessions", "athlete", result.session.athleteId],
+          queryKey: sessionKeys.byAthlete(result.session.athleteId),
         });
       }
     },

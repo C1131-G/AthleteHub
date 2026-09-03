@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ import { desktopAuth } from "@/lib/desktop-auth";
 export const RecoveryForm = () => {
   const [complete, setComplete] = useState(false);
   const [replacementCode, setReplacementCode] = useState<string>();
-  const queryClient = useQueryClient();
+  // oxlint-disable-next-line react-doctor/query-mutation-missing-invalidation -- no query reads the auth status, so there is no cache entry to update.
   const recoveryMutation = useMutation({
     mutationFn: (input: {
       newPassword: string;
@@ -25,8 +25,7 @@ export const RecoveryForm = () => {
       }
       return auth.recover(input);
     },
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ["auth"] });
+    onSuccess: (result) => {
       setReplacementCode(result.recoveryCode);
       setComplete(true);
     },
