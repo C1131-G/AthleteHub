@@ -169,8 +169,8 @@ export const TrainingPlanWeekFields = ({
                   {perTrainingDay(week)}
                 </p>
               </Field>
-              <div className="flex items-end gap-2">
-                <Field className="flex-1">
+              <div className="flex items-start gap-2">
+                <Field className="min-w-0 flex-1">
                   <FieldLabel htmlFor={`week-${week.id}-focus`}>
                     Technical focus
                   </FieldLabel>
@@ -184,6 +184,7 @@ export const TrainingPlanWeekFields = ({
                 </Field>
                 <Button
                   aria-label={`Remove week ${index + 1}`}
+                  className="mt-7"
                   disabled={form.weeks.length === 1}
                   onClick={() => removeWeek(week.id)}
                   size="icon"
