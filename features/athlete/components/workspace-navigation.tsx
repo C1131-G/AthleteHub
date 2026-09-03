@@ -2,7 +2,7 @@
 
 import {
   BarbellIcon,
-  CalendarCheckIcon,
+  CalendarIcon,
   GaugeIcon,
   NotebookIcon,
   TargetIcon,
@@ -35,7 +35,7 @@ interface NavigationItem {
 
 const items: NavigationItem[] = [
   { href: "/dashboard", icon: GaugeIcon, label: "Dashboard" },
-  { href: "/monthly-cycles", icon: CalendarCheckIcon, label: "Monthly Cycle" },
+  { href: "/monthly-cycles", icon: CalendarIcon, label: "Monthly Cycle" },
   { href: "/athletes", icon: UsersThreeIcon, label: "Athletes" },
   { href: "/athletes/equipment", icon: WrenchIcon, label: "Equipment" },
   { href: "/reports", icon: NotebookIcon, label: "Reports" },
