@@ -74,7 +74,7 @@ export const ProfileStep = ({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
+        <h2 className="text-3xl font-semibold tracking-tight">Profile</h2>
         <p className="text-muted-foreground mt-2">
           Review the athlete&apos;s record and confirm it is current for{" "}
           {formatDate(`${cycle.month}-01`)}.

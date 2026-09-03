@@ -36,15 +36,18 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
   const [ends, setEnds] = useState<DraftEnd[]>([
     newEnd("end-1", defaultFormat.arrowsPerEnd),
   ]);
-  const sessionIdRef = useRef<string | undefined>("");
+  const sessionIdRef = useRef("");
   const [format, setFormat] = useState(defaultFormat);
   const [notes, setNotes] = useState("");
   const [technicalFocus, setTechnicalFocus] = useState("");
   const [error, setError] = useState<string | undefined>();
-  const { save } = useSessions(athleteId);
+  const { save } = useSessions(selectedAthleteId || athleteId);
   const desktopAvailable = globalThis.window?.electronAPI !== undefined;
 
   useEffect(() => {
+    if (!sessionIdRef.current) {
+      sessionIdRef.current = crypto.randomUUID();
+    }
     if (!desktopAvailable) {
       setError("Session recording is available in the AthleteHub desktop app.");
     }
@@ -263,6 +266,15 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
         </Button>
         <Button disabled={save.isPending || !desktopAvailable} type="submit">
           {save.isPending ? "Saving…" : "Complete session"}
+        </Button>
+        <Button
+          onClick={() => {
+            window.location.reload();
+          }}
+          type="button"
+          variant="ghost"
+        >
+          Start another session
         </Button>
       </div>
     </form>

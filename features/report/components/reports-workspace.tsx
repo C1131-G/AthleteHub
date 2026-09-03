@@ -33,6 +33,8 @@ import { useAthletes } from "@/features/athlete/use-athletes";
 
 import { useReports } from "../use-reports";
 import { MonthlyReportTable } from "./monthly-report-table";
+import { PerformanceWorkspace } from "./performance-workspace";
+import { ReportActions } from "./report-actions";
 import { WeeklyReportTable } from "./weekly-report-table";
 
 const REPORTS_PATH = "/reports";
@@ -60,7 +62,9 @@ export const ReportsWorkspace = () => {
   const { assessments, ready: assessmentsReady } = useAssessments();
   const [query, setQuery] = useState("");
   const tab =
-    params.get("tab") === "monthly" || params.get("tab") === "assessments"
+    params.get("tab") === "monthly" ||
+    params.get("tab") === "assessments" ||
+    params.get("tab") === "performance"
       ? params.get("tab")
       : "weekly";
   const athleteId = params.get("athleteId") ?? "";
@@ -141,6 +145,10 @@ export const ReportsWorkspace = () => {
 
   return (
     <section aria-labelledby="reports-title" className="space-y-6">
+      <ReportActions
+        summary="AthleteHub performance report. Open the app for the full selected tables and charts."
+        title="AthleteHub performance report"
+      />
       <Card>
         <CardHeader>
           <CardTitle>Find reports</CardTitle>
@@ -258,9 +266,12 @@ export const ReportsWorkspace = () => {
           <TabsTrigger value="assessments">
             Assessments ({assessmentRows.length})
           </TabsTrigger>
+          <TabsTrigger value="performance">Compare athletes</TabsTrigger>
         </TabsList>
       </Tabs>
-      {tab === "weekly" ? (
+      {tab === "performance" ? (
+        <PerformanceWorkspace />
+      ) : tab === "weekly" ? (
         <WeeklyReportTable athleteById={athleteById} rows={weeklyRows} />
       ) : tab === "monthly" ? (
         <MonthlyReportTable

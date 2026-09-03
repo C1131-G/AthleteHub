@@ -230,7 +230,7 @@ export const ReviewStep = ({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Review</h1>
+          <h2 className="text-3xl font-semibold tracking-tight">Review</h2>
           <p className="text-muted-foreground mt-2">
             One consolidated view of the whole month. Completing this step saves
             the monthly report as complete and opens the next athlete.

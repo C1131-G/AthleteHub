@@ -11,11 +11,14 @@ export const metadata = {
 };
 
 const Page = ({ params }: { params: Promise<{ cycleId: string }> }) => (
-  <Suspense fallback={<CycleStepSkeleton />}>
-    {params.then(({ cycleId }) => (
-      <CycleStepGate cycleId={cycleId} step="training-load" />
-    ))}
-  </Suspense>
+  <div>
+    <h1 className="text-3xl font-semibold tracking-tight">Training load</h1>
+    <Suspense fallback={<CycleStepSkeleton />}>
+      {params.then(({ cycleId }) => (
+        <CycleStepGate cycleId={cycleId} step="training-load" />
+      ))}
+    </Suspense>
+  </div>
 );
 
 export default Page;

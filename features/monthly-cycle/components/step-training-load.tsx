@@ -197,7 +197,7 @@ export const TrainingLoadStep = ({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Training load</h1>
+        <h2 className="text-3xl font-semibold tracking-tight">Training load</h2>
         <p className="text-muted-foreground mt-2">
           The following month needs a season plan that covers it, or a
           documented planning exception.
