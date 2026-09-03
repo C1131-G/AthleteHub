@@ -28,7 +28,7 @@ export default defineConfig({
     "components/ui/**",
     "hooks/use-mobile.ts",
   ],
-  jsPlugins: jsPlugins.jsPlugins,
+  jsPlugins: jsPlugins.jsPlugins ?? null,
   rules: {
     "anti-slop/no-unknown-parameters": "off",
     "eslint/arrow-body-style": "off",

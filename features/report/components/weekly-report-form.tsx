@@ -9,40 +9,27 @@ import type { FormEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAthletes } from "@/features/athlete/use-athletes";
+import { planWeekFor } from "@/features/training-plan/training-plan-calculations";
+import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 
-import type { WeeklyPerformanceReportInput } from "../report-types";
 import { useReports } from "../use-reports";
-import { focusFirstError } from "./report-form-errors";
+import {
+  blankWeeklyFormState,
+  validateWeeklyForm,
+  weeklyInputFromForm,
+} from "../weekly-report-form-state";
+import {
+  focusFirstError,
+  toFormErrors,
+  weeklyControls,
+} from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
 import { WeeklyReportFields } from "./weekly-report-fields";
 import type { WeeklyFormState } from "./weekly-report-fields";
 
 interface WeeklyReportFormProps {
-  reportId?: string;
+  reportId?: string | undefined;
 }
-
-const blankState = (athleteId = ""): WeeklyFormState => ({
-  absenceReason: "",
-  actionItems: "",
-  arrowsPlanned: "",
-  arrowsShot: "",
-  athleteId,
-  distanceM: "",
-  maxScore: "360",
-  performanceNotes: "",
-  scores: ["", "", "", ""],
-  status: "completed",
-  trainingDays: "",
-  weekStart: "",
-});
-
-const parseNumber = (value: string) => {
-  if (!value.trim()) {
-    return;
-  }
-  const number = Number(value);
-  return Number.isFinite(number) ? number : undefined;
-};
 
 /**
  * Gate only. The fields below seed their state from the stores on first render,
@@ -51,8 +38,9 @@ const parseNumber = (value: string) => {
 export const WeeklyReportForm = ({ reportId }: WeeklyReportFormProps) => {
   const { ready: athletesReady } = useAthletes();
   const { ready: reportsReady } = useReports();
+  const { ready: plansReady } = useTrainingPlans();
 
-  if (!(athletesReady && reportsReady)) {
+  if (!(athletesReady && plansReady && reportsReady)) {
     return <WeeklyReportFormSkeleton />;
   }
 
@@ -64,10 +52,11 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
   const [pending, startTransition] = useTransition();
   const { athletes } = useAthletes();
   const { createWeekly, getWeekly, updateWeekly } = useReports();
+  const { plans } = useTrainingPlans();
   const existing = reportId ? getWeekly(reportId) : undefined;
   const [form, setForm] = useState<WeeklyFormState>(() => {
     if (!existing) {
-      return blankState(athletes[0]?.id ?? "");
+      return blankWeeklyFormState(athletes[0]?.id ?? "");
     }
     return {
       absenceReason: existing.absenceReason,
@@ -85,6 +74,9 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
     };
   });
   const [errors, setErrors] = useState<ReportFormErrors>({});
+  // A plan week matching this athlete and week owns the arrow target; the
+  // report keeps its own copy so the history survives later plan edits.
+  const planWeek = planWeekFor(plans, form.athleteId, form.weekStart);
 
   if (reportId && !existing) {
     return (
@@ -107,66 +99,13 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
   ) => setForm((current) => ({ ...current, [key]: value }));
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextErrors: ReportFormErrors = {};
-    const today = new Date().toISOString().slice(0, 10);
-    if (!form.athleteId) {
-      nextErrors.athleteId = "Select an athlete.";
-    }
-    if (!form.weekStart) {
-      nextErrors.weekStart = "Choose the week start date.";
-    }
-    if (form.weekStart > today) {
-      nextErrors.weekStart = "The week start cannot be in the future.";
-    }
-    if (
-      ["medical-leave", "absent"].includes(form.status) &&
-      !form.absenceReason.trim()
-    ) {
-      nextErrors.absenceReason = "Add a reason for leave or absence.";
-    }
-    const distanceM = parseNumber(form.distanceM);
-    const maxScore = parseNumber(form.maxScore);
-    const scores = form.scores
-      .map(parseNumber)
-      .filter((score): score is number => score !== undefined);
-    if (form.status === "completed" || form.status === "competition") {
-      if (!distanceM || distanceM <= 0) {
-        nextErrors.distanceM = "Distance must be positive.";
-      }
-      if (!maxScore || maxScore <= 0) {
-        nextErrors.maxScore = "Maximum score must be positive.";
-      }
-      if (!scores.length) {
-        nextErrors.scores = "Add at least one score.";
-      }
-      if (maxScore && scores.some((score) => score < 0 || score > maxScore)) {
-        nextErrors.scores = "Scores must be within the maximum score.";
-      }
-    }
-    const trainingDays = parseNumber(form.trainingDays);
-    if (trainingDays !== undefined && (trainingDays < 0 || trainingDays > 7)) {
-      nextErrors.trainingDays = "Training days must be between 0 and 7.";
-    }
+    const nextErrors = toFormErrors(validateWeeklyForm(form), weeklyControls);
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
       focusFirstError(nextErrors);
       return;
     }
-    const input: WeeklyPerformanceReportInput = {
-      absenceReason: form.absenceReason,
-      actionItems: form.actionItems.split("\n").filter(Boolean),
-      arrowsPlanned: parseNumber(form.arrowsPlanned),
-      arrowsShot: parseNumber(form.arrowsShot),
-      athleteId: form.athleteId,
-      distanceM,
-      equipmentSetupId: undefined,
-      maxScore,
-      performanceNotes: form.performanceNotes,
-      scores,
-      status: form.status,
-      trainingDays,
-      weekStart: form.weekStart,
-    };
+    const input = weeklyInputFromForm(form, planWeek);
     startTransition(() => {
       const result = reportId
         ? updateWeekly(reportId, input)
@@ -174,8 +113,9 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
       if (result.status === "saved") {
         router.push(`/reports/weekly/${result.report.id}`);
       } else {
-        setErrors(result.fieldErrors);
-        focusFirstError(result.fieldErrors);
+        const saveErrors = toFormErrors(result.fieldErrors, weeklyControls);
+        setErrors(saveErrors);
+        focusFirstError(saveErrors);
       }
     });
   };
@@ -198,17 +138,27 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
       {Object.keys(errors).length > 0 && (
         <div
           className="border-destructive/40 bg-destructive/10 text-destructive rounded-xl border p-4"
+          id="weekly-error-summary"
           role="alert"
         >
           <p className="font-medium">Check the report before saving.</p>
           <ul className="mt-2 list-disc pl-5 text-sm">
-            {Object.entries(errors).map(([field, error]) => (
-              <li key={field}>{error}</li>
+            {Object.entries(errors).map(([controlId, error]) => (
+              <li key={controlId}>
+                <a className="underline" href={`#${controlId}`}>
+                  {error}
+                </a>
+              </li>
             ))}
           </ul>
         </div>
       )}
-      <WeeklyReportFields errors={errors} form={form} update={update} />
+      <WeeklyReportFields
+        errors={errors}
+        form={form}
+        planWeek={planWeek}
+        update={update}
+      />
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
           <FloppyDiskIcon /> {pending ? "Saving…" : "Save report"}

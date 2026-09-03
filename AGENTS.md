@@ -1,3 +1,17 @@
+<!-- intent-skills:start -->
+
+## Skill Loading
+
+Before editing files for a substantial task:
+
+- Run `bunx @tanstack/intent@latest list` from the workspace root to see available local skills.
+- If a listed skill matches the task, run `bunx @tanstack/intent@latest load <package>#<skill>` before changing files.
+- Use the loaded `SKILL.md` guidance while making the change.
+- Monorepos: when working across packages, run the skill check from the workspace root and prefer the local skill for the package being changed.
+- Multiple matches: prefer the most specific local skill for the package or concern you are changing; load additional skills only when the task spans multiple packages or concerns.
+
+<!-- intent-skills:end -->
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
@@ -23,17 +37,17 @@ Load the skill before writing the code, not after. Two or more rows can apply at
 | An interaction has pending, loading, or transition behavior | `apply-react-async-ui` |
 | Adding or moving a Suspense boundary | `apply-react-suspense` |
 | A route or view transition, or `ViewTransition` | `apply-react-transitions` |
-| A mutation that should feel instant | `apply-react-optimistic` |
+| A mutation that should feel instant | `apply-react-async-ui` |
 | Showing the user a message about something that happened | `apply-toasts` |
 | Route transitions, gestures, tap feedback, safe areas, or mobile viewport | `apply-native-feel-nav` |
 | A Next.js layout shell, sidebar, private session chrome, or streaming boundary | `apply-next-shell-nav` |
-| Writing a unit test | `vitest` |
+| Writing a unit test | Use the repository's Bun test runner (`bun test`). |
 | Auditing existing code against the installed skills | `audit-with-skills` |
 | A broad quality pass over a feature | `impeccable` |
 | Onboarding a repository, or this table needs updating | `setup-agent-rules` |
 | Reading or reviewing a research paper | `read-research-paper` |
 
-There is no installed accessibility skill. Accessibility is enforced here by the `@axe-core/playwright` scans in `e2e/` — add a scan when you add a route, and keep `bun run test:instant` at zero violations.
+Accessibility is covered by the installed `accessible-html` guidance and the `@axe-core/playwright` scans in `e2e/` — add a scan when you add a route, and keep `bun run test:instant` at zero violations.
 
 ### TanStack skills ship inside `node_modules`
 
@@ -45,7 +59,7 @@ These installed packages carry their own agent skills (the `tanstack-intent` key
 | `@tanstack/table-core`  | `node_modules/@tanstack/table-core/skills/`  |
 | `@tanstack/charts`      | `node_modules/@tanstack/charts/skills/`      |
 
-`use-tanstack-table`, `use-tanstack-query`, `use-tanstack-router`, and `use-tanstack-form` are installed as leaf skills; load the matching one alongside the package's own skills.
+`use-tanstack-query` and `use-tanstack-router` are available as leaf skills; load the matching one alongside the package's own skills when applicable.
 
 This repo is on Table **v9**, whose API differs from the v8 examples that most documentation and the shadcn data-table recipe still show: `useTable` not `useReactTable`, a `features` option not row-model options, `table.state` not `getState()`, and `<table.FlexRender />` not a bare `flexRender` call. Charts follow `@tanstack/charts` v0.16: `defineChart` definitions must be memoized, and marks need a stable `key`.
 

@@ -71,29 +71,6 @@ export const EquipmentWorkspace = () => {
 
   return (
     <section className="space-y-6" aria-labelledby="equipment-title">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h1
-            id="equipment-title"
-            className="text-3xl font-semibold tracking-tight text-balance"
-          >
-            Equipment details
-          </h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl">
-            Track current equipment, previous setups and recommended
-            requirements.
-          </p>
-        </div>
-        {athlete && (
-          <Link
-            className={buttonVariants()}
-            href={equipmentNewHref(athlete.id)}
-          >
-            <PlusIcon /> Add setup
-          </Link>
-        )}
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Select athlete</CardTitle>

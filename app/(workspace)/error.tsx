@@ -15,7 +15,12 @@ import {
  * Without this, one throw inside a workspace route replaces the whole app with
  * the root error page and loses the shell.
  */
-const WorkspaceError = ({ reset }: { error: Error; reset: () => void }) => (
+const WorkspaceError = ({
+  retry,
+}: {
+  error: Error & { digest?: string };
+  retry: () => void;
+}) => (
   <Empty className="min-h-96 border">
     <EmptyHeader>
       <EmptyMedia variant="icon">
@@ -25,7 +30,7 @@ const WorkspaceError = ({ reset }: { error: Error; reset: () => void }) => (
       <EmptyDescription>
         This view could not be displayed. Your saved data has not been changed.
       </EmptyDescription>
-      <Button onClick={reset} type="button">
+      <Button onClick={retry} type="button">
         Try again
       </Button>
     </EmptyHeader>

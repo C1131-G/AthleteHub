@@ -15,9 +15,17 @@ interface AthletePickerProps {
   id: string;
   value: string;
   onChange: (athleteId: string) => void;
+  invalid?: boolean;
+  errorMessageId?: string;
 }
 
-export const AthletePicker = ({ id, value, onChange }: AthletePickerProps) => {
+export const AthletePicker = ({
+  id,
+  value,
+  onChange,
+  invalid = false,
+  errorMessageId,
+}: AthletePickerProps) => {
   const { athletes } = useAthletes();
   const selectedAthlete = athletes.find((athlete) => athlete.id === value);
 
@@ -33,6 +41,8 @@ export const AthletePicker = ({ id, value, onChange }: AthletePickerProps) => {
     >
       <ComboboxInput
         id={id}
+        aria-errormessage={invalid ? errorMessageId : undefined}
+        aria-invalid={invalid || undefined}
         aria-label="Select athlete"
         placeholder="Search by athlete name or ID"
         showClear

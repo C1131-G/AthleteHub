@@ -11,6 +11,9 @@
 # testing
 /coverage
 /test-results/
+/playwright-report/
+# Scratch configs used to run a single suite locally.
+*.tmp.config.ts
 
 # next.js
 /.next/
@@ -24,6 +27,8 @@
 *.pem
 
 # debug
+*.log
+lint-report.txt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

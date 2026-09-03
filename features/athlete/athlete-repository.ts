@@ -1,5 +1,6 @@
 import { readStoredArray, writeStored } from "@/lib/storage";
 
+import { athleteSchema } from "./athlete-types";
 import type { Athlete, AthleteInput } from "./athlete-types";
 
 const STORAGE_KEY = "athletehub.athletes.v1";
@@ -36,13 +37,6 @@ const seedAthletes: Athlete[] = [
   };
 });
 
-const isAthlete = (value: unknown): value is Athlete => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  return "id" in value && "athleteId" in value && "fullName" in value;
-};
-
 const readAthletes = (): Athlete[] => {
   const stored = readStoredArray(STORAGE_KEY);
   if (stored.length === 0) {
@@ -52,7 +46,10 @@ const readAthletes = (): Athlete[] => {
 
   // Keep every record that still parses: one corrupt entry must not discard
   // the rest of the roster.
-  const athletes = stored.filter(isAthlete);
+  const athletes = stored.flatMap((value) => {
+    const result = athleteSchema.safeParse(value);
+    return result.success ? [result.data] : [];
+  });
   return athletes.length > 0 ? athletes : seedAthletes;
 };
 

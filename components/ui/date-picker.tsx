@@ -18,12 +18,14 @@ export const DatePicker = ({
   onChange,
   invalid = false,
   describedBy,
+  errorMessageId,
 }: {
   id: string;
   value: string;
   onChange: (value: string) => void;
   invalid?: boolean;
-  describedBy?: string;
+  describedBy?: string | undefined;
+  errorMessageId?: string | undefined;
 }) => {
   return (
     <Popover>
@@ -39,6 +41,7 @@ export const DatePicker = ({
             )}
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
+            aria-errormessage={invalid ? errorMessageId : undefined}
           />
         }
       >

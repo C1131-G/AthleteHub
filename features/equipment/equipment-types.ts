@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export const standardEquipmentItems = [
   ["riser", "Handle / riser"],
   ["limbs", "Limbs"],
@@ -22,29 +24,34 @@ export const standardEquipmentItems = [
 
 export type StandardEquipmentKey = (typeof standardEquipmentItems)[number][0];
 
-export interface EquipmentItem {
-  id: string;
-  key: string;
-  label: string;
-  value: string;
-  requirement: string;
-  custom: boolean;
-}
+export const equipmentItemSchema = z.object({
+  custom: z.boolean(),
+  id: z.string().min(1),
+  key: z.string().min(1),
+  label: z.string(),
+  requirement: z.string(),
+  value: z.string(),
+});
 
-export interface EquipmentSetup {
-  id: string;
-  athleteId: string;
-  recordedAt: string;
-  items: EquipmentItem[];
-  coachNotes: string;
-  createdAt: string;
-  updatedAt: string;
-}
+export const equipmentSetupSchema = z.object({
+  athleteId: z.string().min(1),
+  coachNotes: z.string(),
+  createdAt: z.string().min(1),
+  id: z.string().min(1),
+  items: z.array(equipmentItemSchema),
+  recordedAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+});
 
-export type EquipmentSetupInput = Omit<
-  EquipmentSetup,
-  "id" | "createdAt" | "updatedAt"
->;
+export const equipmentSetupInputSchema = equipmentSetupSchema.omit({
+  createdAt: true,
+  id: true,
+  updatedAt: true,
+});
+
+export type EquipmentItem = z.infer<typeof equipmentItemSchema>;
+export type EquipmentSetup = z.infer<typeof equipmentSetupSchema>;
+export type EquipmentSetupInput = z.infer<typeof equipmentSetupInputSchema>;
 
 export const createEquipmentItems = (source?: EquipmentItem[]) =>
   standardEquipmentItems.map(([key, label]) => {

@@ -1,4 +1,4 @@
-import { format, isValid, parseISO } from "date-fns";
+import { addMonths, format, isValid, parseISO } from "date-fns";
 
 import type {
   MonthlyPerformanceReport,
@@ -72,6 +72,15 @@ export const monthLabel = (month: string) => {
   }
   const parsed = parseISO(`${month}-01`);
   return isValid(parsed) ? format(parsed, "MMMM yyyy") : month;
+};
+
+/** The month a report's "next month plan" applies to. */
+export const nextMonthOf = (month: string) => {
+  if (!MONTH_PATTERN.test(month)) {
+    return "";
+  }
+  const parsed = parseISO(`${month}-01`);
+  return isValid(parsed) ? format(addMonths(parsed, 1), "yyyy-MM") : "";
 };
 
 export const createMonthlyDraft = (

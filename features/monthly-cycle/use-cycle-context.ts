@@ -1,0 +1,85 @@
+"use client";
+
+import { useAssessments } from "@/features/assessment/use-assessments";
+import { useAthletes } from "@/features/athlete/use-athletes";
+import { useConditioning } from "@/features/conditioning/use-conditioning";
+import { useEquipment } from "@/features/equipment/use-equipment";
+import { useReports } from "@/features/report/use-reports";
+import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
+
+import { deriveCycleView } from "./monthly-cycle-lifecycle";
+import type { CycleDomainContext, CycleView } from "./monthly-cycle-lifecycle";
+import type { MonthlyAthleteCycle } from "./monthly-cycle-types";
+import { useMonthlyCycles } from "./use-monthly-cycles";
+
+export interface CycleContextState {
+  athlete: ReturnType<typeof useAthletes>["athletes"][number] | undefined;
+  context: CycleDomainContext | undefined;
+  cycle: MonthlyAthleteCycle | undefined;
+  ready: boolean;
+  view: CycleView | undefined;
+}
+
+/**
+ * Gathers the slice of every domain store the lifecycle reads for one cycle.
+ * Everything is client-side localStorage data, so `ready` gates the workflow
+ * on all stores being hydrated.
+ */
+export const useCycleContext = (cycleId: string): CycleContextState => {
+  const { cycles, ready: cyclesReady } = useMonthlyCycles();
+  const { athletes, ready: athletesReady } = useAthletes();
+  const { listByAthlete, ready: equipmentReady } = useEquipment();
+  const { listMonthly, listWeekly, ready: reportsReady } = useReports();
+  const { plans, ready: plansReady } = useTrainingPlans();
+  const { assessments: datedAssessments, ready: datedAssessmentsReady } =
+    useAssessments();
+  const {
+    assessments,
+    programmes,
+    ready: conditioningReady,
+  } = useConditioning();
+
+  const cycle = cycles.find((entry) => entry.id === cycleId);
+  const athlete = athletes.find((entry) => entry.id === cycle?.athleteId);
+  const ready =
+    cyclesReady &&
+    athletesReady &&
+    equipmentReady &&
+    reportsReady &&
+    plansReady &&
+    conditioningReady &&
+    datedAssessmentsReady;
+
+  const context: CycleDomainContext | undefined = cycle
+    ? {
+        assessments: assessments.filter(
+          (assessment) => assessment.athleteId === cycle.athleteId
+        ),
+        athlete,
+        athleteId: cycle.athleteId,
+        datedAssessments: datedAssessments.filter(
+          (assessment) => assessment.athleteId === cycle.athleteId
+        ),
+        equipmentSetups: athlete ? listByAthlete(athlete.id) : [],
+        monthlyReport: listMonthly.find(
+          (report) =>
+            report.athleteId === cycle.athleteId && report.month === cycle.month
+        ),
+        plans,
+        programmes: programmes.filter(
+          (programme) => programme.athleteId === cycle.athleteId
+        ),
+        weeklyReports: listWeekly.filter(
+          (report) => report.athleteId === cycle.athleteId
+        ),
+      }
+    : undefined;
+
+  return {
+    athlete,
+    context,
+    cycle,
+    ready,
+    view: cycle && context ? deriveCycleView(cycle, context) : undefined,
+  };
+};

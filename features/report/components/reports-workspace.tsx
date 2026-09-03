@@ -1,4 +1,6 @@
 "use client";
+// Filters and three report modes are intentionally co-located at this client boundary.
+// oxlint-disable complexity, no-nested-ternary
 
 import { XIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,6 +23,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AssessmentTable } from "@/features/assessment/assessment-table";
+import {
+  assessmentTypeLabel,
+  assessmentTypes,
+} from "@/features/assessment/assessment-types";
+import { useAssessments } from "@/features/assessment/use-assessments";
 import { useAthletes } from "@/features/athlete/use-athletes";
 
 import { useReports } from "../use-reports";
@@ -49,8 +57,12 @@ export const ReportsWorkspace = () => {
   const params = useSearchParams();
   const { athletes, ready: athletesReady } = useAthletes();
   const { listMonthly, listWeekly, ready: reportsReady } = useReports();
+  const { assessments, ready: assessmentsReady } = useAssessments();
   const [query, setQuery] = useState("");
-  const tab = params.get("tab") === "monthly" ? "monthly" : "weekly";
+  const tab =
+    params.get("tab") === "monthly" || params.get("tab") === "assessments"
+      ? params.get("tab")
+      : "weekly";
   const athleteId = params.get("athleteId") ?? "";
   const month = params.get("month") ?? "";
   const statusOptions =
@@ -89,6 +101,14 @@ export const ReportsWorkspace = () => {
       (!status || report.status === status) &&
       (!query || matches(report.athleteId, query))
   );
+  const assessmentRows = assessments.filter(
+    (record) =>
+      (!athleteId || record.athleteId === athleteId) &&
+      (!month || record.assessedOn.startsWith(month)) &&
+      (!query || matches(record.athleteId, query)) &&
+      (!params.get("assessmentType") ||
+        record.assessmentType === params.get("assessmentType"))
+  );
   const replaceParams = (next: URLSearchParams) => {
     const search = next.toString();
     router.replace(search ? `${REPORTS_PATH}?${search}` : REPORTS_PATH);
@@ -111,11 +131,11 @@ export const ReportsWorkspace = () => {
   };
   const clearFilters = () => {
     setQuery("");
-    replaceParams(new URLSearchParams({ tab }));
+    replaceParams(new URLSearchParams({ tab: tab ?? "weekly" }));
   };
   const hasFilters = Boolean(athleteId || month || status || query);
 
-  if (!(athletesReady && reportsReady)) {
+  if (!(athletesReady && reportsReady && assessmentsReady)) {
     return <ReportsWorkspaceSkeleton />;
   }
 
@@ -145,6 +165,31 @@ export const ReportsWorkspace = () => {
               value={query}
             />
           </div>
+          {tab === "assessments" ? (
+            <div>
+              <label className={labelClass} htmlFor="report-assessment-type">
+                Assessment type
+              </label>
+              <Select
+                onValueChange={(value) =>
+                  setFilter("assessmentType", value ?? ALL)
+                }
+                value={params.get("assessmentType") ?? ALL}
+              >
+                <SelectTrigger className="w-full" id="report-assessment-type">
+                  <SelectValue placeholder="All types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All types</SelectItem>
+                  {assessmentTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {assessmentTypeLabel[type]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div>
             <label className={labelClass} htmlFor="report-athlete">
               Athlete
@@ -210,16 +255,21 @@ export const ReportsWorkspace = () => {
           <TabsTrigger value="monthly">
             Monthly reports ({monthlyRows.length})
           </TabsTrigger>
+          <TabsTrigger value="assessments">
+            Assessments ({assessmentRows.length})
+          </TabsTrigger>
         </TabsList>
       </Tabs>
       {tab === "weekly" ? (
         <WeeklyReportTable athleteById={athleteById} rows={weeklyRows} />
-      ) : (
+      ) : tab === "monthly" ? (
         <MonthlyReportTable
           athleteById={athleteById}
           month={month}
           rows={monthlyRows}
         />
+      ) : (
+        <AssessmentTable athleteById={athleteById} rows={assessmentRows} />
       )}
     </section>
   );

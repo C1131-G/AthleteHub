@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -11,9 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { trainingPlanHref } from "@/features/training-plan/training-plan-routes";
 
 import { AthletePicker } from "./athlete-picker";
-import { errorId } from "./report-form-errors";
+import { errorId, fieldProps } from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
 
 export interface MonthlyFormState {
@@ -34,13 +37,22 @@ export interface MonthlyFormState {
 
 type UpdateField = (key: keyof MonthlyFormState, value: string) => void;
 
+/** Weekly targets taken from the training plan that covers the next month. */
+export interface PlanArrowTargets {
+  planId: string;
+  planName: string;
+  targets: number[];
+}
+
 export const MonthlyReportFields = ({
   errors,
   form,
+  planTargets,
   update,
 }: {
   errors: ReportFormErrors;
   form: MonthlyFormState;
+  planTargets?: PlanArrowTargets | undefined;
   update: UpdateField;
 }) => (
   <>
@@ -52,22 +64,28 @@ export const MonthlyReportFields = ({
         <Field>
           <FieldLabel htmlFor="monthly-athlete">Athlete</FieldLabel>
           <AthletePicker
+            errorMessageId={errorId("monthly-athlete")}
             id="monthly-athlete"
-            value={form.athleteId}
+            invalid={Boolean(errors["monthly-athlete"])}
             onChange={(value) => update("athleteId", value)}
+            value={form.athleteId}
           />
+          <FieldError id={errorId("monthly-athlete")}>
+            {errors["monthly-athlete"]}
+          </FieldError>
         </Field>
         <Field>
           <FieldLabel htmlFor="report-month">Month</FieldLabel>
           <Input
+            {...fieldProps("report-month", errors)}
             id="report-month"
+            onChange={(event) => update("month", event.target.value)}
             type="month"
             value={form.month}
-            onChange={(event) => update("month", event.target.value)}
-            aria-errormessage={errorId("report-month")}
-            aria-invalid={Boolean(errors.month)}
           />
-          <FieldError id={errorId("report-month")}>{errors.month}</FieldError>
+          <FieldError id={errorId("report-month")}>
+            {errors["report-month"]}
+          </FieldError>
         </Field>
         <Field>
           <FieldLabel htmlFor="monthly-status">Status</FieldLabel>
@@ -96,14 +114,13 @@ export const MonthlyReportFields = ({
         <Field>
           <FieldLabel htmlFor="coach-summary">Summary</FieldLabel>
           <Textarea
+            {...fieldProps("coach-summary", errors)}
             id="coach-summary"
-            value={form.coachSummary}
             onChange={(event) => update("coachSummary", event.target.value)}
-            aria-errormessage={errorId("coach-summary")}
-            aria-invalid={Boolean(errors.coachSummary)}
+            value={form.coachSummary}
           />
           <FieldError id={errorId("coach-summary")}>
-            {errors.coachSummary}
+            {errors["coach-summary"]}
           </FieldError>
         </Field>
         <Field>
@@ -143,13 +160,34 @@ export const MonthlyReportFields = ({
         <Field>
           <FieldLabel htmlFor="arrow-targets">Weekly arrow targets</FieldLabel>
           <Input
+            {...fieldProps("arrow-targets", errors)}
             id="arrow-targets"
-            placeholder="1200, 1400, 1600"
-            value={form.weeklyArrowTargets}
             onChange={(event) =>
               update("weeklyArrowTargets", event.target.value)
             }
+            placeholder="1200, 1400, 1600"
+            readOnly={Boolean(planTargets)}
+            value={
+              planTargets
+                ? planTargets.targets.join(", ")
+                : form.weeklyArrowTargets
+            }
           />
+          {planTargets ? (
+            <p className="text-muted-foreground text-xs">
+              Derived from{" "}
+              <Link
+                className="underline underline-offset-2"
+                href={trainingPlanHref(planTargets.planId)}
+              >
+                {planTargets.planName}
+              </Link>
+              . Edit the plan to change these targets.
+            </p>
+          ) : null}
+          <FieldError id={errorId("arrow-targets")}>
+            {errors["arrow-targets"]}
+          </FieldError>
         </Field>
         <Field>
           <FieldLabel htmlFor="target-distance">Target distance (m)</FieldLabel>

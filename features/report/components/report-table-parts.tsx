@@ -84,7 +84,7 @@ export const SortableHead = ({
   canSort: boolean;
   children: ReactNode;
   direction: ColumnSortState;
-  onToggle?: (event: unknown) => void;
+  onToggle?: ((event: unknown) => void) | undefined;
 }) => (
   <TableHead
     aria-sort={direction ? ariaSortValue[direction] : "none"}

@@ -5,23 +5,15 @@ import {
   test as bunTest,
 } from "bun:test";
 
+import { createMemoryStorage } from "@/lib/test/memory-storage";
+
 import { reportRepository } from "./report-repository";
 import type { WeeklyPerformanceReportInput } from "./report-types";
-
-const memoryStorage = () => {
-  const entries = new Map<string, string>();
-  return {
-    getItem: (key: string) => entries.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      entries.set(key, value);
-    },
-  };
-};
 
 bunBeforeEach(() => {
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
-    value: memoryStorage(),
+    value: createMemoryStorage(),
   });
 });
 

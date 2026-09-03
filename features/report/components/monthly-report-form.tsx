@@ -9,19 +9,33 @@ import type { FormEvent } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAthletes } from "@/features/athlete/use-athletes";
+import {
+  activeProgrammeFor,
+  latestAssessmentFor,
+} from "@/features/conditioning/conditioning-calculations";
+import { useConditioning } from "@/features/conditioning/use-conditioning";
+import {
+  planForMonth,
+  weeklyArrowTargetsForMonth,
+} from "@/features/training-plan/training-plan-calculations";
+import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 
-import { createMonthlyDraft } from "../report-calculations";
+import { createMonthlyDraft, nextMonthOf } from "../report-calculations";
 import type { MonthlyPerformanceReportInput } from "../report-types";
 import { useReports } from "../use-reports";
 import { MonthlyReportFields } from "./monthly-report-fields";
 import type { MonthlyFormState } from "./monthly-report-fields";
-import { focusFirstError } from "./report-form-errors";
+import {
+  focusFirstError,
+  monthlyControls,
+  toFormErrors,
+} from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
 
 interface MonthlyReportFormProps {
-  reportId?: string;
-  initialAthleteId?: string;
-  initialMonth?: string;
+  reportId?: string | undefined;
+  initialAthleteId?: string | undefined;
+  initialMonth?: string | undefined;
 }
 
 const toState = (input: MonthlyPerformanceReportInput): MonthlyFormState => ({
@@ -55,8 +69,10 @@ export const MonthlyReportForm = ({
 }: MonthlyReportFormProps) => {
   const { ready: athletesReady } = useAthletes();
   const { ready: reportsReady } = useReports();
+  const { ready: plansReady } = useTrainingPlans();
+  const { ready: conditioningReady } = useConditioning();
 
-  if (!(athletesReady && reportsReady)) {
+  if (!(athletesReady && plansReady && reportsReady && conditioningReady)) {
     return <MonthlyReportFormSkeleton />;
   }
 
@@ -79,6 +95,11 @@ const MonthlyReportFormBody = ({
   const { athletes } = useAthletes();
   const { createMonthly, getMonthly, listMonthly, updateMonthly } =
     useReports();
+  const {
+    assessments: conditioningAssessments,
+    programmes: conditioningProgrammes,
+  } = useConditioning();
+  const { plans } = useTrainingPlans();
   const existing = reportId ? getMonthly(reportId) : undefined;
   const [form, setForm] = useState<MonthlyFormState>(() =>
     toState(
@@ -90,6 +111,25 @@ const MonthlyReportFormBody = ({
     )
   );
   const [errors, setErrors] = useState<ReportFormErrors>({});
+  // The next-month plan takes its weekly targets from whichever season plan
+  // covers that month; the stored array stays as the compatibility snapshot.
+  const targetMonth = nextMonthOf(form.month);
+  const coveringPlan =
+    form.athleteId && targetMonth
+      ? planForMonth(plans, form.athleteId, targetMonth)
+      : undefined;
+  const derivedTargets = coveringPlan
+    ? weeklyArrowTargetsForMonth(coveringPlan, targetMonth)
+    : [];
+  const planTargets =
+    coveringPlan && derivedTargets.length
+      ? {
+          planId: coveringPlan.id,
+          planName: coveringPlan.name,
+          targets: derivedTargets,
+        }
+      : undefined;
+
   if (reportId && !existing) {
     return (
       <Card>
@@ -145,7 +185,9 @@ const MonthlyReportFormBody = ({
     if (targetScore !== undefined && targetScore <= 0) {
       nextErrors.targetScore = "Target score must be positive.";
     }
-    const weeklyArrowTargets = form.weeklyArrowTargets
+    const weeklyArrowTargets = (
+      planTargets ? planTargets.targets.join(", ") : form.weeklyArrowTargets
+    )
       .split(",")
       .flatMap((value) => {
         const number = Number(value.trim());
@@ -159,8 +201,9 @@ const MonthlyReportFormBody = ({
         "Weekly arrow targets must be non-negative integers.";
     }
     if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors);
-      focusFirstError(nextErrors);
+      const formErrors = toFormErrors(nextErrors, monthlyControls);
+      setErrors(formErrors);
+      focusFirstError(formErrors);
       return;
     }
     const draft = createMonthlyDraft(form.athleteId, form.month, existing);
@@ -172,7 +215,18 @@ const MonthlyReportFormBody = ({
         .filter(Boolean),
       assessments: {
         ...draft.assessments,
+        // Resolved at save time so the report keeps pointing at the records
+        // that were current for this athlete and month.
+        conditioningAssessmentId:
+          latestAssessmentFor(
+            conditioningAssessments,
+            form.athleteId,
+            form.month
+          )?.id ?? draft.assessments.conditioningAssessmentId,
         conditioningPlan: form.conditioningPlan.trim(),
+        conditioningProgrammeId:
+          activeProgrammeFor(conditioningProgrammes, form.athleteId, form.month)
+            ?.id ?? draft.assessments.conditioningProgrammeId,
         dartfishNotes: form.dartfishNotes.trim(),
       },
       coachSummary: form.coachSummary.trim(),
@@ -193,8 +247,9 @@ const MonthlyReportFormBody = ({
       if (result.status === "saved") {
         router.push(`/reports/monthly/${result.report.id}`);
       } else {
-        setErrors(result.fieldErrors);
-        focusFirstError(result.fieldErrors);
+        const saveErrors = toFormErrors(result.fieldErrors, monthlyControls);
+        setErrors(saveErrors);
+        focusFirstError(saveErrors);
       }
     });
   };
@@ -216,17 +271,27 @@ const MonthlyReportFormBody = ({
       {Object.keys(errors).length > 0 && (
         <div
           className="border-destructive/40 bg-destructive/10 text-destructive rounded-xl border p-4"
+          id="monthly-error-summary"
           role="alert"
         >
           <p className="font-medium">Check the report before saving.</p>
           <ul className="mt-2 list-disc pl-5 text-sm">
-            {Object.entries(errors).map(([field, error]) => (
-              <li key={field}>{error}</li>
+            {Object.entries(errors).map(([controlId, error]) => (
+              <li key={controlId}>
+                <a className="underline" href={`#${controlId}`}>
+                  {error}
+                </a>
+              </li>
             ))}
           </ul>
         </div>
       )}
-      <MonthlyReportFields errors={errors} form={form} update={update} />
+      <MonthlyReportFields
+        errors={errors}
+        form={form}
+        planTargets={planTargets}
+        update={update}
+      />
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
           <FloppyDiskIcon /> {pending ? "Saving…" : "Save report"}

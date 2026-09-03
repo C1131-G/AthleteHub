@@ -211,8 +211,8 @@ const NumberField = ({
 }: {
   id: string;
   label: string;
-  value?: number;
-  error?: string;
+  value?: number | undefined;
+  error?: string | undefined;
   onChange: (value?: number) => void;
 }) => {
   return (

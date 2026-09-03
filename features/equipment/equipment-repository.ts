@@ -1,25 +1,16 @@
 import { readStoredArray, writeStored } from "@/lib/storage";
 
+import { equipmentSetupSchema } from "./equipment-types";
 import type { EquipmentSetup, EquipmentSetupInput } from "./equipment-types";
 
 const STORAGE_KEY = "athletehub.equipment.v1";
 
-const isEquipmentSetup = (value: unknown): value is EquipmentSetup => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  return (
-    "id" in value &&
-    "athleteId" in value &&
-    "recordedAt" in value &&
-    "items" in value &&
-    Array.isArray(value.items)
-  );
-};
-
 // Keep every setup that still parses rather than discarding the whole history.
 const readSetups = (): EquipmentSetup[] =>
-  readStoredArray(STORAGE_KEY).filter(isEquipmentSetup);
+  readStoredArray(STORAGE_KEY).flatMap((value) => {
+    const result = equipmentSetupSchema.safeParse(value);
+    return result.success ? [result.data] : [];
+  });
 
 const writeSetups = (setups: EquipmentSetup[]) =>
   writeStored(STORAGE_KEY, setups);

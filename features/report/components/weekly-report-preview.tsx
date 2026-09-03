@@ -23,6 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AssessmentHistoryPanel } from "@/features/assessment/assessment-history-panel";
+import { assessmentNewHref } from "@/features/assessment/assessment-routes";
 import { useAthletes } from "@/features/athlete/use-athletes";
 import { initials } from "@/lib/format";
 
@@ -84,6 +86,16 @@ export const WeeklyReportPreview = ({ reportId }: { reportId: string }) => {
         >
           <PencilSimpleIcon /> Edit report
         </Link>
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          href={assessmentNewHref(
+            report.athleteId,
+            report.weekStart,
+            `/reports/weekly/${report.id}`
+          )}
+        >
+          Record assessment
+        </Link>
       </div>
       <div className="flex flex-wrap gap-2">
         <Badge>{report.status.replace("-", " ")}</Badge>
@@ -139,6 +151,10 @@ export const WeeklyReportPreview = ({ reportId }: { reportId: string }) => {
         <Notes title="Performance notes" items={[report.performanceNotes]} />
         <Notes title="Action items" items={report.actionItems} />
       </div>
+      <AssessmentHistoryPanel
+        athleteId={report.athleteId}
+        weekStart={report.weekStart}
+      />
       {report.scores.length > 0 && report.distanceM && (
         <Card>
           <CardHeader>

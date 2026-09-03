@@ -14,7 +14,7 @@ export const RouteFocus = () => {
   const pathname = usePathname();
   const previousPathname = useRef("");
 
-  useEffect(() => {
+  const focusMainOnRouteChange = () => {
     const previous = previousPathname.current;
     previousPathname.current = pathname;
 
@@ -26,7 +26,8 @@ export const RouteFocus = () => {
     if (main instanceof HTMLElement) {
       main.focus();
     }
-  }, [pathname]);
+  };
+  useEffect(focusMainOnRouteChange, [pathname]);
 
   return null;
 };

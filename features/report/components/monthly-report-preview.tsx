@@ -1,6 +1,10 @@
 "use client";
 
-import { ChartLineUpIcon, PencilSimpleIcon } from "@phosphor-icons/react";
+import {
+  ChartLineUpIcon,
+  PencilSimpleIcon,
+  TargetIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +26,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AssessmentHistoryPanel } from "@/features/assessment/assessment-history-panel";
 import { useAthletes } from "@/features/athlete/use-athletes";
+import { ConditioningMonthlyPanel } from "@/features/conditioning/conditioning-monthly-panel";
+import {
+  planForMonth,
+  weeklyArrowTargetsForMonth,
+} from "@/features/training-plan/training-plan-calculations";
+import {
+  trainingPlanHref,
+  trainingPlansHref,
+} from "@/features/training-plan/training-plan-routes";
+import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 
 import {
   loadSummary,
   monthLabel,
+  nextMonthOf,
   reportsForAthleteMonth,
   scoreSummary,
 } from "../report-calculations";
@@ -35,9 +51,10 @@ import { useReports } from "../use-reports";
 export const MonthlyReportPreview = ({ reportId }: { reportId: string }) => {
   const { athletes, ready: athletesReady } = useAthletes();
   const { getMonthly, listWeekly, ready: reportsReady } = useReports();
+  const { plans, ready: plansReady } = useTrainingPlans();
   const report = getMonthly(reportId);
   const athlete = athletes.find((item) => item.id === report?.athleteId);
-  if (!athletesReady || !reportsReady) {
+  if (!(athletesReady && plansReady && reportsReady)) {
     return <MonthlyReportPreviewSkeleton />;
   }
   if (!report || !athlete) {
@@ -50,6 +67,20 @@ export const MonthlyReportPreview = ({ reportId }: { reportId: string }) => {
   );
   const scores = scoreSummary(weeklyReports, report.month);
   const load = loadSummary(weeklyReports, report.month);
+  const targetMonth = nextMonthOf(report.month);
+  const coveringPlan = planForMonth(plans, athlete.id, targetMonth);
+  const derivedTargets = coveringPlan
+    ? weeklyArrowTargetsForMonth(coveringPlan, targetMonth)
+    : [];
+  // Older reports predate training plans, so their stored snapshot stands in.
+  const storedTargets = derivedTargets.length
+    ? derivedTargets
+    : report.nextMonthPlan.weeklyArrowTargets;
+  const arrowTargets = storedTargets.map((target, index) => ({
+    id: `week-${index + 1}`,
+    label: `Week ${index + 1}`,
+    target,
+  }));
   return (
     <article className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -61,12 +92,24 @@ export const MonthlyReportPreview = ({ reportId }: { reportId: string }) => {
             {monthLabel(report.month)} monthly report
           </h1>
         </div>
-        <Link
-          className={buttonVariants()}
-          href={`/reports/monthly/${report.id}/edit`}
-        >
-          <PencilSimpleIcon /> Edit report
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            className={buttonVariants({ variant: "outline" })}
+            href={
+              coveringPlan
+                ? trainingPlanHref(coveringPlan.id)
+                : trainingPlansHref(athlete.id)
+            }
+          >
+            <TargetIcon /> Training plan
+          </Link>
+          <Link
+            className={buttonVariants()}
+            href={`/reports/monthly/${report.id}/edit`}
+          >
+            <PencilSimpleIcon /> Edit report
+          </Link>
+        </div>
       </div>
       <Badge variant={report.status === "complete" ? "default" : "secondary"}>
         {report.status}
@@ -111,6 +154,49 @@ export const MonthlyReportPreview = ({ reportId }: { reportId: string }) => {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Weekly arrow targets for {monthLabel(targetMonth)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {arrowTargets.length ? (
+            <>
+              <ol className="flex flex-wrap gap-2">
+                {arrowTargets.map((week) => (
+                  <li
+                    className="bg-muted rounded-lg px-3 py-1.5 text-sm"
+                    key={week.id}
+                  >
+                    <span className="text-muted-foreground">
+                      {week.label}:{" "}
+                    </span>
+                    {week.target}
+                  </li>
+                ))}
+              </ol>
+              <p className="text-muted-foreground mt-3 text-xs">
+                {coveringPlan && derivedTargets.length
+                  ? `Derived from ${coveringPlan.name}.`
+                  : "Recorded on this report."}
+              </p>
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              No weekly arrow targets set for {monthLabel(targetMonth)}.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      <ConditioningMonthlyPanel
+        athleteId={report.athleteId}
+        month={report.month}
+      />
+      <AssessmentHistoryPanel
+        athleteId={report.athleteId}
+        month={report.month}
+      />
       <div className="grid gap-4 lg:grid-cols-2">
         <Notes title="Coach summary" text={report.coachSummary} />
         <Notes

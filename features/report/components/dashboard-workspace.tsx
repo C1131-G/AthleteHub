@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/table";
 import { categoryLabel, statusLabel } from "@/features/athlete/athlete-labels";
 import { useAthletes } from "@/features/athlete/use-athletes";
+import { useConditioning } from "@/features/conditioning/use-conditioning";
 import { useEquipment } from "@/features/equipment/use-equipment";
+import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 
 import { dashboardMetrics } from "../dashboard-metrics";
 import { useReports } from "../use-reports";
@@ -42,6 +44,8 @@ export const DashboardWorkspace = () => {
   const { athletes, ready: athletesReady } = useAthletes();
   const { listMonthly, listWeekly, ready: reportsReady } = useReports();
   const { listByAthlete, ready: equipmentReady } = useEquipment();
+  const { plans, ready: plansReady } = useTrainingPlans();
+  const conditioning = useConditioning();
   const rankingDistance = Number(searchParams.get("distance") ?? "70") || 70;
   const {
     attentionRows,
@@ -58,6 +62,8 @@ export const DashboardWorkspace = () => {
     statusCounts,
   } = dashboardMetrics({
     athletes,
+    conditioningAssessments: conditioning.assessments,
+    conditioningProgrammes: conditioning.programmes,
     equipmentFor: listByAthlete,
     filters: {
       athleteId: athleteFilter,
@@ -67,10 +73,19 @@ export const DashboardWorkspace = () => {
       status: statusFilter,
     },
     monthly: listMonthly,
+    plans,
     weekly: listWeekly,
   });
 
-  if (!athletesReady || !reportsReady || !equipmentReady) {
+  if (
+    !(
+      athletesReady &&
+      conditioning.ready &&
+      equipmentReady &&
+      plansReady &&
+      reportsReady
+    )
+  ) {
     return <DashboardWorkspaceSkeleton />;
   }
   const updateFilter = (param: string, value: string) => {

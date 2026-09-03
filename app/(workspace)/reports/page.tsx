@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { WorkspaceHeader } from "@/components/workspace-header";
+import { assessmentNewHref } from "@/features/assessment/assessment-routes";
 import {
   ReportsWorkspace,
   ReportsWorkspaceSkeleton,
@@ -27,6 +28,12 @@ const ReportsPage = () => (
           </Link>
           <Link className={buttonVariants()} href="/reports/weekly/new">
             <PlusIcon /> Weekly entry
+          </Link>
+          <Link
+            className={buttonVariants({ variant: "outline" })}
+            href={assessmentNewHref()}
+          >
+            <PlusIcon /> Assessment
           </Link>
         </>
       }

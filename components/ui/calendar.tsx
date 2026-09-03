@@ -152,7 +152,7 @@ function Calendar({
           );
         },
         DayButton: ({ ...props }) => (
-          <CalendarDayButton locale={locale} {...props} />
+          <CalendarDayButton {...(locale ? { locale } : {})} {...props} />
         ),
         Root: ({ className, rootRef, ...props }) => (
           <div

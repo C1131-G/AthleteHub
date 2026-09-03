@@ -1,8 +1,9 @@
 "use client";
 
-import { barX, barY, defineChart, lineY } from "@tanstack/charts";
+import { barX, barY, defineChart, group, lineY } from "@tanstack/charts";
 import { pie, polar, radialArc } from "@tanstack/charts/polar";
 import { Chart } from "@tanstack/charts/react";
+import { scaleBand } from "@tanstack/charts/scales/band";
 import { scaleLinear } from "@tanstack/charts/scales/linear";
 import { scalePoint } from "@tanstack/charts/scales/point";
 import { useMemo } from "react";
@@ -19,7 +20,8 @@ interface ScorePoint {
 interface LoadPoint {
   label: string;
   planned: number;
-  shot: number;
+  /** `undefined` means the week is planned but no report exists yet. */
+  shot: number | undefined;
 }
 
 export interface RankingPoint {
@@ -124,20 +126,27 @@ export const ScoreTrendChart = ({
 export const ArrowLoadChart = ({ points }: { points: LoadPoint[] }) => {
   const chartRows = useMemo(
     () =>
-      points.flatMap((point) => [
-        {
+      points.flatMap((point) => {
+        const planned = {
           id: `${point.label}-planned`,
           label: point.label,
           series: "planned",
           value: point.planned,
-        },
-        {
-          id: `${point.label}-shot`,
-          label: point.label,
-          series: "shot",
-          value: point.shot,
-        },
-      ]),
+        };
+        // A planned week with no report contributes no shot bar, so the gap in
+        // the chart matches the "Not recorded" row in the table below it.
+        return point.shot === undefined
+          ? [planned]
+          : [
+              planned,
+              {
+                id: `${point.label}-shot`,
+                label: point.label,
+                series: "shot",
+                value: point.shot,
+              },
+            ];
+      }),
     [points]
   );
   const definition = useMemo(
@@ -150,13 +159,16 @@ export const ArrowLoadChart = ({ points }: { points: LoadPoint[] }) => {
               fill: (row) =>
                 row.series === "planned" ? "var(--chart-2)" : "var(--chart-1)",
               key: "id",
+              // Planned and shot sit side by side; stacking them would read as
+              // a single total rather than a comparison.
+              layout: group(),
               x: "label",
               y: "value",
               z: "series",
             }),
           ],
           scales: {
-            x: { scale: scalePoint },
+            x: { scale: scaleBand },
             y: { axis: { label: "Arrows" }, scale: scaleLinear },
           },
         },
@@ -185,10 +197,11 @@ export const ArrowLoadChart = ({ points }: { points: LoadPoint[] }) => {
               ]}
             />
             <DataTable
-              headers={["Week / series", "Arrows"]}
-              rows={chartRows.map((row) => [
-                `${row.label} / ${row.series}`,
-                String(row.value),
+              headers={["Week", "Planned (arrows)", "Shot (arrows)"]}
+              rows={points.map((point) => [
+                point.label,
+                String(point.planned),
+                point.shot === undefined ? "Not recorded" : String(point.shot),
               ])}
             />
           </>

@@ -29,8 +29,18 @@ export const weeklyReportSchema = z.object({
   scores: z.array(z.number().int().min(0)).max(4),
   status: weeklyEntryStatusSchema,
   trainingDays: z.number().int().min(0).max(7).optional(),
+  /** Set when the entry was recorded against a season training plan week. */
+  trainingPlanId: z.string().optional(),
+  trainingPlanWeekId: z.string().optional(),
   updatedAt: z.string(),
-  weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  weekStart: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((value) => {
+      const [year, month, day] = value.split("-").map(Number);
+      const parsed = new Date(Date.UTC(year ?? 0, (month ?? 0) - 1, day ?? 0));
+      return parsed.toISOString().slice(0, 10) === value;
+    }, "Use a real calendar date."),
 });
 
 export const mentisMetricsSchema = z.object({
@@ -40,7 +50,11 @@ export const mentisMetricsSchema = z.object({
 });
 
 export const monthlyAssessmentsSchema = z.object({
+  /** Reference to the conditioning assessment resolved for this athlete/month. */
+  conditioningAssessmentId: z.string().optional(),
   conditioningPlan: z.string(),
+  /** Reference to the active conditioning programme resolved for this month. */
+  conditioningProgrammeId: z.string().optional(),
   conditioningTests: z.array(
     z.object({
       id: z.string(),
@@ -84,6 +98,23 @@ export const monthlyAssessmentsSchema = z.object({
   ringShotStrengths: stringList,
 });
 
+/**
+ * Where a monthly report's inputs came from. Set by the monthly cycle
+ * workflow; reports written outside a cycle leave it unset.
+ */
+export const monthlyReportSourceReferencesSchema = z.object({
+  conditioningAssessmentId: z.string().optional(),
+  conditioningProgrammeId: z.string().optional(),
+  cycleId: z.string().optional(),
+  equipmentSetupId: z.string().optional(),
+  trainingPlanId: z.string().optional(),
+  weeklyReportIds: z.array(z.string()).optional(),
+});
+
+export type MonthlyReportSourceReferences = z.infer<
+  typeof monthlyReportSourceReferencesSchema
+>;
+
 export const monthlyReportSchema = z.object({
   actionItems: stringList,
   assessments: monthlyAssessmentsSchema,
@@ -100,6 +131,7 @@ export const monthlyReportSchema = z.object({
     weeklyArrowTargets: z.array(nonNegative),
   }),
   performanceHighlights: z.string(),
+  sourceReferences: monthlyReportSourceReferencesSchema.optional(),
   status: monthlyReportStatusSchema,
   updatedAt: z.string(),
 });

@@ -5,6 +5,7 @@ import {
 } from "bun:test";
 
 import type { Athlete } from "@/features/athlete/athlete-types";
+import type { SeasonTrainingPlan } from "@/features/training-plan/training-plan-types";
 
 import { dashboardMetrics } from "./dashboard-metrics";
 import type { WeeklyPerformanceReport } from "./report-types";
@@ -39,13 +40,48 @@ const weekly = (
   ...overrides,
 });
 
+const trainingPlan = (
+  overrides: Partial<SeasonTrainingPlan> = {}
+): SeasonTrainingPlan => ({
+  athleteId: "a1",
+  createdAt: "2026-06-01T00:00:00.000Z",
+  endsOn: "2026-07-31",
+  events: [],
+  id: "p1",
+  name: "Season 2026",
+  startsOn: "2026-07-01",
+  status: "active",
+  strategyNotes: "",
+  updatedAt: "2026-06-01T00:00:00.000Z",
+  weeks: [
+    {
+      arrowsPlanned: 1200,
+      id: "w1",
+      technicalFocus: "",
+      trainingDaysPlanned: 6,
+      weekStart: "2026-07-06",
+    },
+    {
+      arrowsPlanned: 1400,
+      id: "w2",
+      technicalFocus: "",
+      trainingDaysPlanned: 6,
+      weekStart: "2026-07-13",
+    },
+  ],
+  ...overrides,
+});
+
 const run = (
   athletes: Athlete[],
   reports: WeeklyPerformanceReport[],
-  filters: Partial<Parameters<typeof dashboardMetrics>[0]["filters"]> = {}
+  filters: Partial<Parameters<typeof dashboardMetrics>[0]["filters"]> = {},
+  plans: SeasonTrainingPlan[] = []
 ) =>
   dashboardMetrics({
     athletes,
+    conditioningAssessments: [],
+    conditioningProgrammes: [],
     equipmentFor: () => [],
     filters: {
       athleteId: "",
@@ -56,6 +92,7 @@ const run = (
       ...filters,
     },
     monthly: [],
+    plans,
     weekly: reports,
   });
 
@@ -113,5 +150,61 @@ bunDescribe("dashboard metrics", () => {
     bunExpect(
       result.attentionRows.some((row) => row.reason === "Score decline")
     ).toBe(false);
+  });
+});
+
+bunDescribe("arrow load with a training plan", () => {
+  bunTest("keeps a planned week with no report as missing, not zero", () => {
+    const { loadPoints } = run(
+      [athlete({})],
+      [weekly({ arrowsPlanned: 1200, arrowsShot: 1100 })],
+      {},
+      [trainingPlan()]
+    );
+    bunExpect(loadPoints).toHaveLength(2);
+    bunExpect(loadPoints[0]?.shot).toBe(1100);
+    bunExpect(loadPoints[1]?.planned).toBe(1400);
+    bunExpect(loadPoints[1]?.shot).toBeUndefined();
+  });
+
+  bunTest("prefers the report's snapshot over the current plan target", () => {
+    // The plan says 1200 for this week, the report recorded 900 at the time.
+    const { load, loadPoints } = run(
+      [athlete({})],
+      [weekly({ arrowsPlanned: 900, arrowsShot: 800 })],
+      {},
+      [trainingPlan()]
+    );
+    bunExpect(loadPoints[0]?.planned).toBe(900);
+    bunExpect(load.planned).toBe(900 + 1400);
+  });
+
+  bunTest("counts planned weeks from every athlete in scope", () => {
+    const { loadPoints } = run(
+      [athlete({}), athlete({ athleteId: "AH-002", id: "a2" })],
+      [],
+      {},
+      [trainingPlan(), trainingPlan({ athleteId: "a2", id: "p2" })]
+    );
+    bunExpect(loadPoints[0]?.planned).toBe(2400);
+  });
+
+  bunTest("ignores plans for athletes filtered out of the dashboard", () => {
+    const { loadPoints } = run(
+      [athlete({}), athlete({ athleteId: "AH-002", id: "a2" })],
+      [],
+      { athleteId: "a1" },
+      [trainingPlan(), trainingPlan({ athleteId: "a2", id: "p2" })]
+    );
+    bunExpect(loadPoints[0]?.planned).toBe(1200);
+  });
+
+  bunTest("still reports load for entries with no plan at all", () => {
+    const { load, loadPoints } = run(
+      [athlete({})],
+      [weekly({ arrowsPlanned: 500, arrowsShot: 400 })]
+    );
+    bunExpect(loadPoints).toHaveLength(1);
+    bunExpect(load).toEqual({ completion: 80, planned: 500, shot: 400 });
   });
 });

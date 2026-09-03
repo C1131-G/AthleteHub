@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
-      data-slot="table-container"
+      aria-label="Scrollable table"
       className="relative w-full overflow-x-auto"
+      data-slot="table-container"
+      tabIndex={0}
     >
       <table
         data-slot="table"

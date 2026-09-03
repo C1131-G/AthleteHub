@@ -35,8 +35,8 @@ import { EquipmentSkeleton } from "./equipment-skeleton";
 
 interface EquipmentFormProps {
   athleteId: string;
-  previousSetup?: EquipmentSetup;
-  setup?: EquipmentSetup;
+  previousSetup?: EquipmentSetup | undefined;
+  setup?: EquipmentSetup | undefined;
 }
 
 type FormErrors = Partial<
@@ -87,7 +87,7 @@ const EquipmentFormFields = ({
   athlete: Athlete;
   carriedFrom: EquipmentSetup | undefined;
   previousSetup: EquipmentSetup | undefined;
-  setup?: EquipmentSetup;
+  setup?: EquipmentSetup | undefined;
 }) => {
   const athleteId = athlete.id;
   const router = useRouter();

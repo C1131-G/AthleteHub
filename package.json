@@ -63,5 +63,10 @@
     "tailwindcss": "^4",
     "typescript": "7.0.2",
     "ultracite": "7.10.7"
+  },
+  "intent": {
+    "skills": [
+      "@tanstack/*"
+    ]
   }
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -12,11 +14,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { trainingPlanHref } from "@/features/training-plan/training-plan-routes";
+import type {
+  SeasonTrainingPlan,
+  TrainingPlanWeek,
+} from "@/features/training-plan/training-plan-types";
 
 import { weeklyEntryStatuses } from "../report-types";
 import type { WeeklyEntryStatus } from "../report-types";
 import { AthletePicker } from "./athlete-picker";
-import { errorId } from "./report-form-errors";
+import { errorId, fieldProps } from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
 
 export interface WeeklyFormState {
@@ -39,15 +46,22 @@ type UpdateField = <K extends keyof WeeklyFormState>(
   value: WeeklyFormState[K]
 ) => void;
 
+export interface PlanWeekMatch {
+  plan: SeasonTrainingPlan;
+  week: TrainingPlanWeek;
+}
+
 interface WeeklyReportFieldsProps {
   errors: ReportFormErrors;
   form: WeeklyFormState;
+  planWeek?: PlanWeekMatch | undefined;
   update: UpdateField;
 }
 
 export const WeeklyReportFields = ({
   errors,
   form,
+  planWeek,
   update,
 }: WeeklyReportFieldsProps) => {
   const showScores =
@@ -62,23 +76,27 @@ export const WeeklyReportFields = ({
           <Field>
             <FieldLabel htmlFor="weekly-athlete">Athlete</FieldLabel>
             <AthletePicker
+              errorMessageId={errorId("weekly-athlete")}
               id="weekly-athlete"
-              value={form.athleteId}
+              invalid={Boolean(errors["weekly-athlete"])}
               onChange={(value) => update("athleteId", value)}
+              value={form.athleteId}
             />
             <FieldError id={errorId("weekly-athlete")}>
-              {errors.athleteId}
+              {errors["weekly-athlete"]}
             </FieldError>
           </Field>
           <Field>
             <FieldLabel htmlFor="week-start">Week start</FieldLabel>
             <DatePicker
+              errorMessageId={errorId("week-start")}
               id="week-start"
-              value={form.weekStart}
+              invalid={Boolean(errors["week-start"])}
               onChange={(value) => update("weekStart", value)}
+              value={form.weekStart}
             />
             <FieldError id={errorId("week-start")}>
-              {errors.weekStart}
+              {errors["week-start"]}
             </FieldError>
           </Field>
           <Field>
@@ -107,17 +125,26 @@ export const WeeklyReportFields = ({
           <Field>
             <FieldLabel htmlFor="weekly-distance">Distance (m)</FieldLabel>
             <Input
+              {...fieldProps("weekly-distance", errors)}
+              disabled={!showScores}
               id="weekly-distance"
               inputMode="numeric"
-              value={form.distanceM}
               onChange={(event) => update("distanceM", event.target.value)}
-              disabled={!showScores}
+              value={form.distanceM}
             />
+            <FieldError id={errorId("weekly-distance")}>
+              {errors["weekly-distance"]}
+            </FieldError>
           </Field>
         </CardContent>
       </Card>
       {showScores ? (
-        <ScoringFields form={form} update={update} />
+        <ScoringFields
+          errors={errors}
+          form={form}
+          planWeek={planWeek}
+          update={update}
+        />
       ) : (
         <AbsenceField errors={errors} form={form} update={update} />
       )}
@@ -154,9 +181,11 @@ export const WeeklyReportFields = ({
 };
 
 const ScoringFields = ({
+  errors,
   form,
+  planWeek,
   update,
-}: Omit<WeeklyReportFieldsProps, "errors">) => (
+}: WeeklyReportFieldsProps) => (
   <Card>
     <CardHeader>
       <CardTitle>Scoring and load</CardTitle>
@@ -166,54 +195,84 @@ const ScoringFields = ({
         <Field>
           <FieldLabel htmlFor="max-score">Maximum score per round</FieldLabel>
           <Input
+            {...fieldProps("max-score", errors)}
             id="max-score"
             inputMode="numeric"
-            value={form.maxScore}
             onChange={(event) => update("maxScore", event.target.value)}
+            value={form.maxScore}
           />
+          <FieldError id={errorId("max-score")}>
+            {errors["max-score"]}
+          </FieldError>
         </Field>
         <Field>
           <FieldLabel htmlFor="training-days">Training days</FieldLabel>
           <Input
+            {...fieldProps("training-days", errors)}
             id="training-days"
             inputMode="numeric"
-            value={form.trainingDays}
             onChange={(event) => update("trainingDays", event.target.value)}
+            value={form.trainingDays}
           />
+          <FieldError id={errorId("training-days")}>
+            {errors["training-days"]}
+          </FieldError>
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-4">
         {form.scores.map((score, fieldIndex) => {
           const field = ["one", "two", "three", "four"][fieldIndex] ?? "one";
+          // A scores error covers the whole set, so it hangs off the first box.
+          const invalid = field === "one" && Boolean(errors["score-one"]);
           return (
             <Field key={field}>
               <FieldLabel htmlFor={`score-${field}`}>
                 Scoring {fieldIndex + 1}
               </FieldLabel>
               <Input
+                aria-errormessage={invalid ? errorId("score-one") : undefined}
+                aria-invalid={invalid || undefined}
                 id={`score-${field}`}
                 inputMode="numeric"
-                value={score}
                 onChange={(event) =>
                   update(
                     "scores",
                     form.scores.with(fieldIndex, event.target.value)
                   )
                 }
+                value={score}
               />
             </Field>
           );
         })}
       </div>
+      <FieldError id={errorId("score-one")}>{errors["score-one"]}</FieldError>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="arrows-planned">Arrows planned</FieldLabel>
           <Input
             id="arrows-planned"
             inputMode="numeric"
-            value={form.arrowsPlanned}
             onChange={(event) => update("arrowsPlanned", event.target.value)}
+            readOnly={Boolean(planWeek)}
+            value={
+              planWeek
+                ? String(planWeek.week.arrowsPlanned)
+                : form.arrowsPlanned
+            }
           />
+          {planWeek ? (
+            <p className="text-muted-foreground text-xs">
+              Target from{" "}
+              <Link
+                className="underline underline-offset-2"
+                href={trainingPlanHref(planWeek.plan.id)}
+              >
+                {planWeek.plan.name}
+              </Link>
+              . Edit the plan to change it.
+            </p>
+          ) : null}
         </Field>
         <Field>
           <FieldLabel htmlFor="arrows-shot">Arrows shot</FieldLabel>
@@ -241,11 +300,14 @@ const AbsenceField = ({
           Leave or absence reason
         </FieldLabel>
         <Textarea
+          {...fieldProps("absence-reason", errors)}
           id="absence-reason"
-          value={form.absenceReason}
           onChange={(event) => update("absenceReason", event.target.value)}
+          value={form.absenceReason}
         />
-        <FieldError>{errors.absenceReason}</FieldError>
+        <FieldError id={errorId("absence-reason")}>
+          {errors["absence-reason"]}
+        </FieldError>
       </Field>
     </CardContent>
   </Card>

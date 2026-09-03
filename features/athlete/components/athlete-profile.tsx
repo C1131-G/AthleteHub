@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  BarbellIcon,
   ChartLineUpIcon,
   PencilSimpleIcon,
+  TargetIcon,
   UserFocusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
@@ -20,7 +22,9 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { conditioningHref } from "@/features/conditioning/conditioning-routes";
 import { equipmentHref } from "@/features/equipment/equipment-routes";
+import { trainingPlansHref } from "@/features/training-plan/training-plan-routes";
 import { formatDate, initials } from "@/lib/format";
 
 import { categoryLabel, statusLabel } from "../athlete-labels";
@@ -91,6 +95,18 @@ export const AthleteProfile = ({ athleteId }: { athleteId: string }) => {
           href={`/reports?athleteId=${athlete.id}`}
         >
           <ChartLineUpIcon /> Reports
+        </Link>
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          href={trainingPlansHref(athlete.id)}
+        >
+          <TargetIcon /> Training plan
+        </Link>
+        <Link
+          className={buttonVariants({ variant: "outline" })}
+          href={conditioningHref(athlete.id)}
+        >
+          <BarbellIcon /> Conditioning
         </Link>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
