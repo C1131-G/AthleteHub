@@ -25,3 +25,33 @@ model OwnerAccount {
   createdAt      DateTime
   updatedAt      DateTime
 }
+
+model ArcherySession {
+  id               String       @id
+  athleteId        String
+  date             String
+  kind             String
+  status           String
+  formatSnapshot   String
+  equipmentSetupId String?
+  plannedArrows    Int?
+  actualArrows     Int?
+  technicalFocus   String
+  notes            String
+  createdAt        DateTime
+  updatedAt        DateTime
+  ends             ArcheryEnd[]
+
+  @@index([athleteId, date])
+}
+
+model ArcheryEnd {
+  id         String         @id
+  sessionId  String
+  sequence   Int
+  arrowCount Int
+  score      Int
+  session    ArcherySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, sequence])
+}

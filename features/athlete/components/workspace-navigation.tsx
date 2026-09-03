@@ -28,6 +28,7 @@ interface NavigationItem {
     | "/conditioning"
     | "/monthly-cycles"
     | "/reports"
+    | "/sessions/new"
     | "/training-plans";
   icon: ComponentType<{ "aria-hidden"?: boolean }>;
   label: string;
@@ -39,6 +40,7 @@ const items: NavigationItem[] = [
   { href: "/athletes", icon: UsersThreeIcon, label: "Athletes" },
   { href: "/athletes/equipment", icon: WrenchIcon, label: "Equipment" },
   { href: "/reports", icon: NotebookIcon, label: "Reports" },
+  { href: "/sessions/new", icon: TargetIcon, label: "Record session" },
   { href: "/conditioning", icon: BarbellIcon, label: "Conditioning" },
   { href: "/training-plans", icon: TargetIcon, label: "Training Load" },
 ];

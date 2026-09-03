@@ -16,7 +16,41 @@ export interface DatabaseContext {
   runTransaction: (
     operation: (transaction: DatabaseContext) => Promise<void>
   ) => Promise<void>;
+  sessions: {
+    get: (sessionId: string) => Promise<SessionRecord | undefined>;
+    listByAthlete: (athleteId: string) => Promise<SessionRecord[]>;
+    save: (input: SessionRecordInput) => Promise<SessionRecord>;
+  };
 }
+
+export interface SessionEndRecord {
+  arrowCount: number;
+  score: number;
+}
+
+export interface SessionRecord {
+  actualArrows: number | null;
+  athleteId: string;
+  createdAt: Date;
+  date: string;
+  ends: SessionEndRecord[];
+  equipmentSetupId: string | null;
+  formatSnapshot: string;
+  id: string;
+  kind: string;
+  notes: string;
+  plannedArrows: number | null;
+  status: string;
+  technicalFocus: string;
+  updatedAt: Date;
+}
+
+export type SessionRecordInput = Omit<
+  SessionRecord,
+  "createdAt" | "ends" | "updatedAt"
+> & {
+  ends: SessionEndRecord[];
+};
 
 export interface OwnerAccount {
   createdAt: Date;
@@ -112,6 +146,36 @@ const migrations = [
     )`,
     ],
   },
+  {
+    name: "0002_archery_sessions",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS "ArcherySession" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "date" TEXT NOT NULL,
+      "kind" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "formatSnapshot" TEXT NOT NULL,
+      "equipmentSetupId" TEXT,
+      "plannedArrows" INTEGER,
+      "actualArrows" INTEGER,
+      "technicalFocus" TEXT NOT NULL,
+      "notes" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE TABLE IF NOT EXISTS "ArcheryEnd" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "sessionId" TEXT NOT NULL,
+      "sequence" INTEGER NOT NULL,
+      "arrowCount" INTEGER NOT NULL,
+      "score" INTEGER NOT NULL,
+      CONSTRAINT "ArcheryEnd_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "ArcherySession" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "ArcheryEnd_sessionId_sequence_key" ON "ArcheryEnd" ("sessionId", "sequence")`,
+      `CREATE INDEX IF NOT EXISTS "ArcherySession_athleteId_date_idx" ON "ArcherySession" ("athleteId", "date")`,
+    ],
+  },
 ] as const;
 
 export const createDatabaseContext = async ({
@@ -165,6 +229,112 @@ export const createDatabaseContext = async ({
       select: { id: true, label: true },
     });
 
+  const readSession = async (
+    sessionId: string
+  ): Promise<SessionRecord | undefined> => {
+    const record = await prisma.archerySession.findUnique({
+      include: { ends: { orderBy: { sequence: "asc" } } },
+      where: { id: sessionId },
+    });
+    return record
+      ? {
+          ...record,
+          ends: record.ends.map(({ arrowCount, score }) => ({
+            arrowCount,
+            score,
+          })),
+        }
+      : undefined;
+  };
+
+  const listSessions = async (athleteId: string): Promise<SessionRecord[]> => {
+    const records = await prisma.archerySession.findMany({
+      include: { ends: { orderBy: { sequence: "asc" } } },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      where: { athleteId },
+    });
+    return records.map((record) => ({
+      ...record,
+      ends: record.ends.map(({ arrowCount, score }) => ({ arrowCount, score })),
+    }));
+  };
+
+  const saveSession = async (
+    input: SessionRecordInput
+  ): Promise<SessionRecord> => {
+    const now = new Date();
+    const record = await prisma.$transaction(async (transaction) => {
+      const existing = await transaction.archerySession.findUnique({
+        where: { id: input.id },
+      });
+      if (existing) {
+        await transaction.archerySession.update({
+          data: {
+            actualArrows: input.actualArrows,
+            date: input.date,
+            equipmentSetupId: input.equipmentSetupId,
+            formatSnapshot: input.formatSnapshot,
+            kind: input.kind,
+            notes: input.notes,
+            plannedArrows: input.plannedArrows,
+            status: input.status,
+            technicalFocus: input.technicalFocus,
+            updatedAt: now,
+          },
+          where: { id: input.id },
+        });
+        await transaction.archeryEnd.deleteMany({
+          where: { sessionId: input.id },
+        });
+        await Promise.all(
+          input.ends.map((end, index) =>
+            transaction.archeryEnd.create({
+              data: {
+                ...end,
+                id: `${input.id}-end-${index + 1}`,
+                sequence: index + 1,
+                sessionId: input.id,
+              },
+            })
+          )
+        );
+      } else {
+        await transaction.archerySession.create({
+          data: {
+            actualArrows: input.actualArrows,
+            athleteId: input.athleteId,
+            createdAt: now,
+            date: input.date,
+            ends: {
+              create: input.ends.map((end, index) => ({
+                ...end,
+                id: `${input.id}-end-${index + 1}`,
+                sequence: index + 1,
+              })),
+            },
+            equipmentSetupId: input.equipmentSetupId,
+            formatSnapshot: input.formatSnapshot,
+            id: input.id,
+            kind: input.kind,
+            notes: input.notes,
+            plannedArrows: input.plannedArrows,
+            status: input.status,
+            technicalFocus: input.technicalFocus,
+            updatedAt: now,
+          },
+        });
+      }
+      return transaction.archerySession.findUniqueOrThrow({
+        include: { ends: { orderBy: { sequence: "asc" } } },
+        where: { id: input.id },
+      });
+    });
+    return {
+      ...record,
+      ends: record.ends.map(({ arrowCount, score }) => ({ arrowCount, score })),
+    };
+  };
+
   const context: DatabaseContext = {
     close: () => prisma.$disconnect(),
     createTestRecord,
@@ -208,9 +378,99 @@ export const createDatabaseContext = async ({
               });
             },
           },
+          sessions: {
+            get: async (sessionId) => {
+              const record = await transaction.archerySession.findUnique({
+                include: { ends: { orderBy: { sequence: "asc" } } },
+                where: { id: sessionId },
+              });
+              return record
+                ? {
+                    ...record,
+                    ends: record.ends.map(({ arrowCount, score }) => ({
+                      arrowCount,
+                      score,
+                    })),
+                  }
+                : undefined;
+            },
+            listByAthlete: async (athleteId) => {
+              const records = await transaction.archerySession.findMany({
+                include: { ends: { orderBy: { sequence: "asc" } } },
+                orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+                where: { athleteId },
+              });
+              return records.map((record) => ({
+                ...record,
+                ends: record.ends.map(({ arrowCount, score }) => ({
+                  arrowCount,
+                  score,
+                })),
+              }));
+            },
+            save: async (input) => {
+              const now = new Date();
+              const existing = await transaction.archerySession.findUnique({
+                select: { id: true },
+                where: { id: input.id },
+              });
+              if (existing) {
+                await transaction.archeryEnd.deleteMany({
+                  where: { sessionId: input.id },
+                });
+                await transaction.archerySession.update({
+                  data: {
+                    ...input,
+                    ends: {
+                      create: input.ends.map((end, index) => ({
+                        ...end,
+                        id: `${input.id}-end-${index + 1}`,
+                        sequence: index + 1,
+                      })),
+                    },
+                    updatedAt: now,
+                  },
+                  where: { id: input.id },
+                });
+              } else {
+                await transaction.archerySession.create({
+                  data: {
+                    ...input,
+                    createdAt: now,
+                    ends: {
+                      create: input.ends.map((end, index) => ({
+                        ...end,
+                        id: `${input.id}-end-${index + 1}`,
+                        sequence: index + 1,
+                      })),
+                    },
+                    updatedAt: now,
+                  },
+                });
+              }
+              const record = await transaction.archerySession.findUniqueOrThrow(
+                {
+                  include: { ends: { orderBy: { sequence: "asc" } } },
+                  where: { id: input.id },
+                }
+              );
+              return {
+                ...record,
+                ends: record.ends.map(({ arrowCount, score }) => ({
+                  arrowCount,
+                  score,
+                })),
+              };
+            },
+          },
         };
         await operation(transactionalContext);
       });
+    },
+    sessions: {
+      get: readSession,
+      listByAthlete: listSessions,
+      save: saveSession,
     },
   };
 

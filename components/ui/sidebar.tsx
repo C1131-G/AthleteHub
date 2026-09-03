@@ -517,6 +517,8 @@ function SidebarMenuButton({
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
   } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const { isMobile, state } = useSidebar();
+  const tooltipEnabled = state === "collapsed" && !isMobile;
+  const [tooltipOpen, setTooltipOpen] = React.useState(false);
   const comp = useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(
@@ -525,7 +527,8 @@ function SidebarMenuButton({
       },
       props
     ),
-    render: tooltip ? <TooltipTrigger render={render} /> : render,
+    render:
+      tooltip && tooltipEnabled ? <TooltipTrigger render={render} /> : render,
     state: {
       active: isActive,
       sidebar: "menu-button",
@@ -538,6 +541,10 @@ function SidebarMenuButton({
     return comp;
   }
 
+  if (!tooltipEnabled) {
+    return comp;
+  }
+
   if (typeof tooltip === "string") {
     tooltip = {
       children: tooltip,
@@ -545,14 +552,26 @@ function SidebarMenuButton({
   }
 
   return (
-    <Tooltip disabled={state !== "collapsed" || isMobile}>
-      {comp}
-      <TooltipContent
-        side="right"
-        align="center"
-        hidden={state !== "collapsed" || isMobile}
-        {...tooltip}
-      />
+    <Tooltip defaultOpen={false}>
+      <span
+        className="relative block"
+        onBlur={() => setTooltipOpen(false)}
+        onFocus={() => setTooltipOpen(true)}
+        onMouseEnter={() => setTooltipOpen(true)}
+        onMouseLeave={() => setTooltipOpen(false)}
+        onPointerEnter={() => setTooltipOpen(true)}
+        onPointerLeave={() => setTooltipOpen(false)}
+      >
+        {comp}
+        {tooltipOpen ? (
+          <span
+            className="bg-foreground text-background pointer-events-none absolute top-1/2 left-full z-50 ml-2 -translate-y-1/2 rounded-2xl px-3 py-1.5 text-xs whitespace-nowrap"
+            role="tooltip"
+          >
+            {tooltip.children}
+          </span>
+        ) : null}
+      </span>
     </Tooltip>
   );
 }

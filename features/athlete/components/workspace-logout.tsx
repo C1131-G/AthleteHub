@@ -2,10 +2,10 @@
 
 import { SignOutIcon } from "@phosphor-icons/react";
 
-import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
 
 export const WorkspaceLogout = () => (
-  <SidebarMenuItem>
+  <div>
     <SidebarMenuButton
       aria-label="Log out"
       render={
@@ -20,5 +20,5 @@ export const WorkspaceLogout = () => (
       <SignOutIcon aria-hidden="true" />
       <span>Log out</span>
     </SidebarMenuButton>
-  </SidebarMenuItem>
+  </div>
 );

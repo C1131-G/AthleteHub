@@ -16,6 +16,7 @@ let serverProcess;
 let serverOrigin;
 let runtime;
 const authServices = new Map();
+const sessionServices = new Map();
 
 const findFreePort = async () => {
   const probe = createServer();
@@ -195,6 +196,19 @@ const getAuthService = (event) => {
   return service;
 };
 
+const getSessionService = async (event) => {
+  await getAuthService(event).requireSession();
+  let service = sessionServices.get(event.sender.id);
+  if (!service) {
+    service = runtime.createSessionService();
+    sessionServices.set(event.sender.id, service);
+    event.sender.once("destroyed", () =>
+      sessionServices.delete(event.sender.id)
+    );
+  }
+  return service;
+};
+
 const registerBackendIpc = async () => {
   if (runtime) {
     return;
@@ -215,6 +229,22 @@ const registerBackendIpc = async () => {
     getAuthService(event).recover(input)
   );
   ipcMain.handle("auth.logout", (event) => getAuthService(event).logout());
+  ipcMain.handle("sessions.get", async (event, sessionId) => {
+    const service = await getSessionService(event);
+    return service.get(sessionId);
+  });
+  ipcMain.handle("sessions.listByAthlete", async (event, athleteId) => {
+    const service = await getSessionService(event);
+    return service.listByAthlete(athleteId);
+  });
+  ipcMain.handle("sessions.saveDraft", async (event, input) => {
+    const service = await getSessionService(event);
+    return service.saveDraft(input);
+  });
+  ipcMain.handle("sessions.complete", async (event, input) => {
+    const service = await getSessionService(event);
+    return service.complete(input);
+  });
 };
 
 /**
