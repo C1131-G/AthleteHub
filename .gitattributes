@@ -1,0 +1,21 @@
+# Biome formats to LF, so the checkout must not rewrite it to CRLF. Without
+# this, `core.autocrlf=true` on Windows makes `bun run check` fail on every
+# file git touches, while CI on Linux sees no problem.
+* text=auto eol=lf
+
+# Binary files git must never translate.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary
+*.exe binary
+*.dll binary
+*.node binary
+*.db binary
+*.sqlite binary
