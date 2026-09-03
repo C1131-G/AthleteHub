@@ -23,6 +23,7 @@ import {
 import { MAIN_CONTENT_ID, RouteFocus } from "./route-focus";
 import { RouteTransition } from "./route-transition";
 import { StoreHydrator } from "./store-hydrator";
+import { WorkspaceLogout } from "./workspace-logout";
 import {
   WorkspaceNavigation,
   WorkspaceNavigationSkeleton,
@@ -77,6 +78,7 @@ export const AthleteShellClient = ({
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
+            <WorkspaceLogout />
             <div className="flex justify-center group-data-[collapsible=icon]:hidden">
               <ThemeSwitcher />
             </div>
