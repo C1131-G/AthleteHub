@@ -1,0 +1,76 @@
+name: Release
+
+# Tag a commit as `v0.1.0` and push it to build every installer and attach it to
+# a draft GitHub release. `workflow_dispatch` builds the same matrix without
+# publishing, for verifying a packaging change before it is tagged.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # One broken platform should not hide the artifacts of the others.
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            flags: --win --x64
+          - name: linux-x64
+            os: ubuntu-latest
+            flags: --linux --x64
+          - name: macos-x64
+            os: macos-13
+            flags: --mac --x64
+          - name: macos-arm64
+            os: macos-14
+            flags: --mac --arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # `@libsql` resolves a prebuilt binary for the current platform, so every
+      # installer is built on the OS and architecture it targets.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build renderer and backend bundle
+        run: bun run dist:prepare
+
+      - name: Package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # No Apple Developer identity is configured; skip signing instead of
+          # failing the macOS jobs.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: >-
+          bunx electron-builder ${{ matrix.flags }} --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AthleteHub-${{ matrix.name }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            release/*.exe
+            release/*.zip
+            release/*.dmg
+            release/*.AppImage
+            release/*.deb
+            release/*.tar.gz
