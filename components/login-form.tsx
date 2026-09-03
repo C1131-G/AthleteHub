@@ -1,17 +1,33 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { desktopAuth } from "@/lib/desktop-auth";
 import { cn } from "@/lib/utils";
 
 type LoginFormProps = React.ComponentProps<"div">;
 
 const LoginForm = ({ className, ...props }: LoginFormProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState("");
+  const loginMutation = useMutation({
+    mutationFn: (input: { email: string; password: string }) => {
+      const auth = desktopAuth();
+      if (!auth) {
+        throw new Error("Open the AthleteHub desktop app to log in.");
+      }
+      return auth.login(input);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["auth"] });
+      router.push("/dashboard");
+    },
+  });
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -22,7 +38,11 @@ const LoginForm = ({ className, ...props }: LoginFormProps) => {
             onSubmit={(event) => {
               event.preventDefault();
               setError("");
-              router.push("/dashboard");
+              const formData = new FormData(event.currentTarget);
+              loginMutation.mutate({
+                email: String(formData.get("email") ?? ""),
+                password: String(formData.get("password") ?? ""),
+              });
             }}
           >
             <div className="flex flex-col items-center gap-2 text-center">
@@ -69,40 +89,14 @@ const LoginForm = ({ className, ...props }: LoginFormProps) => {
               />
             </div>
 
-            <Button type="submit">Log in</Button>
-            {error && (
+            <Button type="submit" disabled={loginMutation.isPending}>
+              {loginMutation.isPending ? "Logging in…" : "Log in"}
+            </Button>
+            {(error || loginMutation.error) && (
               <p role="alert" className="text-destructive text-sm">
-                {error}
+                {error || loginMutation.error?.message}
               </p>
             )}
-
-            <div className="text-muted-foreground before:bg-border after:bg-border flex items-center gap-3 text-sm before:h-px before:flex-1 after:h-px after:flex-1">
-              Or continue with
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <Button
-                variant="outline"
-                type="button"
-                aria-label="Log in with Apple"
-              >
-                Apple
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                aria-label="Log in with Google"
-              >
-                Google
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                aria-label="Log in with Meta"
-              >
-                Meta
-              </Button>
-            </div>
 
             <p className="text-muted-foreground text-center text-sm">
               Don&apos;t have an account?{" "}

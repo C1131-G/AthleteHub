@@ -22,6 +22,8 @@ extraResources:
     # restores it.
     filter:
       - "**/*"
+  - from: .next/electron-backend.mjs
+    to: backend/electron-backend.mjs
 
 asar: true
 afterPack: scripts/after-pack.mjs

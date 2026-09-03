@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
-import { AuthPlaceholder } from "@/components/auth-placeholder";
+import { RecoveryForm } from "@/components/recovery-form";
 
 export const metadata: Metadata = { title: "Forgot password | AthleteHub" };
 
-const ForgotPasswordPage = () => <AuthPlaceholder title="Forgot password" />;
+const ForgotPasswordPage = () => <RecoveryForm />;
 
 export default ForgotPasswordPage;

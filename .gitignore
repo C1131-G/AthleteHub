@@ -43,3 +43,7 @@ next-env.d.ts
 
 # electron
 /release/
+
+# Local backend bundle experiments
+/.tmp-backend-build/
+/electron/generated/

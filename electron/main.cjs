@@ -1,9 +1,10 @@
-const { app, BrowserWindow, nativeTheme, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
 const { existsSync, readFileSync } = require("node:fs");
 const { createServer } = require("node:net");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 const { setTimeout: delay } = require("node:timers/promises");
 
 const HOST = "127.0.0.1";
@@ -13,6 +14,8 @@ const isProduction = app.isPackaged || isProductionPreview;
 
 let serverProcess;
 let serverOrigin;
+let runtime;
+const authServices = new Map();
 
 const findFreePort = async () => {
   const probe = createServer();
@@ -173,6 +176,47 @@ const applyNavigationPolicy = (contents) => {
   });
 };
 
+const resolveBackendEntry = () =>
+  app.isPackaged
+    ? path.join(process.resourcesPath, "backend", "electron-backend.mjs")
+    : path.join(PROJECT_ROOT, ".next", "electron-backend.mjs");
+
+const getAuthService = (event) => {
+  const senderUrl = event.sender.getURL();
+  if (!serverOrigin || !senderUrl.startsWith(`${serverOrigin}/`)) {
+    throw new Error("Untrusted renderer.");
+  }
+  let service = authServices.get(event.sender.id);
+  if (!service) {
+    service = runtime.createAuthService();
+    authServices.set(event.sender.id, service);
+    event.sender.once("destroyed", () => authServices.delete(event.sender.id));
+  }
+  return service;
+};
+
+const registerBackendIpc = async () => {
+  if (runtime) {
+    return;
+  }
+  const backendModule = await import(pathToFileURL(resolveBackendEntry()).href);
+  runtime = await backendModule.createRuntime(
+    `file:${path.join(app.getPath("userData"), "athletehub.db")}`
+  );
+
+  ipcMain.handle("auth.status", (event) => getAuthService(event).status());
+  ipcMain.handle("auth.setup", (event, input) =>
+    getAuthService(event).setup(input)
+  );
+  ipcMain.handle("auth.login", (event, input) =>
+    getAuthService(event).login(input)
+  );
+  ipcMain.handle("auth.recover", (event, input) =>
+    getAuthService(event).recover(input)
+  );
+  ipcMain.handle("auth.logout", (event) => getAuthService(event).logout());
+};
+
 /**
  * Paint the window in the app's own background colour so the frame that appears
  * before the first render doesn't flash white on a dark desktop.
@@ -204,6 +248,8 @@ const createWindow = async () => {
   mainWindow.show();
 
   const origin = await ensureServer();
+
+  await registerBackendIpc();
 
   applyNavigationPolicy(mainWindow.webContents);
 
@@ -254,4 +300,9 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("before-quit", stopServer);
+app.on("before-quit", async () => {
+  if (runtime) {
+    await runtime.close();
+  }
+  stopServer();
+});

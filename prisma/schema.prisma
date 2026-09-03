@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../electron/generated"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model BackendProbe {
+  id        String   @id
+  label     String
+  createdAt DateTime
+}
+
+model OwnerAccount {
+  id             String    @id
+  email          String    @unique
+  passwordHash   Bytes
+  passwordSalt   Bytes
+  recoveryHash   Bytes
+  recoverySalt   Bytes
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime
+  updatedAt      DateTime
+}
