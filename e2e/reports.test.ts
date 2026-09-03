@@ -26,8 +26,9 @@ playwrightTest.describe("reporting workspace", () => {
     await playwrightExpect(
       page.getByRole("tab", { name: /Monthly reports/ })
     ).toHaveAttribute("aria-selected", "true");
-    await playwrightExpect(page.locator("#report-month")).toHaveValue(
-      "2026-07"
+    // The month filter is a picker now, so its trigger shows a formatted label.
+    await playwrightExpect(page.locator("#report-month")).toHaveText(
+      "July 2026"
     );
   });
 
@@ -82,7 +83,9 @@ playwrightTest.describe("reporting workspace", () => {
     async ({ page }) => {
       await page.goto("/reports/monthly/new");
       // The month is blank by default and would otherwise be the first error.
-      await page.locator("#report-month").fill("2026-08");
+      // It opens on the current year, so the month button is enough.
+      await page.locator("#report-month").click();
+      await page.getByRole("button", { exact: true, name: "Aug" }).click();
       await page.locator("#arrow-targets").fill("1200, oops");
       await page.getByRole("button", { name: /Save/ }).click();
 

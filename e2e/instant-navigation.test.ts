@@ -233,6 +233,14 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
       `Equipment details is instant from ${sourceRoute}`,
       async ({ page }) => {
         await page.goto(sourceRoute);
+        // On mobile the sidebar is a drawer, so its links are not in the DOM
+        // until it is opened.
+        if ((await page.evaluate(() => innerWidth)) < 500) {
+          await page
+            .getByRole("banner")
+            .getByRole("button", { name: "Toggle Sidebar" })
+            .click();
+        }
         await instant(page, async () => {
           await page
             .getByRole("link", { exact: true, name: "Equipment" })
