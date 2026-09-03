@@ -34,7 +34,7 @@
     "package:win": "bun run dist:prepare && electron-builder --win",
     "prepare": "lefthook install",
     "pretest": "bun run prisma:generate",
-    "pretypecheck": "bun run prisma:generate",
+    "pretypecheck": "bun run prisma:generate && next typegen",
     "prisma:generate": "prisma generate",
     "release": "bun run dist:prepare && electron-builder --publish always",
     "standalone": "bun scripts/prepare-standalone.mjs",
