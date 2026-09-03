@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -102,12 +103,12 @@ export const ProgressPanel = ({ athleteId }: { athleteId: string }) => {
       {selected ? (
         <div className="space-y-3">
           <div className="max-w-sm">
-            <label
+            <Label
               className="mb-1.5 block text-sm font-medium"
               htmlFor="progress-test"
             >
               Test trend
-            </label>
+            </Label>
             <Select
               onValueChange={(value) => setSelectedKey(value ?? "")}
               value={selected.key}

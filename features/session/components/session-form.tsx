@@ -5,8 +5,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { AthletePicker } from "@/features/athlete/athlete-picker";
 
 import type { SessionEndInput, SessionFormat } from "../session-types";
@@ -124,12 +126,7 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="session-date">Date</Label>
-            <Input
-              id="session-date"
-              onChange={(event) => setDate(event.target.value)}
-              type="date"
-              value={date}
-            />
+            <DatePicker id="session-date" onChange={setDate} value={date} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="session-distance">Distance (m)</Label>
@@ -242,8 +239,8 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           <Label className="sr-only" htmlFor="session-notes">
             Coach notes
           </Label>
-          <textarea
-            className="border-input bg-background min-h-28 w-full rounded-md border px-3 py-2 text-sm"
+          <Textarea
+            className="min-h-28"
             id="session-notes"
             onChange={(event) => setNotes(event.target.value)}
             value={notes}

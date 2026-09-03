@@ -13,6 +13,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -94,9 +95,9 @@ export const AthleteList = () => {
                 className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
                 aria-hidden="true"
               />
-              <label className="sr-only" htmlFor="athlete-search">
+              <Label className="sr-only" htmlFor="athlete-search">
                 Search athletes
-              </label>
+              </Label>
               <Input
                 id="athlete-search"
                 value={query}

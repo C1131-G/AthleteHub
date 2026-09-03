@@ -5,13 +5,15 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { desktopAuth } from "@/lib/desktop-auth";
 
 export const SetupForm = () => {
   const [recoveryCode, setRecoveryCode] = useState("");
   const queryClient = useQueryClient();
   const setupMutation = useMutation({
-    mutationFn: (input: { email: string; password: string }) => {
+    mutationFn: (input: { password: string; username: string }) => {
       const auth = desktopAuth();
       if (!auth) {
         throw new Error(
@@ -34,8 +36,8 @@ export const SetupForm = () => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
           setupMutation.mutate({
-            email: String(formData.get("email") ?? ""),
             password: String(formData.get("password") ?? ""),
+            username: String(formData.get("username") ?? ""),
           });
         }}
       >
@@ -45,33 +47,28 @@ export const SetupForm = () => {
             Create the single owner account for this installation.
           </p>
         </div>
-        <label
-          className="flex flex-col gap-2 text-sm font-medium"
-          htmlFor="email"
-        >
-          Email
-          <input
-            className="border-input bg-input/30 h-9 rounded-4xl border px-3"
-            id="email"
-            name="email"
+        <Field>
+          <FieldLabel htmlFor="username">Username</FieldLabel>
+          <Input
+            autoComplete="username"
+            id="username"
+            maxLength={32}
+            minLength={3}
+            name="username"
             required
-            type="email"
+            type="text"
           />
-        </label>
-        <label
-          className="flex flex-col gap-2 text-sm font-medium"
-          htmlFor="password"
-        >
-          Password
-          <input
-            className="border-input bg-input/30 h-9 rounded-4xl border px-3"
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <Input
             id="password"
             minLength={8}
             name="password"
             required
             type="password"
           />
-        </label>
+        </Field>
         <Button
           disabled={setupMutation.isPending || Boolean(recoveryCode)}
           type="submit"

@@ -1,5 +1,7 @@
 "use client";
 
+import { Label } from "@/components/ui/label";
+import { MonthPicker } from "@/components/ui/month-picker";
 import {
   Select,
   SelectContent,
@@ -29,16 +31,14 @@ export const DashboardFilters = ({
   updateFilter: (param: string, value: string) => void;
 }) => (
   <div className="flex flex-wrap items-end gap-3">
-    <div>
-      <label className="text-sm font-medium" htmlFor="dashboard-month">
+    <div className="min-w-44">
+      <Label className="mb-1" htmlFor="dashboard-month">
         Month
-      </label>
-      <input
+      </Label>
+      <MonthPicker
         id="dashboard-month"
-        type="month"
-        className="border-input bg-input/30 h-9 rounded-4xl border px-3 text-sm"
+        onChange={onMonthChange}
         value={month}
-        onChange={(event) => onMonthChange(event.target.value)}
       />
     </div>
     <DashboardFilter
@@ -83,9 +83,9 @@ const DashboardFilter = ({
   onChange: (value: string) => void;
 }) => (
   <div>
-    <label className="text-sm font-medium" htmlFor={`dashboard-${label}`}>
+    <Label className="mb-1" htmlFor={`dashboard-${label}`}>
       {label}
-    </label>
+    </Label>
     <Select value={value} onValueChange={(next) => onChange(next ?? "")}>
       <SelectTrigger id={`dashboard-${label}`} className="w-full">
         <SelectValue placeholder={`All ${label.toLowerCase()}`} />

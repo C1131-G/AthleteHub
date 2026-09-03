@@ -14,11 +14,15 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import {
   Field,
+  FieldContent,
+  FieldDescription,
   FieldError,
   FieldLabel,
   FieldLegend,
   FieldSet,
+  FieldTitle,
 } from "@/components/ui/field";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { EquipmentItemField } from "@/features/equipment/equipment-item-field";
 import { createEquipmentItems } from "@/features/equipment/equipment-types";
@@ -60,6 +64,18 @@ export const EquipmentStep = ({
   const effective = setupEffectiveBy(context.equipmentSetups, monthEnd);
   const hasPreviousSetup = Boolean(effective);
   const [choice, setChoice] = useState<Choice>("confirm");
+  /** One radio group now owns the choice, so the per-row side effects merge. */
+  const chooseOption = (next: Choice) => {
+    setChoice(next);
+    if (next === "new") {
+      setItems((current) =>
+        current.some((item) => item.value.trim())
+          ? current
+          : createEquipmentItems(effective?.items)
+      );
+    }
+    setErrors({});
+  };
   const [recordedAt, setRecordedAt] = useState(() =>
     new Date().toISOString().slice(0, 10)
   );
@@ -203,7 +219,7 @@ export const EquipmentStep = ({
         </CardHeader>
         {effective ? (
           <CardContent>
-            <Table items={effective.items} />
+            <EquipmentItemsTable items={effective.items} />
           </CardContent>
         ) : null}
       </Card>
@@ -219,9 +235,13 @@ export const EquipmentStep = ({
         <CardContent className="space-y-4">
           <FieldSet>
             <FieldLegend>What applies to this month?</FieldLegend>
-            <div className="mt-2 space-y-2">
+            <RadioGroup
+              className="mt-2"
+              name="equipment-choice"
+              onValueChange={chooseOption}
+              value={choice}
+            >
               <RadioRow
-                checked={choice === "confirm"}
                 description={
                   effective
                     ? `Use the setup recorded ${formatDate(effective.recordedAt)}.`
@@ -229,31 +249,14 @@ export const EquipmentStep = ({
                 }
                 disabled={!effective}
                 label="Use this setup"
-                name="equipment-choice"
-                onChange={() => {
-                  setChoice("confirm");
-                  setErrors({});
-                }}
                 value="confirm"
               />
               <RadioRow
-                checked={choice === "new"}
                 description="Record a new setup with this month's values."
                 label="Record a new setup"
-                name="equipment-choice"
-                onChange={() => {
-                  setChoice("new");
-                  setItems((current) =>
-                    current.some((item) => item.value.trim())
-                      ? current
-                      : createEquipmentItems(effective?.items)
-                  );
-                  setErrors({});
-                }}
                 value="new"
               />
               <RadioRow
-                checked={choice === "no-change"}
                 description={
                   hasPreviousSetup
                     ? "Document that the equipment did not change this month."
@@ -261,14 +264,9 @@ export const EquipmentStep = ({
                 }
                 disabled={!hasPreviousSetup}
                 label="No equipment change"
-                name="equipment-choice"
-                onChange={() => {
-                  setChoice("no-change");
-                  setErrors({});
-                }}
                 value="no-change"
               />
-            </div>
+            </RadioGroup>
           </FieldSet>
           {choice === "new" ? (
             <div className="space-y-4">
@@ -372,41 +370,32 @@ export const EquipmentStep = ({
 };
 
 const RadioRow = ({
-  checked,
   description,
   disabled,
   label,
-  name,
-  onChange,
   value,
 }: {
-  checked: boolean;
   description: string;
   disabled?: boolean;
   label: string;
-  name: string;
-  onChange: () => void;
-  value: string;
+  value: Choice;
 }) => (
-  <div className="has-[input:checked]:border-primary flex cursor-pointer items-start gap-3 rounded-xl border p-3">
-    <input
-      aria-label={label}
-      checked={checked}
-      className="mt-1"
-      disabled={disabled}
-      name={name}
-      onChange={onChange}
-      type="radio"
-      value={value}
-    />
-    <span>
-      <span className="block font-medium">{label}</span>
-      <span className="text-muted-foreground block text-sm">{description}</span>
-    </span>
-  </div>
+  <FieldLabel htmlFor={`equipment-choice-${value}`}>
+    <Field orientation="horizontal">
+      <RadioGroupItem
+        disabled={disabled}
+        id={`equipment-choice-${value}`}
+        value={value}
+      />
+      <FieldContent>
+        <FieldTitle>{label}</FieldTitle>
+        <FieldDescription>{description}</FieldDescription>
+      </FieldContent>
+    </Field>
+  </FieldLabel>
 );
 
-const Table = ({ items }: { items: EquipmentItem[] }) => {
+const EquipmentItemsTable = ({ items }: { items: EquipmentItem[] }) => {
   const rows = items.filter(
     (item) => item.value.trim() || item.requirement.trim()
   );

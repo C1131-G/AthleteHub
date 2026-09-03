@@ -15,6 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { MonthPicker } from "@/components/ui/month-picker";
 import {
   Select,
   SelectContent,
@@ -232,18 +234,16 @@ export const CycleQueue = () => {
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label
-                className="text-muted-foreground mb-1 block text-sm"
+            <div className="min-w-44">
+              <Label
+                className="text-muted-foreground mb-1"
                 htmlFor="queue-month"
               >
                 Month
-              </label>
-              <input
-                className="border-input bg-input/30 h-9 rounded-4xl border px-3 text-sm"
+              </Label>
+              <MonthPicker
                 id="queue-month"
-                onChange={(event) => setParam("month", event.target.value)}
-                type="month"
+                onChange={(value) => setParam("month", value)}
                 value={month}
               />
             </div>
@@ -262,12 +262,12 @@ export const CycleQueue = () => {
               />
             </div>
             <div>
-              <label
+              <Label
                 className="text-muted-foreground mb-1 block text-sm"
                 htmlFor="queue-status"
               >
                 Status
-              </label>
+              </Label>
               <Select
                 onValueChange={(value) => setParam("status", value)}
                 value={statusFilter}
@@ -287,12 +287,12 @@ export const CycleQueue = () => {
               </Select>
             </div>
             <div>
-              <label
+              <Label
                 className="text-muted-foreground mb-1 block text-sm"
                 htmlFor="queue-category"
               >
                 Category
-              </label>
+              </Label>
               <Select
                 onValueChange={(value) => setParam("category", value)}
                 value={categoryFilter}

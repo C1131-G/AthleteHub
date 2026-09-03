@@ -12,7 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MonthPicker } from "@/components/ui/month-picker";
 import {
   Select,
   SelectContent,
@@ -56,7 +57,7 @@ const programmeStatusOptions = [
   { label: "Completed", value: "completed" },
 ];
 
-const labelClass = "mb-1.5 block text-sm font-medium";
+const labelClass = "mb-1.5";
 
 interface WorkspaceFilters {
   assessmentStatus: string;
@@ -172,9 +173,9 @@ export const ConditioningWorkspace = () => {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div>
-            <label className={labelClass} htmlFor="conditioning-athlete">
+            <Label className={labelClass} htmlFor="conditioning-athlete">
               Athlete
-            </label>
+            </Label>
             <AthletePicker
               id="conditioning-athlete"
               value={athleteId}
@@ -182,23 +183,22 @@ export const ConditioningWorkspace = () => {
             />
           </div>
           <div>
-            <label className={labelClass} htmlFor="conditioning-month">
+            <Label className={labelClass} htmlFor="conditioning-month">
               Month
-            </label>
-            <Input
+            </Label>
+            <MonthPicker
               id="conditioning-month"
-              onChange={(event) => setFilter("month", event.target.value)}
-              type="month"
+              onChange={(value) => setFilter("month", value)}
               value={month}
             />
           </div>
           <div>
-            <label
+            <Label
               className={labelClass}
               htmlFor="conditioning-assessment-status"
             >
               Assessment status
-            </label>
+            </Label>
             <Select
               onValueChange={(value) =>
                 setFilter("assessmentStatus", value ?? ALL)
@@ -222,9 +222,9 @@ export const ConditioningWorkspace = () => {
             </Select>
           </div>
           <div>
-            <label className={labelClass} htmlFor="conditioning-phase">
+            <Label className={labelClass} htmlFor="conditioning-phase">
               Programme phase
-            </label>
+            </Label>
             <Select
               onValueChange={(value) => setFilter("phase", value ?? ALL)}
               value={phase || ALL}
@@ -243,12 +243,12 @@ export const ConditioningWorkspace = () => {
             </Select>
           </div>
           <div>
-            <label
+            <Label
               className={labelClass}
               htmlFor="conditioning-programme-status"
             >
               Programme status
-            </label>
+            </Label>
             <Select
               onValueChange={(value) =>
                 setFilter("programmeStatus", value ?? ALL)

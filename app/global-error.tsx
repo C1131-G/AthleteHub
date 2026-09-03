@@ -25,7 +25,14 @@ const GlobalError = ({
         <div style={{ maxWidth: "32rem" }}>
           <h1 style={{ fontSize: "1.5rem" }}>Something went wrong</h1>
           <p>AthleteHub could not load this page.</p>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.75rem",
+              justifyContent: "center",
+            }}
+          >
             <button
               style={{
                 borderRadius: "0.5rem",

@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Field,
   FieldError,
@@ -42,6 +43,10 @@ const emptyValues: FormValues = {
   technicalFocus: "",
   weightKg: undefined,
 };
+
+/** A date of birth cannot be in the future. */
+const today = new Date();
+const noFutureDates = { after: today };
 
 export const AthleteForm = ({ athlete }: { athlete?: Athlete }) => {
   const router = useRouter();
@@ -167,17 +172,19 @@ export const AthleteForm = ({ athlete }: { athlete?: Athlete }) => {
               </Field>
               <Field>
                 <FieldLabel htmlFor="dateOfBirth">Date of birth</FieldLabel>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={values.dateOfBirth}
-                  onChange={(event) =>
-                    update("dateOfBirth", event.target.value)
-                  }
-                  aria-invalid={Boolean(errors.dateOfBirth)}
-                  aria-describedby={
+                <DatePicker
+                  clearable
+                  describedBy={
                     errors.dateOfBirth ? "dateOfBirth-error" : undefined
                   }
+                  disabled={noFutureDates}
+                  endMonth={today}
+                  errorMessageId="dateOfBirth-error"
+                  id="dateOfBirth"
+                  invalid={Boolean(errors.dateOfBirth)}
+                  onChange={(value) => update("dateOfBirth", value)}
+                  placeholder="Select date of birth"
+                  value={values.dateOfBirth}
                 />
                 {errors.dateOfBirth && (
                   <FieldError id="dateOfBirth-error">

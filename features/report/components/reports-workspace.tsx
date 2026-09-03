@@ -15,6 +15,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MonthPicker } from "@/components/ui/month-picker";
 import {
   Select,
   SelectContent,
@@ -52,7 +54,7 @@ const monthlyStatusOptions = [
   { label: "Complete", value: "complete" },
 ];
 
-const labelClass = "mb-1.5 block text-sm font-medium";
+const labelClass = "mb-1.5";
 
 export const ReportsWorkspace = () => {
   const router = useRouter();
@@ -163,9 +165,9 @@ export const ReportsWorkspace = () => {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-4">
           <div>
-            <label className={labelClass} htmlFor="report-search">
+            <Label className={labelClass} htmlFor="report-search">
               Search athlete
-            </label>
+            </Label>
             <Input
               id="report-search"
               onChange={(event) => setQuery(event.target.value)}
@@ -175,9 +177,9 @@ export const ReportsWorkspace = () => {
           </div>
           {tab === "assessments" ? (
             <div>
-              <label className={labelClass} htmlFor="report-assessment-type">
+              <Label className={labelClass} htmlFor="report-assessment-type">
                 Assessment type
-              </label>
+              </Label>
               <Select
                 onValueChange={(value) =>
                   setFilter("assessmentType", value ?? ALL)
@@ -199,9 +201,9 @@ export const ReportsWorkspace = () => {
             </div>
           ) : null}
           <div>
-            <label className={labelClass} htmlFor="report-athlete">
+            <Label className={labelClass} htmlFor="report-athlete">
               Athlete
-            </label>
+            </Label>
             <Select
               onValueChange={(value) => setFilter("athleteId", value ?? ALL)}
               value={athleteId || ALL}
@@ -222,20 +224,19 @@ export const ReportsWorkspace = () => {
             </Select>
           </div>
           <div>
-            <label className={labelClass} htmlFor="report-month">
+            <Label className={labelClass} htmlFor="report-month">
               Month
-            </label>
-            <Input
+            </Label>
+            <MonthPicker
               id="report-month"
-              onChange={(event) => setFilter("month", event.target.value)}
-              type="month"
+              onChange={(value) => setFilter("month", value)}
               value={month}
             />
           </div>
           <div>
-            <label className={labelClass} htmlFor="report-status">
+            <Label className={labelClass} htmlFor="report-status">
               Status
-            </label>
+            </Label>
             <Select
               onValueChange={(value) => setFilter("status", value ?? ALL)}
               value={status || ALL}

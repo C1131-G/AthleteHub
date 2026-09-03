@@ -3,6 +3,14 @@
 import { useMemo, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Field,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { useAthletes } from "@/features/athlete/use-athletes";
 
@@ -41,55 +49,65 @@ export const PerformanceWorkspace = () => {
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="performance-from">From</Label>
-              <input
-                className="border-input bg-background mt-1 h-10 w-full rounded-md border px-3"
+              <Label className="mb-1" htmlFor="performance-from">
+                From
+              </Label>
+              <DatePicker
+                clearable
                 id="performance-from"
-                type="date"
+                onChange={setFrom}
+                placeholder="Start date"
                 value={from}
-                onChange={(event) => setFrom(event.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="performance-to">To</Label>
-              <input
-                className="border-input bg-background mt-1 h-10 w-full rounded-md border px-3"
+              <Label className="mb-1" htmlFor="performance-to">
+                To
+              </Label>
+              <DatePicker
+                clearable
                 id="performance-to"
-                type="date"
+                onChange={setTo}
+                placeholder="End date"
                 value={to}
-                onChange={(event) => setTo(event.target.value)}
               />
             </div>
           </div>
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium">
+          <FieldSet>
+            <FieldLegend variant="label">
               Athletes (select up to six)
-            </legend>
+            </FieldLegend>
             <div className="flex flex-wrap gap-3">
               {athletes.map((athlete) => (
-                <label
-                  className="flex items-center gap-2 text-sm"
+                <Field
+                  className="w-auto"
                   key={athlete.id}
+                  orientation="horizontal"
                 >
-                  <input
+                  <Checkbox
                     checked={selectedSet.has(athlete.id)}
                     disabled={
                       !selectedSet.has(athlete.id) && selected.length >= 6
                     }
-                    onChange={(event) =>
+                    id={`performance-athlete-${athlete.id}`}
+                    onCheckedChange={(checked) =>
                       setSelected((current) =>
-                        event.target.checked
+                        checked
                           ? [...current, athlete.id]
                           : current.filter((id) => id !== athlete.id)
                       )
                     }
-                    type="checkbox"
                   />
-                  {athlete.fullName}
-                </label>
+                  <FieldLabel
+                    className="font-normal"
+                    htmlFor={`performance-athlete-${athlete.id}`}
+                  >
+                    {athlete.fullName}
+                  </FieldLabel>
+                </Field>
               ))}
             </div>
-          </fieldset>
+          </FieldSet>
         </CardContent>
       </Card>
       <Card>

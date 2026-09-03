@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { desktopAuth } from "@/lib/desktop-auth";
 
 export const RecoveryForm = () => {
@@ -13,9 +15,9 @@ export const RecoveryForm = () => {
   const queryClient = useQueryClient();
   const recoveryMutation = useMutation({
     mutationFn: (input: {
-      email: string;
       newPassword: string;
       recoveryCode: string;
+      username: string;
     }) => {
       const auth = desktopAuth();
       if (!auth) {
@@ -38,9 +40,9 @@ export const RecoveryForm = () => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
           recoveryMutation.mutate({
-            email: String(formData.get("email") ?? ""),
             newPassword: String(formData.get("password") ?? ""),
             recoveryCode: String(formData.get("recoveryCode") ?? ""),
+            username: String(formData.get("username") ?? ""),
           });
         }}
       >
@@ -50,45 +52,37 @@ export const RecoveryForm = () => {
             Use the recovery code saved during setup.
           </p>
         </div>
-        <label
-          className="flex flex-col gap-2 text-sm font-medium"
-          htmlFor="email"
-        >
-          Email
-          <input
-            className="border-input bg-input/30 h-9 rounded-4xl border px-3"
-            id="email"
-            name="email"
+        <Field>
+          <FieldLabel htmlFor="username">Username</FieldLabel>
+          <Input
+            autoComplete="username"
+            id="username"
+            maxLength={32}
+            minLength={3}
+            name="username"
             required
-            type="email"
+            type="text"
           />
-        </label>
-        <label
-          className="flex flex-col gap-2 text-sm font-medium"
-          htmlFor="recoveryCode"
-        >
-          Recovery code
-          <input
-            className="border-input bg-input/30 h-9 rounded-4xl border px-3 uppercase"
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="recoveryCode">Recovery code</FieldLabel>
+          <Input
+            className="uppercase"
             id="recoveryCode"
             name="recoveryCode"
             required
           />
-        </label>
-        <label
-          className="flex flex-col gap-2 text-sm font-medium"
-          htmlFor="password"
-        >
-          New password
-          <input
-            className="border-input bg-input/30 h-9 rounded-4xl border px-3"
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="password">New password</FieldLabel>
+          <Input
             id="password"
             minLength={8}
             name="password"
             required
             type="password"
           />
-        </label>
+        </Field>
         <Button disabled={recoveryMutation.isPending || complete} type="submit">
           {recoveryMutation.isPending ? "Recovering…" : "Reset password"}
         </Button>

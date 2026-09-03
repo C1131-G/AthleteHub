@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MonthPicker } from "@/components/ui/month-picker";
 import {
   Select,
   SelectContent,
@@ -76,11 +77,11 @@ export const MonthlyReportFields = ({
         </Field>
         <Field>
           <FieldLabel htmlFor="report-month">Month</FieldLabel>
-          <Input
-            {...fieldProps("report-month", errors)}
+          <MonthPicker
+            errorMessageId={errorId("report-month")}
             id="report-month"
-            onChange={(event) => update("month", event.target.value)}
-            type="month"
+            invalid={Boolean(errors["report-month"])}
+            onChange={(value) => update("month", value)}
             value={form.month}
           />
           <FieldError id={errorId("report-month")}>

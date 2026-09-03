@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { desktopAuth } from "@/lib/desktop-auth";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +18,7 @@ const LoginForm = ({ className, ...props }: LoginFormProps) => {
   const queryClient = useQueryClient();
   const [error, setError] = useState("");
   const loginMutation = useMutation({
-    mutationFn: (input: { email: string; password: string }) => {
+    mutationFn: (input: { password: string; username: string }) => {
       const auth = desktopAuth();
       if (!auth) {
         throw new Error("Open the AthleteHub desktop app to log in.");
@@ -40,8 +42,8 @@ const LoginForm = ({ className, ...props }: LoginFormProps) => {
               setError("");
               const formData = new FormData(event.currentTarget);
               loginMutation.mutate({
-                email: String(formData.get("email") ?? ""),
                 password: String(formData.get("password") ?? ""),
+                username: String(formData.get("username") ?? ""),
               });
             }}
           >
@@ -52,42 +54,38 @@ const LoginForm = ({ className, ...props }: LoginFormProps) => {
               </p>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="m@example.com"
+            <Field>
+              <FieldLabel htmlFor="username">Username</FieldLabel>
+              <Input
+                autoComplete="username"
+                id="username"
+                maxLength={32}
+                minLength={3}
+                name="username"
+                placeholder="your-username"
                 required
-                className="border-input bg-input/30 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-4xl border px-3 text-base transition-colors outline-none focus-visible:ring-[3px] md:text-sm"
+                type="text"
               />
-            </div>
+            </Field>
 
-            <div className="flex flex-col gap-2">
+            <Field>
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </label>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
                 <Link
-                  href={{ pathname: "/forgot-password" }}
                   className="text-sm underline-offset-2 hover:underline"
+                  href={{ pathname: "/forgot-password" }}
                 >
                   Forgot your password?
                 </Link>
               </div>
-              <input
+              <Input
+                autoComplete="current-password"
                 id="password"
                 name="password"
-                type="password"
-                autoComplete="current-password"
                 required
-                className="border-input bg-input/30 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-4xl border px-3 text-base transition-colors outline-none focus-visible:ring-[3px] md:text-sm"
+                type="password"
               />
-            </div>
+            </Field>
 
             <Button type="submit" disabled={loginMutation.isPending}>
               {loginMutation.isPending ? "Logging in…" : "Log in"}

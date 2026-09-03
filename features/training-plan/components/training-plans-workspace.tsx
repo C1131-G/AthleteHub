@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -44,7 +45,7 @@ import {
 const PLANS_PATH = "/training-plans";
 /** Select cannot hold an empty value, so "all" stands in for "no filter". */
 const ALL = "all";
-const labelClass = "mb-1.5 block text-sm font-medium";
+const labelClass = "mb-1.5";
 
 export const TrainingPlansWorkspace = () => {
   const router = useRouter();
@@ -115,9 +116,9 @@ export const TrainingPlansWorkspace = () => {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className={labelClass} htmlFor="plan-search">
+            <Label className={labelClass} htmlFor="plan-search">
               Search plans
-            </label>
+            </Label>
             <Input
               id="plan-search"
               onChange={(event) => setQuery(event.target.value)}
@@ -126,9 +127,9 @@ export const TrainingPlansWorkspace = () => {
             />
           </div>
           <div>
-            <label className={labelClass} htmlFor="plan-athlete-filter">
+            <Label className={labelClass} htmlFor="plan-athlete-filter">
               Athlete
-            </label>
+            </Label>
             <Select
               onValueChange={(value) => setFilter("athleteId", value ?? ALL)}
               value={athleteId || ALL}
@@ -149,9 +150,9 @@ export const TrainingPlansWorkspace = () => {
             </Select>
           </div>
           <div>
-            <label className={labelClass} htmlFor="plan-status-filter">
+            <Label className={labelClass} htmlFor="plan-status-filter">
               Status
-            </label>
+            </Label>
             <Select
               onValueChange={(value) => setFilter("status", value ?? ALL)}
               value={status || ALL}

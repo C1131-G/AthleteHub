@@ -27,7 +27,7 @@ function ThemeOption({
     <button
       type="button"
       data-active={isActive}
-      className="text-muted-foreground hover:text-foreground data-[active=true]:text-foreground relative flex size-8 items-center justify-center rounded-full transition-[color] [&_svg]:size-4"
+      className="text-muted-foreground hover:text-foreground data-[active=true]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 relative flex size-8 items-center justify-center rounded-full transition-[color] outline-none focus-visible:ring-[3px] [&_svg]:size-4"
       aria-label={`Switch to ${value} theme`}
       aria-pressed={isActive}
       onClick={() => onClick(value)}
