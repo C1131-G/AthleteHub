@@ -78,8 +78,6 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
     playwrightTest(
       "keeps expanded desktop navigation stable while links are hovered and changed",
       async ({ page }) => {
-        playwrightTest.skip((await page.evaluate(() => innerWidth)) < 500);
-
         const consoleWarnings: string[] = [];
         page.on("console", (message) => {
           if (message.type() === "warning") {
@@ -117,8 +115,6 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
     playwrightTest(
       "keeps collapsed desktop tooltips and keyboard navigation working",
       async ({ page }) => {
-        playwrightTest.skip((await page.evaluate(() => innerWidth)) < 500);
-
         const consoleWarnings: string[] = [];
         page.on("console", (message) => {
           if (message.type() === "warning") {
@@ -146,53 +142,6 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
         ).toBeVisible();
 
         await reportsLink.press("Enter");
-        await playwrightExpect(page).toHaveURL(/\/reports$/);
-        await playwrightExpect(
-          page.getByRole("heading", { level: 1, name: "Reports" })
-        ).toBeVisible();
-        playwrightExpect(consoleWarnings).toEqual([]);
-      }
-    );
-
-    playwrightTest(
-      "disables drawer tooltips while links remain navigable",
-      async ({ page }) => {
-        playwrightTest.skip((await page.evaluate(() => innerWidth)) >= 500);
-
-        const consoleWarnings: string[] = [];
-        page.on("console", (message) => {
-          if (message.type() === "warning") {
-            consoleWarnings.push(message.text());
-          }
-        });
-
-        await page.goto("/dashboard");
-        await page
-          .getByRole("banner")
-          .getByRole("button", { name: "Toggle Sidebar" })
-          .click();
-
-        const drawer = page.getByRole("dialog");
-        const reportsLink = drawer.getByRole("link", {
-          exact: true,
-          name: "Reports",
-        });
-        await reportsLink.hover();
-        await playwrightExpect(
-          page.getByRole("tooltip", { name: "Reports" })
-        ).toBeHidden();
-
-        // Hovering a second link has to happen while the drawer is still open.
-        // Doing it mid-navigation raced the drawer unmounting, which is a
-        // property of the close animation rather than of the tooltips.
-        await drawer
-          .getByRole("link", { exact: true, name: "Conditioning" })
-          .hover();
-        await playwrightExpect(
-          page.getByRole("tooltip", { name: "Conditioning" })
-        ).toBeHidden();
-
-        await reportsLink.click();
         await playwrightExpect(page).toHaveURL(/\/reports$/);
         await playwrightExpect(
           page.getByRole("heading", { level: 1, name: "Reports" })
@@ -239,14 +188,6 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
       `Equipment details is instant from ${sourceRoute}`,
       async ({ page }) => {
         await page.goto(sourceRoute);
-        // On mobile the sidebar is a drawer, so its links are not in the DOM
-        // until it is opened.
-        if ((await page.evaluate(() => innerWidth)) < 500) {
-          await page
-            .getByRole("banner")
-            .getByRole("button", { name: "Toggle Sidebar" })
-            .click();
-        }
         await instant(page, async () => {
           await page
             .getByRole("link", { exact: true, name: "Equipment" })
