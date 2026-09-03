@@ -54,7 +54,6 @@ export type SessionRecordInput = Omit<
 
 export interface OwnerAccount {
   createdAt: Date;
-  email: string;
   failedAttempts: number;
   id: string;
   lockedUntil: Date | null;
@@ -63,17 +62,18 @@ export interface OwnerAccount {
   recoveryHash: Uint8Array<ArrayBuffer>;
   recoverySalt: Uint8Array<ArrayBuffer>;
   updatedAt: Date;
+  username: string;
 }
 
 export interface OwnerAccountInput {
   createdAt: Date;
-  email: string;
   id: string;
   passwordHash: Uint8Array<ArrayBuffer>;
   passwordSalt: Uint8Array<ArrayBuffer>;
   recoveryHash: Uint8Array<ArrayBuffer>;
   recoverySalt: Uint8Array<ArrayBuffer>;
   updatedAt: Date;
+  username: string;
 }
 
 export interface OwnerAccountUpdate {
@@ -174,6 +174,13 @@ const migrations = [
     )`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "ArcheryEnd_sessionId_sequence_key" ON "ArcheryEnd" ("sessionId", "sequence")`,
       `CREATE INDEX IF NOT EXISTS "ArcherySession_athleteId_date_idx" ON "ArcherySession" ("athleteId", "date")`,
+    ],
+  },
+  {
+    name: "0003_owner_username",
+    sql: [
+      `ALTER TABLE "OwnerAccount" RENAME COLUMN "email" TO "username"`,
+      `DELETE FROM "OwnerAccount" WHERE "username" LIKE '%@%'`,
     ],
   },
 ] as const;

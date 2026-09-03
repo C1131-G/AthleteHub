@@ -5,18 +5,18 @@ import type {
 
 interface ElectronAuthApi {
   login: (input: {
-    email: string;
     password: string;
+    username: string;
   }) => Promise<{ authenticated: true; recoveryCode: string }>;
   logout: () => Promise<void>;
   recover: (input: {
-    email: string;
     newPassword: string;
     recoveryCode: string;
+    username: string;
   }) => Promise<{ authenticated: true }>;
   setup: (input: {
-    email: string;
     password: string;
+    username: string;
   }) => Promise<{ recoveryCode: string }>;
   status: () => Promise<{ authenticated: boolean; configured: boolean }>;
 }

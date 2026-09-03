@@ -15,14 +15,23 @@ const RECOVERY_LENGTH = 16;
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_DURATION_MS = 60_000;
 const RECOVERY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const USERNAME_MIN_LENGTH = 3;
+const USERNAME_MAX_LENGTH = 32;
+const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/i;
+const usernameSchema = z
+  .string()
+  .trim()
+  .min(USERNAME_MIN_LENGTH)
+  .max(USERNAME_MAX_LENGTH)
+  .regex(USERNAME_PATTERN);
 const credentialsSchema = z.object({
-  email: z.string().trim().email(),
   password: z.string().min(8),
+  username: usernameSchema,
 });
 const recoverySchema = z.object({
-  email: z.string().trim().email(),
   newPassword: z.string().min(8),
   recoveryCode: z.string().min(16),
+  username: usernameSchema,
 });
 
 export type AuthErrorCode =
@@ -54,11 +63,11 @@ export interface AuthService {
   status: () => Promise<{ authenticated: boolean; configured: boolean }>;
 }
 
-const validateCredentials = (email: string, password: string) => {
-  if (!email.includes("@") || password.length < 8) {
+const validateCredentials = (username: string, password: string) => {
+  if (!USERNAME_PATTERN.test(username.trim()) || password.length < 8) {
     throw new AuthError(
       "VALIDATION_ERROR",
-      "A valid email and password are required."
+      "A valid username and password are required."
     );
   }
 };
@@ -89,10 +98,10 @@ const derive = async (value: string, salt: Uint8Array) => {
 const matches = (actual: Uint8Array, expected: Uint8Array) =>
   actual.length === expected.length && timingSafeEqual(actual, expected);
 
-const normalizedEmail = (email: string) => email.trim().toLowerCase();
+const normalizedUsername = (username: string) => username.trim().toLowerCase();
 
 const ownerInput = async (
-  email: string,
+  username: string,
   password: string,
   recoveryCode: string
 ): Promise<OwnerAccountInput> => {
@@ -101,7 +110,6 @@ const ownerInput = async (
   const now = new Date();
   return {
     createdAt: now,
-    email: normalizedEmail(email),
     id: randomBytes(16).toString("hex"),
     passwordHash: await derive(password, passwordSalt),
     passwordSalt,
@@ -111,6 +119,7 @@ const ownerInput = async (
     ),
     recoverySalt,
     updatedAt: now,
+    username: normalizedUsername(username),
   };
 };
 
@@ -129,15 +138,15 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
     if (!parsed.success) {
       throw new AuthError(
         "VALIDATION_ERROR",
-        "A valid email and password are required."
+        "A valid username and password are required."
       );
     }
     const credentials = parsed.data;
-    validateCredentials(credentials.email, credentials.password);
+    validateCredentials(credentials.username, credentials.password);
     const recoveryCode = createRecoveryCode();
     try {
       const ownerRecord = await ownerInput(
-        credentials.email,
+        credentials.username,
         credentials.password,
         recoveryCode
       );
@@ -168,16 +177,16 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
     if (!parsed.success) {
       throw new AuthError(
         "VALIDATION_ERROR",
-        "A valid email and password are required."
+        "A valid username and password are required."
       );
     }
     const credentials = parsed.data;
-    validateCredentials(credentials.email, credentials.password);
+    validateCredentials(credentials.username, credentials.password);
     const owner = await getOwner();
-    if (!owner || owner.email !== normalizedEmail(credentials.email)) {
+    if (!owner || owner.username !== normalizedUsername(credentials.username)) {
       throw new AuthError(
         "INVALID_CREDENTIALS",
-        "The email or password is incorrect."
+        "The username or password is incorrect."
       );
     }
     if (owner.lockedUntil && owner.lockedUntil.getTime() > Date.now()) {
@@ -199,7 +208,7 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
       });
       throw new AuthError(
         "INVALID_CREDENTIALS",
-        "The email or password is incorrect."
+        "The username or password is incorrect."
       );
     }
     await database.owner.update({
@@ -220,9 +229,9 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
       );
     }
     const recovery = parsed.data;
-    validateCredentials(recovery.email, recovery.newPassword);
+    validateCredentials(recovery.username, recovery.newPassword);
     const owner = await getOwner();
-    if (!owner || owner.email !== normalizedEmail(recovery.email)) {
+    if (!owner || owner.username !== normalizedUsername(recovery.username)) {
       throw new AuthError(
         "INVALID_RECOVERY_CODE",
         "The recovery details are incorrect."
@@ -240,7 +249,7 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
     }
     const nextRecoveryCode = createRecoveryCode();
     const next = await ownerInput(
-      owner.email,
+      owner.username,
       recovery.newPassword,
       nextRecoveryCode
     );

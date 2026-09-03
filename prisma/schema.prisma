@@ -15,7 +15,7 @@ model BackendProbe {
 
 model OwnerAccount {
   id             String    @id
-  email          String    @unique
+  username       String    @unique
   passwordHash   Bytes
   passwordSalt   Bytes
   recoveryHash   Bytes

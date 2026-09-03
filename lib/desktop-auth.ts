@@ -13,15 +13,15 @@ export const desktopAuth = () => {
 
   const { auth } = electronApi.backend;
   return {
-    login: async (input: { email: string; password: string }) =>
+    login: async (input: { password: string; username: string }) =>
       loginResponseSchema.parse(await auth.login(input)),
     logout: () => auth.logout(),
     recover: async (input: {
-      email: string;
       newPassword: string;
       recoveryCode: string;
+      username: string;
     }) => recoveryResponseSchema.parse(await auth.recover(input)),
-    setup: async (input: { email: string; password: string }) =>
+    setup: async (input: { password: string; username: string }) =>
       z.object({ recoveryCode: z.string() }).parse(await auth.setup(input)),
     status: async () =>
       z
