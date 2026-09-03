@@ -501,8 +501,10 @@ playwrightTest.describe("monthly cycles", () => {
       });
 
       await page.getByRole("link", { name: /Weekly reports/ }).click();
+      // The route heading and the step heading share this text, so the level
+      // is what distinguishes them.
       await playwrightExpect(
-        page.getByRole("heading", { name: "Weekly reports" })
+        page.getByRole("heading", { level: 1, name: "Weekly reports" })
       ).toBeVisible();
 
       const probeSurvived = await page.evaluate(() => {

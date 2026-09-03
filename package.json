@@ -3,12 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "description": "Offline-first training log for athletes and coaches.",
+  "homepage": "https://github.com/C1131-G/AthleteHub",
+  "license": "UNLICENSED",
   "author": {
     "name": "CIBI",
     "email": "abilazlee@gmail.com"
   },
-  "license": "UNLICENSED",
-  "homepage": "https://github.com/C1131-G/AthleteHub",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/C1131-G/AthleteHub.git"

@@ -27,7 +27,10 @@ const targets = process.argv.includes("--all")
   ? [...buildArtifacts, ...installedArtifacts]
   : buildArtifacts;
 
-for (const target of targets) {
-  await rm(path.join(projectRoot, target), { force: true, recursive: true });
-  process.stdout.write(`removed ${target}\n`);
-}
+// The targets are independent trees, so they come down together.
+await Promise.all(
+  targets.map(async (target) => {
+    await rm(path.join(projectRoot, target), { force: true, recursive: true });
+    process.stdout.write(`removed ${target}\n`);
+  })
+);

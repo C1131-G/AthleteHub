@@ -182,11 +182,17 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
           page.getByRole("tooltip", { name: "Reports" })
         ).toBeHidden();
 
-        const navigation = reportsLink.click();
+        // Hovering a second link has to happen while the drawer is still open.
+        // Doing it mid-navigation raced the drawer unmounting, which is a
+        // property of the close animation rather than of the tooltips.
         await drawer
           .getByRole("link", { exact: true, name: "Conditioning" })
           .hover();
-        await navigation;
+        await playwrightExpect(
+          page.getByRole("tooltip", { name: "Conditioning" })
+        ).toBeHidden();
+
+        await reportsLink.click();
         await playwrightExpect(page).toHaveURL(/\/reports$/);
         await playwrightExpect(
           page.getByRole("heading", { level: 1, name: "Reports" })

@@ -1,8 +1,6 @@
 # AthleteHub
 
-Offline-first training log for athletes and coaches. AthleteHub ships as a
-desktop app: an Electron shell that launches a self-contained Next.js server and
-stores everything locally in SQLite (libSQL) — no account, no network required.
+Offline-first training log for athletes and coaches. AthleteHub ships as a desktop app: an Electron shell that launches a self-contained Next.js server and stores everything locally in SQLite (libSQL) — no account, no network required.
 
 - **Downloads:** [Releases](https://github.com/C1131-G/AthleteHub/releases/latest)
 - **Platforms:** Windows x64, macOS (Intel + Apple Silicon), Linux x64
@@ -11,14 +9,11 @@ stores everything locally in SQLite (libSQL) — no account, no network required
 
 ## Install
 
-Every installer is published on the
-[latest release](https://github.com/C1131-G/AthleteHub/releases/latest) page.
-Replace `0.0.1` below with the version you are installing.
+Every installer is published on the [latest release](https://github.com/C1131-G/AthleteHub/releases/latest) page. Replace `0.0.1` below with the version you are installing.
 
 ### Windows
 
-Download `AthleteHub-0.0.1-win-x64.exe` and run it. The installer is per-user
-(no admin rights) and lets you choose the install directory.
+Download `AthleteHub-0.0.1-win-x64.exe` and run it. The installer is per-user (no admin rights) and lets you choose the install directory.
 
 Unsigned builds trigger SmartScreen: click **More info → Run anyway**.
 
@@ -31,17 +26,13 @@ Invoke-WebRequest "https://github.com/C1131-G/AthleteHub/releases/download/v$ver
 Start-Process $exe -Wait
 ```
 
-**Portable (no installer):** download `AthleteHub-0.0.1-win-x64.zip`, extract it
-anywhere, and run `AthleteHub.exe`.
+**Portable (no installer):** download `AthleteHub-0.0.1-win-x64.zip`, extract it anywhere, and run `AthleteHub.exe`.
 
 ### macOS
 
-Download the build that matches your chip — `AthleteHub-0.0.1-mac-arm64.dmg`
-for Apple Silicon (M1 and newer), `AthleteHub-0.0.1-mac-x64.dmg` for Intel —
-open it and drag **AthleteHub** into `Applications`.
+Download the build that matches your chip — `AthleteHub-0.0.1-mac-arm64.dmg` for Apple Silicon (M1 and newer), `AthleteHub-0.0.1-mac-x64.dmg` for Intel — open it and drag **AthleteHub** into `Applications`.
 
-The app is not notarized, so Gatekeeper blocks the first launch. Right-click the
-app → **Open** → **Open**, or clear the quarantine flag once:
+The app is not notarized, so Gatekeeper blocks the first launch. Right-click the app → **Open** → **Open**, or clear the quarantine flag once:
 
 ```bash
 VERSION=0.0.1
@@ -84,9 +75,7 @@ curl -L "https://github.com/C1131-G/AthleteHub/releases/download/v$VERSION/Athle
 ~/Applications/AthleteHub-$VERSION-linux-x64/athletehub
 ```
 
-If the AppImage fails to start on a minimal system, install the usual Electron
-runtime libraries: `libgtk-3-0`, `libnss3`, `libxss1`, `libxtst6`, `libatspi2.0-0`,
-`libsecret-1-0`.
+If the AppImage fails to start on a minimal system, install the usual Electron runtime libraries: `libgtk-3-0`, `libnss3`, `libxss1`, `libxtst6`, `libatspi2.0-0`, `libsecret-1-0`.
 
 ---
 
@@ -111,9 +100,7 @@ bun run dev
 
 ## Build installers
 
-Packaging always starts from a clean tree — `dist:prepare` removes `.next` and
-`release`, regenerates the Prisma client, rebuilds the renderer and the backend
-bundle, then copies the static assets the standalone server needs.
+Packaging always starts from a clean tree — `dist:prepare` removes `.next` and `release`, regenerates the Prisma client, rebuilds the renderer and the backend bundle, then copies the static assets the standalone server needs.
 
 ```bash
 bun run package:win     # NSIS installer + portable zip
@@ -123,25 +110,20 @@ bun run package:linux   # AppImage + deb + tar.gz
 
 Other useful targets:
 
-| Command | What it does |
-| --- | --- |
-| `bun run package` | Installers for the current platform |
+| Command               | What it does                                       |
+| --------------------- | -------------------------------------------------- |
+| `bun run package`     | Installers for the current platform                |
 | `bun run package:dir` | Unpacked app tree only — fast packaging smoke test |
-| `bun run clean` | Delete `.next`, `release`, and generated bundles |
-| `bun run clean:all` | Also delete `node_modules` and test output |
+| `bun run clean`       | Delete `.next`, `release`, and generated bundles   |
+| `bun run clean:all`   | Also delete `node_modules` and test output         |
 
 Everything lands in `release/`.
 
-**Each platform must be packaged on its own OS and architecture.** `@libsql`
-ships prebuilt native bindings and `scripts/after-pack.mjs` copies the *host's*
-copy into the app, so a Windows machine cannot produce a working macOS or Linux
-build. Use the release workflow instead of cross-compiling.
+**Each platform must be packaged on its own OS and architecture.** `@libsql` ships prebuilt native bindings and `scripts/after-pack.mjs` copies the _host's_ copy into the app, so a Windows machine cannot produce a working macOS or Linux build. Use the release workflow instead of cross-compiling.
 
 ## Publish a release
 
-`.github/workflows/release.yml` builds all four targets in parallel —
-`windows-latest`, `ubuntu-latest`, `macos-13` (Intel) and `macos-14` (Apple
-Silicon) — and uploads every installer to a draft GitHub release.
+`.github/workflows/release.yml` builds all four targets in parallel — `windows-latest`, `ubuntu-latest`, `macos-13` (Intel) and `macos-14` (Apple Silicon) — and uploads every installer to a draft GitHub release.
 
 ```bash
 npm version 0.1.0 --no-git-tag-version   # or edit package.json
@@ -150,13 +132,6 @@ git tag v0.1.0
 git push origin main --tags
 ```
 
-The workflow attaches the artifacts to a **draft** release; review it on the
-[releases page](https://github.com/C1131-G/AthleteHub/releases) and publish when
-the downloads look right. Running the workflow manually
-(**Actions → Release → Run workflow**) builds the same matrix and uploads the
-installers as workflow artifacts without touching any release.
+The workflow attaches the artifacts to a **draft** release; review it on the [releases page](https://github.com/C1131-G/AthleteHub/releases) and publish when the downloads look right. Running the workflow manually (**Actions → Release → Run workflow**) builds the same matrix and uploads the installers as workflow artifacts without touching any release.
 
-Builds are unsigned: no Windows Authenticode certificate and no Apple Developer
-identity are configured, which is why the install steps above include the
-SmartScreen and Gatekeeper workarounds. Adding certificates later only requires
-the corresponding `CSC_*` secrets — no config change.
+Builds are unsigned: no Windows Authenticode certificate and no Apple Developer identity are configured, which is why the install steps above include the SmartScreen and Gatekeeper workarounds. Adding certificates later only requires the corresponding `CSC_*` secrets — no config change.
