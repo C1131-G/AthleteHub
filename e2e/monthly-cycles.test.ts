@@ -270,7 +270,7 @@ playwrightTest.describe("monthly cycles", () => {
         /\/monthly-cycles\/[\w-]+\/profile$/
       );
       await playwrightExpect(
-        page.getByRole("heading", { exact: true, name: "Profile" })
+        page.getByRole("heading", { exact: true, name: "Athlete profile" })
       ).toBeVisible();
 
       await page.getByRole("button", { name: "Save & exit" }).click();
@@ -291,6 +291,8 @@ playwrightTest.describe("monthly cycles", () => {
   playwrightTest(
     "completes one athlete from profile through review and advances to the next",
     async ({ page }) => {
+      // Walking all seven steps does not fit the default per-test budget.
+      playwrightTest.slow();
       await seedOnce(page, [
         [ATHLETES_KEY, fullFleet.athletes],
         [EQUIPMENT_KEY, fullFleet.equipment],
@@ -479,6 +481,8 @@ playwrightTest.describe("monthly cycles", () => {
   playwrightTest(
     "keeps the shell mounted across step navigation",
     async ({ page }) => {
+      // Multi-step navigation does not fit the default per-test budget.
+      playwrightTest.slow();
       await seedOnce(page, [
         [ATHLETES_KEY, fullFleet.athletes],
         [EQUIPMENT_KEY, fullFleet.equipment],
@@ -488,7 +492,7 @@ playwrightTest.describe("monthly cycles", () => {
         .getByRole("button", { name: "Start" })
         .click();
       await playwrightExpect(
-        page.getByRole("heading", { exact: true, name: "Profile" })
+        page.getByRole("heading", { exact: true, name: "Athlete profile" })
       ).toBeVisible();
 
       await page.evaluate(() => {

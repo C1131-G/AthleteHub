@@ -138,9 +138,6 @@ export const MonthlyAverageStep = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-semibold tracking-tight">
-          Monthly average
-        </h2>
         <p className="text-muted-foreground mt-2">
           Derived directly from the weekly reports — nothing is stored here, so
           corrections to a week flow straight through.

@@ -116,7 +116,6 @@ export const ConditioningStep = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-semibold tracking-tight">Conditioning</h2>
         <p className="text-muted-foreground mt-2">
           The month needs a conditioning assessment dated within it and a
           programme covering the following period.
