@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -79,9 +78,6 @@ export const AthleteShellClient = ({
           </SidebarContent>
           <SidebarFooter>
             <WorkspaceLogout />
-            <div className="flex justify-center group-data-[collapsible=icon]:hidden">
-              <ThemeSwitcher />
-            </div>
           </SidebarFooter>
           <SidebarRail />
         </Sidebar>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { buttonVariants } from "@/components/ui/button";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import {
@@ -17,9 +18,12 @@ const DashboardPage = () => (
   <>
     <WorkspaceHeader
       actions={
-        <Link className={buttonVariants()} href="/reports/weekly/new">
-          Add weekly entry
-        </Link>
+        <>
+          <ThemeSwitcher />
+          <Link className={buttonVariants()} href="/reports/weekly/new">
+            Add weekly entry
+          </Link>
+        </>
       }
       description="A quick view of training, scores, and reports."
       id="dashboard-title"
