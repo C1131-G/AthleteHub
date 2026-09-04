@@ -1,5 +1,7 @@
 "use client";
 
+import { isValid, parseISO } from "date-fns";
+
 import { useAllSessions } from "@/features/session/use-sessions";
 
 import { sessionSummaryForWeek } from "../report-calculations";
@@ -15,7 +17,13 @@ export const useSessionSummary = (
   weekStart: string
 ): SessionWeekSummary | undefined => {
   const { data: sessions, isPending } = useAllSessions();
-  if (isPending) {
+  const parsedWeekStart = parseISO(weekStart);
+  if (
+    isPending ||
+    !athleteId ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(weekStart) ||
+    !isValid(parsedWeekStart)
+  ) {
     return undefined;
   }
   return sessionSummaryForWeek(sessions ?? [], athleteId, weekStart);
