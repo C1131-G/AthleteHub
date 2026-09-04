@@ -1,4 +1,6 @@
+import { sessionWeekStart } from "@/features/report/report-calculations";
 import type { WeeklyPerformanceReport } from "@/features/report/report-types";
+import type { ArcherySession } from "@/features/session/session-types";
 
 import type { SeasonTrainingPlan } from "./training-plan-types";
 
@@ -31,7 +33,8 @@ export interface PlanTotals {
  */
 export const planWeekProgress = (
   plan: SeasonTrainingPlan,
-  weekly: WeeklyPerformanceReport[]
+  weekly: WeeklyPerformanceReport[],
+  sessions: ArcherySession[] = []
 ): PlanWeekProgress[] => {
   const byWeekStart = new Map<string, WeeklyPerformanceReport>();
   for (const report of weekly) {
@@ -39,11 +42,31 @@ export const planWeekProgress = (
       byWeekStart.set(report.weekStart, report);
     }
   }
+  // Recorded sessions own their week; the typed figure usually came from the
+  // same sessions via pre-fill, so it only applies where sessions are absent.
+  const sessionArrowsByWeek = new Map<string, number>();
+  for (const session of sessions) {
+    if (session.athleteId !== plan.athleteId || session.status !== "complete") {
+      continue;
+    }
+    const arrows =
+      session.actualArrows ??
+      session.ends.reduce((total, end) => total + end.arrowCount, 0);
+    if (!arrows) {
+      continue;
+    }
+    const weekStart = sessionWeekStart(session.date);
+    sessionArrowsByWeek.set(
+      weekStart,
+      (sessionArrowsByWeek.get(weekStart) ?? 0) + arrows
+    );
+  }
   return plan.weeks
     .toSorted((a, b) => a.weekStart.localeCompare(b.weekStart))
     .map((week) => {
       const report = byWeekStart.get(week.weekStart);
-      const actualArrows = report?.arrowsShot;
+      const actualArrows =
+        sessionArrowsByWeek.get(week.weekStart) ?? report?.arrowsShot;
       return {
         actualArrows,
         actualTrainingDays: report?.trainingDays,

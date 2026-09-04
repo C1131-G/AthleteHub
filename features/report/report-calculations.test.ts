@@ -4,7 +4,12 @@ import {
   test as bunTest,
 } from "bun:test";
 
-import { loadSummary, scoreSummary } from "./report-calculations";
+import type { ArcherySession } from "../session/session-types";
+import {
+  loadSummary,
+  scoreSummary,
+  sessionSummaryForWeek,
+} from "./report-calculations";
 import type { WeeklyPerformanceReport } from "./report-types";
 
 const weekly = (
@@ -52,5 +57,86 @@ bunDescribe("report calculations", () => {
         "2026-07"
       )
     ).toEqual({ completion: 86.66666666666667, planned: 150, shot: 130 });
+  });
+});
+
+const session = (overrides: Partial<ArcherySession>): ArcherySession => ({
+  athleteId: "athlete-1",
+  createdAt: "2026-09-01T00:00:00.000Z",
+  date: "2026-09-02",
+  ends: [],
+  format: {
+    arrowsPerEnd: 6,
+    bowCategory: "recurve",
+    distanceM: 70,
+    indoor: false,
+    maxScorePerArrow: 10,
+    targetFaceCm: 122,
+  },
+  id: crypto.randomUUID(),
+  kind: "practice",
+  notes: "",
+  status: "complete",
+  technicalFocus: "",
+  updatedAt: "2026-09-01T00:00:00.000Z",
+  ...overrides,
+});
+
+bunDescribe("session week summary", () => {
+  bunTest("counts completed sessions inside the week", () => {
+    bunExpect(
+      sessionSummaryForWeek(
+        [
+          session({ actualArrows: 30, date: "2026-09-02" }),
+          session({
+            actualArrows: 60,
+            date: "2026-09-05",
+            format: {
+              arrowsPerEnd: 6,
+              bowCategory: "recurve",
+              distanceM: 18,
+              indoor: true,
+              maxScorePerArrow: 10,
+              targetFaceCm: 40,
+            },
+          }),
+          session({ actualArrows: 999, date: "2026-09-03", status: "draft" }),
+          session({
+            actualArrows: 999,
+            athleteId: "athlete-2",
+            date: "2026-09-04",
+          }),
+          session({ actualArrows: 999, date: "2026-08-25" }),
+        ],
+        "athlete-1",
+        "2026-09-01"
+      )
+    ).toEqual({ arrowsShot: 90, distanceM: 18, trainingDays: 2 });
+  });
+
+  bunTest("falls back to end totals when actualArrows is absent", () => {
+    bunExpect(
+      sessionSummaryForWeek(
+        [
+          session({
+            date: "2026-09-02",
+            ends: [
+              { arrowCount: 6, score: 48 },
+              { arrowCount: 6, score: 51 },
+            ],
+          }),
+        ],
+        "athlete-1",
+        "2026-09-01"
+      )
+    ).toEqual({ arrowsShot: 12, distanceM: 70, trainingDays: 1 });
+  });
+
+  bunTest("summarises an empty week as zero", () => {
+    bunExpect(sessionSummaryForWeek([], "athlete-1", "2026-09-01")).toEqual({
+      arrowsShot: 0,
+      distanceM: undefined,
+      trainingDays: 0,
+    });
   });
 });

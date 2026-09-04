@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     sessions: {
       complete: (input) => ipcRenderer.invoke("sessions.complete", input),
       get: (sessionId) => ipcRenderer.invoke("sessions.get", sessionId),
+      listAll: () => ipcRenderer.invoke("sessions.listAll"),
       listByAthlete: (athleteId) =>
         ipcRenderer.invoke("sessions.listByAthlete", athleteId),
       saveDraft: (input) => ipcRenderer.invoke("sessions.saveDraft", input),

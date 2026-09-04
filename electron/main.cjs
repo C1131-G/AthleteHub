@@ -296,6 +296,10 @@ const registerBackendIpc = async () => {
     const service = await getSessionService(event);
     return service.get(sessionId);
   });
+  ipcMain.handle("sessions.listAll", async (event) => {
+    const service = await getSessionService(event);
+    return service.listAll();
+  });
   ipcMain.handle("sessions.listByAthlete", async (event, athleteId) => {
     const service = await getSessionService(event);
     return service.listByAthlete(athleteId);

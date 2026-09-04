@@ -26,7 +26,7 @@ import {
   ChartLegend,
   DataTable,
 } from "@/features/report/chart-parts";
-import type { LoadPoint } from "@/features/report/dashboard-metrics";
+import type { LoadPoint } from "@/features/report/dashboard-load";
 import {
   ArrowLoadChart,
   ScoreTrendChart,

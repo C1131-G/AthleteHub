@@ -24,6 +24,7 @@ import {
   weeklyControls,
 } from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
+import { useSessionSummary } from "./use-session-summary";
 import { WeeklyReportFields } from "./weekly-report-fields";
 import type { WeeklyFormState } from "./weekly-report-fields";
 
@@ -77,6 +78,17 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
   // A plan week matching this athlete and week owns the arrow target; the
   // report keeps its own copy so the history survives later plan edits.
   const planWeek = planWeekFor(plans, form.athleteId, form.weekStart);
+  const sessionSummary = useSessionSummary(form.athleteId, form.weekStart);
+  const fillFromSessions = () => {
+    if (!sessionSummary) {
+      return;
+    }
+    update("arrowsShot", String(sessionSummary.arrowsShot));
+    update("trainingDays", String(sessionSummary.trainingDays));
+    if (sessionSummary.distanceM !== undefined) {
+      update("distanceM", String(sessionSummary.distanceM));
+    }
+  };
 
   if (reportId && !existing) {
     return (
@@ -156,7 +168,9 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
       <WeeklyReportFields
         errors={errors}
         form={form}
+        onFillFromSessions={fillFromSessions}
         planWeek={planWeek}
+        sessionSummary={sessionSummary}
         update={update}
       />
       <div className="flex justify-end">

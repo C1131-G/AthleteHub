@@ -21,6 +21,7 @@ export interface DatabaseContext {
   ) => Promise<void>;
   sessions: {
     get: (sessionId: string) => Promise<SessionRecord | undefined>;
+    listAll: () => Promise<SessionRecord[]>;
     listByAthlete: (athleteId: string) => Promise<SessionRecord[]>;
     save: (input: SessionRecordInput) => Promise<SessionRecord>;
   };
@@ -406,6 +407,17 @@ export const createDatabaseContext = async ({
     }));
   };
 
+  const listAllSessions = async (): Promise<SessionRecord[]> => {
+    const records = await prisma.archerySession.findMany({
+      include: { ends: { orderBy: { sequence: "asc" } } },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    });
+    return records.map((record) => ({
+      ...record,
+      ends: record.ends.map(({ arrowCount, score }) => ({ arrowCount, score })),
+    }));
+  };
+
   const saveSession = async (
     input: SessionRecordInput
   ): Promise<SessionRecord> => {
@@ -546,6 +558,19 @@ export const createDatabaseContext = async ({
                   }
                 : undefined;
             },
+            listAll: async () => {
+              const records = await transaction.archerySession.findMany({
+                include: { ends: { orderBy: { sequence: "asc" } } },
+                orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+              });
+              return records.map((record) => ({
+                ...record,
+                ends: record.ends.map(({ arrowCount, score }) => ({
+                  arrowCount,
+                  score,
+                })),
+              }));
+            },
             listByAthlete: async (athleteId) => {
               const records = await transaction.archerySession.findMany({
                 include: { ends: { orderBy: { sequence: "asc" } } },
@@ -631,6 +656,7 @@ export const createDatabaseContext = async ({
     },
     sessions: {
       get: readSession,
+      listAll: listAllSessions,
       listByAthlete: listSessions,
       save: saveSession,
     },

@@ -17,6 +17,7 @@ import { categoryLabel, statusLabel } from "@/features/athlete/athlete-labels";
 import { useAthletes } from "@/features/athlete/use-athletes";
 import { useConditioning } from "@/features/conditioning/use-conditioning";
 import { useEquipment } from "@/features/equipment/use-equipment";
+import { useAllSessions } from "@/features/session/use-sessions";
 import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 
 import { dashboardMetrics } from "../dashboard-metrics";
@@ -45,6 +46,7 @@ export const DashboardWorkspace = () => {
   const { listByAthlete, ready: equipmentReady } = useEquipment();
   const { plans, ready: plansReady } = useTrainingPlans();
   const conditioning = useConditioning();
+  const { data: sessions, isPending: sessionsPending } = useAllSessions();
   const rankingDistance = Number(searchParams.get("distance") ?? "70") || 70;
   const {
     attentionRows,
@@ -73,6 +75,8 @@ export const DashboardWorkspace = () => {
     },
     monthly: listMonthly,
     plans,
+    sessionsFor: (athleteId) =>
+      (sessions ?? []).filter((session) => session.athleteId === athleteId),
     weekly: listWeekly,
   });
 
@@ -82,7 +86,8 @@ export const DashboardWorkspace = () => {
       conditioning.ready &&
       equipmentReady &&
       plansReady &&
-      reportsReady
+      reportsReady &&
+      !sessionsPending
     )
   ) {
     return <DashboardWorkspaceSkeleton />;

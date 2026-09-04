@@ -8,11 +8,13 @@ import type { Athlete } from "@/features/athlete/athlete-types";
 import type { ConditioningAssessment } from "@/features/conditioning/conditioning-types";
 import type { EquipmentSetup } from "@/features/equipment/equipment-types";
 import type { WeeklyPerformanceReport } from "@/features/report/report-types";
+import type { ArcherySession } from "@/features/session/session-types";
 import type { SeasonTrainingPlan } from "@/features/training-plan/training-plan-types";
 
 import {
   conditioningCoverageFor,
   coveringPlanForNextMonth,
+  currentSourcesFor,
   deriveCycleView,
   expectedMondays,
   monthlyAverageFor,
@@ -362,7 +364,32 @@ const context = (
   monthlyReport: undefined,
   plans: [],
   programmes: [],
+  sessions: [],
   weeklyReports: [],
+  ...overrides,
+});
+
+const trainingSession = (
+  overrides: Partial<ArcherySession> = {}
+): ArcherySession => ({
+  athleteId: "athlete-1",
+  createdAt: "2026-08-05T00:00:00.000Z",
+  date: "2026-08-05",
+  ends: [],
+  format: {
+    arrowsPerEnd: 6,
+    bowCategory: "recurve",
+    distanceM: 70,
+    indoor: false,
+    maxScorePerArrow: 10,
+    targetFaceCm: 122,
+  },
+  id: "s1",
+  kind: "practice",
+  notes: "",
+  status: "complete",
+  technicalFocus: "",
+  updatedAt: "2026-08-05T00:00:00.000Z",
   ...overrides,
 });
 
@@ -423,6 +450,61 @@ bunDescribe("derive cycle view", () => {
     const view = deriveCycleView(cycle(), context());
     bunExpect(view.steps.weekly?.blockers?.[0]).toContain("5 of 5");
   });
+
+  bunTest("the weekly step watches sessions in the month", () => {
+    const sources = currentSourcesFor(
+      "weekly",
+      context({ sessions: [trainingSession()] }),
+      "2026-08"
+    );
+    bunExpect(sources).toContainEqual({
+      id: "s1",
+      updatedAt: "2026-08-05T00:00:00.000Z",
+    });
+  });
+
+  bunTest("sessions outside the month do not touch the weekly step", () => {
+    const sources = currentSourcesFor(
+      "weekly",
+      context({
+        sessions: [trainingSession({ date: "2026-09-02", id: "s2" })],
+      }),
+      "2026-08"
+    );
+    bunExpect(sources).toEqual([]);
+  });
+
+  bunTest(
+    "a new session after confirmation makes the weekly step stale",
+    () => {
+      const confirmed = cycle({
+        steps: {
+          ...blankCycleSteps(),
+          weekly: { sources: [], status: "complete" },
+        },
+      });
+      const edited = deriveCycleView(
+        confirmed,
+        context({ sessions: [trainingSession()] })
+      );
+      bunExpect(edited.steps.weekly?.status).toBe("stale");
+
+      const reconfirmed = cycle({
+        steps: {
+          ...blankCycleSteps(),
+          weekly: {
+            sources: [{ id: "s1", updatedAt: "2026-08-05T00:00:00.000Z" }],
+            status: "complete",
+          },
+        },
+      });
+      const fresh = deriveCycleView(
+        reconfirmed,
+        context({ sessions: [trainingSession()] })
+      );
+      bunExpect(fresh.steps.weekly?.status).toBe("complete");
+    }
+  );
 });
 
 bunDescribe("next incomplete athlete", () => {

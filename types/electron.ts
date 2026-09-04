@@ -51,6 +51,7 @@ interface ElectronAuthApi {
 interface ElectronSessionsApi {
   complete: (input: unknown) => Promise<SessionMutationResult>;
   get: (sessionId: string) => Promise<ArcherySession | undefined>;
+  listAll: () => Promise<ArcherySession[]>;
   listByAthlete: (athleteId: string) => Promise<ArcherySession[]>;
   saveDraft: (input: unknown) => Promise<SessionMutationResult>;
 }

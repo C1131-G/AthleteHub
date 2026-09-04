@@ -36,12 +36,9 @@ import type {
   ConditioningRating,
   ConditioningUnit,
 } from "../conditioning-types";
+import type { AssessmentFormState, ResultDraft } from "./assessment-form-state";
 import { errorId } from "./conditioning-form-errors";
 import type { ConditioningFormErrors } from "./conditioning-form-errors";
-import type {
-  AssessmentFormState,
-  ResultDraft,
-} from "./conditioning-form-state";
 
 const ratingOptions = conditioningRatings.map((rating) => ({
   label: ratingLabel[rating],

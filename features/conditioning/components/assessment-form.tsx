@@ -27,16 +27,16 @@ import {
   toAssessmentStatus,
 } from "../conditioning-types";
 import { useConditioning } from "../use-conditioning";
-import { AssessmentResultsEditor } from "./assessment-results-editor";
-import { errorId, focusFirstError } from "./conditioning-form-errors";
-import type { ConditioningFormErrors } from "./conditioning-form-errors";
 import {
   createAssessmentDraft,
   emptyResultDraft,
   presetResultDraft,
   toAssessmentInput,
-} from "./conditioning-form-state";
-import type { AssessmentFormState } from "./conditioning-form-state";
+} from "./assessment-form-state";
+import type { AssessmentFormState } from "./assessment-form-state";
+import { AssessmentResultsEditor } from "./assessment-results-editor";
+import { errorId, focusFirstError } from "./conditioning-form-errors";
+import type { ConditioningFormErrors } from "./conditioning-form-errors";
 
 // SAFETY: Object.entries preserves the label map's exact key union.
 const statusChoices = (

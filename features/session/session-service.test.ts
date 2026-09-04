@@ -13,6 +13,25 @@ import { createDatabaseContext } from "../../electron/backend";
 import type { DatabaseContext } from "../../electron/backend";
 import { createSessionService } from "./session-service";
 import type { SessionService } from "./session-service";
+import type { SessionInput } from "./session-types";
+
+const rosterDraft = (id: string, athleteId: string): SessionInput => ({
+  athleteId,
+  date: "2026-09-03",
+  ends: [{ arrowCount: 6, score: 48 }],
+  format: {
+    arrowsPerEnd: 6,
+    bowCategory: "recurve",
+    distanceM: 70,
+    indoor: false,
+    maxScorePerArrow: 10,
+    targetFaceCm: 122,
+  },
+  id,
+  kind: "practice",
+  notes: "",
+  technicalFocus: "",
+});
 
 bunDescribe("archery sessions", () => {
   let directory: string;
@@ -68,6 +87,22 @@ bunDescribe("archery sessions", () => {
     service = createSessionService(database.sessions);
     const sessions = await service.listByAthlete("athlete-1");
     bunExpect(sessions[0]?.status).toBe("complete");
+  });
+
+  bunTest("lists every athlete's sessions roster-wide", async () => {
+    const results = await Promise.all([
+      service.complete(rosterDraft("roster-1", "athlete-1")),
+      service.complete(rosterDraft("roster-2", "athlete-2")),
+    ]);
+    for (const result of results) {
+      bunExpect(result.status).toBe("saved");
+    }
+
+    const sessions = await service.listAll();
+    bunExpect(sessions.map((session) => session.id).toSorted()).toEqual([
+      "roster-1",
+      "roster-2",
+    ]);
   });
 
   bunTest("rejects malformed input without writing a record", async () => {

@@ -7,35 +7,18 @@ import { z } from "zod";
 
 import { ArchivedToggle } from "@/components/archived-toggle";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { MonthPicker } from "@/components/ui/month-picker";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AthletePicker } from "@/features/athlete/athlete-picker";
 import { useAthletes } from "@/features/athlete/use-athletes";
 
 import {
-  assessmentStatusLabel,
   conditioningAssessmentStatuses,
   conditioningPhases,
   conditioningProgrammeStatuses,
-  phaseLabel,
 } from "../conditioning-types";
 import { useConditioning } from "../use-conditioning";
 import { AssessmentTable } from "./assessment-table";
+import { ConditioningFilters } from "./conditioning-filters";
 import { ConditioningWorkspaceSkeleton } from "./conditioning-workspace-skeleton";
 import { ProgrammeTable } from "./programme-table";
 import { ProgressPanel } from "./progress-panel";
@@ -58,27 +41,6 @@ const conditioningSearchSchema = z.object({
   programmeStatus: emptyOr(z.enum(conditioningProgrammeStatuses)).catch(""),
   tab: z.enum(tabs).catch("assessments"),
 });
-
-// SAFETY: Object.entries preserves the label map's exact key union.
-const assessmentStatusOptions = (
-  Object.entries(assessmentStatusLabel) as [
-    keyof typeof assessmentStatusLabel,
-    string,
-  ][]
-).map(([value, label]) => ({ label, value }));
-
-// SAFETY: Object.entries preserves the label map's exact key union.
-const phaseOptions = (
-  Object.entries(phaseLabel) as [keyof typeof phaseLabel, string][]
-).map(([value, label]) => ({ label, value }));
-
-const programmeStatusOptions = [
-  { label: "Draft", value: "draft" },
-  { label: "Active", value: "active" },
-  { label: "Completed", value: "completed" },
-];
-
-const labelClass = "mb-1.5";
 
 interface WorkspaceFilters {
   assessmentStatus: string;
@@ -193,107 +155,16 @@ export const ConditioningWorkspace = () => {
             />
           </CardAction>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <div>
-            <Label className={labelClass} htmlFor="conditioning-athlete">
-              Athlete
-            </Label>
-            <AthletePicker
-              id="conditioning-athlete"
-              value={athleteId}
-              onChange={(value) => setFilter("athleteId", value)}
-            />
-          </div>
-          <div>
-            <Label className={labelClass} htmlFor="conditioning-month">
-              Month
-            </Label>
-            <MonthPicker
-              id="conditioning-month"
-              onChange={(value) => setFilter("month", value)}
-              value={month}
-            />
-          </div>
-          <div>
-            <Label
-              className={labelClass}
-              htmlFor="conditioning-assessment-status"
-            >
-              Assessment status
-            </Label>
-            <Select
-              onValueChange={(value) =>
-                setFilter("assessmentStatus", value ?? ALL)
-              }
-              value={assessmentStatus || ALL}
-            >
-              <SelectTrigger
-                className="w-full"
-                id="conditioning-assessment-status"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All statuses</SelectItem>
-                {assessmentStatusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className={labelClass} htmlFor="conditioning-phase">
-              Programme phase
-            </Label>
-            <Select
-              onValueChange={(value) => setFilter("phase", value ?? ALL)}
-              value={phase || ALL}
-            >
-              <SelectTrigger className="w-full" id="conditioning-phase">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All phases</SelectItem>
-                {phaseOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label
-              className={labelClass}
-              htmlFor="conditioning-programme-status"
-            >
-              Programme status
-            </Label>
-            <Select
-              onValueChange={(value) =>
-                setFilter("programmeStatus", value ?? ALL)
-              }
-              value={programmeStatus || ALL}
-            >
-              <SelectTrigger
-                className="w-full"
-                id="conditioning-programme-status"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All statuses</SelectItem>
-                {programmeStatusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
+        <ConditioningFilters
+          assessmentStatus={assessmentStatus}
+          athleteId={athleteId}
+          month={month}
+          onFilter={(key, value) =>
+            setFilter(key, value === "all" ? ALL : value)
+          }
+          phase={phase}
+          programmeStatus={programmeStatus}
+        />
       </Card>
       <Tabs onValueChange={setTab} value={tab}>
         <TabsList aria-label="Conditioning views">

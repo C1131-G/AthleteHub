@@ -54,6 +54,13 @@ export const createLocalSessions = (): DatabaseContext["sessions"] => ({
     const stored = readSessions().find((session) => session.id === sessionId);
     return await Promise.resolve(stored ? toRecord(stored) : undefined);
   },
+  listAll: async () => {
+    const stored = readSessions().toSorted(
+      (a, b) =>
+        b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)
+    );
+    return await Promise.resolve(stored.map(toRecord));
+  },
   listByAthlete: async (athleteId) => {
     const stored = readSessions()
       .filter((session) => session.athleteId === athleteId)

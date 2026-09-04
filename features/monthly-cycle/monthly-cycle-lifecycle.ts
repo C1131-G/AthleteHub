@@ -21,6 +21,7 @@ import type {
   MonthlyPerformanceReport,
   WeeklyPerformanceReport,
 } from "@/features/report/report-types";
+import type { ArcherySession } from "@/features/session/session-types";
 import { planForMonth } from "@/features/training-plan/training-plan-calculations";
 import type { SeasonTrainingPlan } from "@/features/training-plan/training-plan-types";
 
@@ -48,6 +49,8 @@ export interface CycleDomainContext {
   assessments: ConditioningAssessment[];
   /** Conditioning programmes for the athlete, any span. */
   programmes: ConditioningProgrammeRef[];
+  /** Recorded sessions for the athlete, any date. */
+  sessions: ArcherySession[];
   weeklyReports: WeeklyPerformanceReport[];
 }
 
@@ -295,7 +298,12 @@ export const currentSourcesFor = (
           covered.push(entry.report);
         }
       }
-      return sourceRefsFor(covered);
+      const monthSessions = context.sessions.filter(
+        (session) =>
+          session.athleteId === context.athleteId &&
+          session.date.startsWith(month)
+      );
+      return sourceRefsFor([...covered, ...monthSessions]);
     }
     case "training-load": {
       const plan = coveringPlanForNextMonth(

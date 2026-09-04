@@ -5,6 +5,7 @@ import type { ArcherySession, SessionMutationResult } from "./session-types";
 export interface SessionService {
   complete: (input: unknown) => Promise<SessionMutationResult>;
   get: (sessionId: string) => Promise<ArcherySession | undefined>;
+  listAll: () => Promise<ArcherySession[]>;
   listByAthlete: (athleteId: string) => Promise<ArcherySession[]>;
   saveDraft: (input: unknown) => Promise<SessionMutationResult>;
 }
@@ -97,6 +98,13 @@ export const createSessionService = (
     get: async (sessionId) => {
       const record = await sessions.get(sessionId);
       return toSession(record);
+    },
+    listAll: async () => {
+      const records = await sessions.listAll();
+      return records.flatMap((record) => {
+        const session = toSession(record);
+        return session ? [session] : [];
+      });
     },
     listByAthlete: async (athleteId) => {
       const records = await sessions.listByAthlete(athleteId);

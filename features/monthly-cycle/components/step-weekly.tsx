@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { focusFirstError } from "@/features/report/report-form-errors";
 import type { ReportFormErrors } from "@/features/report/report-form-errors";
 import { useReports } from "@/features/report/use-reports";
+import { useSessionSummary } from "@/features/report/use-session-summary";
 import { WeeklyReportFields } from "@/features/report/weekly-report-fields";
 import type { WeeklyFormState } from "@/features/report/weekly-report-fields";
 import {
@@ -218,6 +219,17 @@ const WeekRow = ({
   );
   const [errors, setErrors] = useState<ReportFormErrors>({});
   const planWeek = planWeekFor(plans, form.athleteId, form.weekStart);
+  const sessionSummary = useSessionSummary(form.athleteId, form.weekStart);
+  const fillFromSessions = () => {
+    if (!sessionSummary) {
+      return;
+    }
+    update("arrowsShot", String(sessionSummary.arrowsShot));
+    update("trainingDays", String(sessionSummary.trainingDays));
+    if (sessionSummary.distanceM !== undefined) {
+      update("distanceM", String(sessionSummary.distanceM));
+    }
+  };
 
   const update = <K extends keyof WeeklyFormState>(
     key: K,
@@ -289,7 +301,9 @@ const WeekRow = ({
             <WeeklyReportFields
               errors={errors}
               form={form}
+              onFillFromSessions={fillFromSessions}
               planWeek={planWeek}
+              sessionSummary={sessionSummary}
               update={update}
             />
             <div className="flex justify-end gap-2">

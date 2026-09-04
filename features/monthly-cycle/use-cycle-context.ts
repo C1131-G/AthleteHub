@@ -5,6 +5,7 @@ import { useAthletes } from "@/features/athlete/use-athletes";
 import { useConditioning } from "@/features/conditioning/use-conditioning";
 import { useEquipment } from "@/features/equipment/use-equipment";
 import { useReports } from "@/features/report/use-reports";
+import { useAllSessions } from "@/features/session/use-sessions";
 import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 
 import { deriveCycleView } from "./monthly-cycle-lifecycle";
@@ -31,6 +32,7 @@ export const useCycleContext = (cycleId: string): CycleContextState => {
   const { listByAthlete, ready: equipmentReady } = useEquipment();
   const { listMonthly, listWeekly, ready: reportsReady } = useReports();
   const { plans, ready: plansReady } = useTrainingPlans();
+  const { data: sessions, isPending: sessionsPending } = useAllSessions();
   const { assessments: datedAssessments, ready: datedAssessmentsReady } =
     useAssessments();
   const {
@@ -48,7 +50,8 @@ export const useCycleContext = (cycleId: string): CycleContextState => {
     reportsReady &&
     plansReady &&
     conditioningReady &&
-    datedAssessmentsReady;
+    datedAssessmentsReady &&
+    !sessionsPending;
 
   const context: CycleDomainContext | undefined = cycle
     ? {
@@ -68,6 +71,9 @@ export const useCycleContext = (cycleId: string): CycleContextState => {
         plans,
         programmes: programmes.filter(
           (programme) => programme.athleteId === cycle.athleteId
+        ),
+        sessions: (sessions ?? []).filter(
+          (session) => session.athleteId === cycle.athleteId
         ),
         weeklyReports: listWeekly.filter(
           (report) => report.athleteId === cycle.athleteId

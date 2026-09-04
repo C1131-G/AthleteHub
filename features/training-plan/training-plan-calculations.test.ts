@@ -5,6 +5,7 @@ import {
 } from "bun:test";
 
 import type { WeeklyPerformanceReport } from "@/features/report/report-types";
+import type { ArcherySession } from "@/features/session/session-types";
 
 import {
   currentTechnicalFocus,
@@ -70,6 +71,30 @@ const report = (
   ...overrides,
 });
 
+const trainingSession = (
+  overrides: Partial<ArcherySession>
+): ArcherySession => ({
+  athleteId: "a1",
+  createdAt: "2026-03-02T00:00:00.000Z",
+  date: "2026-03-04",
+  ends: [],
+  format: {
+    arrowsPerEnd: 6,
+    bowCategory: "recurve",
+    distanceM: 70,
+    indoor: false,
+    maxScorePerArrow: 10,
+    targetFaceCm: 122,
+  },
+  id: crypto.randomUUID(),
+  kind: "practice",
+  notes: "",
+  status: "complete",
+  technicalFocus: "",
+  updatedAt: "2026-03-02T00:00:00.000Z",
+  ...overrides,
+});
+
 bunDescribe("plan and report matching", () => {
   bunTest("pairs a report with its planned week", () => {
     const progress = planWeekProgress(plan(), [
@@ -107,6 +132,34 @@ bunDescribe("plan and report matching", () => {
       "2026-03-02",
       "2026-04-06",
     ]);
+  });
+
+  bunTest("prefers recorded sessions over the typed arrowsShot", () => {
+    const progress = planWeekProgress(
+      plan(),
+      [report({ arrowsShot: 900, weekStart: "2026-03-02" })],
+      [
+        trainingSession({ actualArrows: 950, date: "2026-03-04" }),
+        trainingSession({
+          actualArrows: 999,
+          date: "2026-03-05",
+          status: "draft",
+        }),
+      ]
+    );
+    bunExpect(progress[0]?.actualArrows).toBe(950);
+    bunExpect(progress[0]?.variance).toBe(-50);
+  });
+
+  bunTest("falls back to arrowsShot when the week has no sessions", () => {
+    const progress = planWeekProgress(
+      plan(),
+      [report({ arrowsShot: 900, weekStart: "2026-03-02" })],
+      [trainingSession({ actualArrows: 950, date: "2026-03-11" })]
+    );
+    bunExpect(progress[0]?.actualArrows).toBe(900);
+    bunExpect(progress[1]?.actualArrows).toBe(950);
+    bunExpect(progress[2]?.actualArrows).toBeUndefined();
   });
 
   bunTest("derives arrows per training day from the weekly target", () => {

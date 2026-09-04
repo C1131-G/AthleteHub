@@ -14,6 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAthletes } from "@/features/athlete/use-athletes";
 import { useReports } from "@/features/report/use-reports";
+import { useAllSessions } from "@/features/session/use-sessions";
 
 import {
   currentTechnicalFocus,
@@ -49,10 +50,11 @@ export const TrainingPlanPreview = ({ planId }: { planId: string }) => {
   const { athletes, ready: athletesReady } = useAthletes();
   const { listWeekly, ready: reportsReady } = useReports();
   const { getPlan, ready: plansReady } = useTrainingPlans();
+  const { data: sessions } = useAllSessions();
   const plan = getPlan(planId);
   const progress = useMemo(
-    () => (plan ? planWeekProgress(plan, listWeekly) : []),
-    [listWeekly, plan]
+    () => (plan ? planWeekProgress(plan, listWeekly, sessions ?? []) : []),
+    [listWeekly, plan, sessions]
   );
   const totals = useMemo(() => planTotals(progress), [progress]);
 

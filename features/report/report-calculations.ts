@@ -1,5 +1,13 @@
-import { addMonths, format, isValid, parseISO } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  format,
+  isValid,
+  parseISO,
+  startOfWeek,
+} from "date-fns";
 
+import type { ArcherySession } from "../session/session-types";
 import type {
   MonthlyPerformanceReport,
   ScoreSummary,
@@ -63,6 +71,52 @@ export const reportsForAthleteMonth = (
     (report) =>
       report.athleteId === athleteId && sameMonth(report.weekStart, month)
   );
+
+export interface SessionWeekSummary {
+  arrowsShot: number;
+  /** The latest session's distance, so mixed-distance weeks stay honest. */
+  distanceM: number | undefined;
+  trainingDays: number;
+}
+
+/** Monday-start weeks match the report calendar. */
+export const sessionWeekStart = (date: string) =>
+  format(startOfWeek(parseISO(date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+
+/**
+ * Completed sessions inside the athlete's week, for pre-filling a weekly
+ * report. Drafts never count, and a session without an arrow total falls back
+ * to its ends. Scores are deliberately excluded: the report caps them at four
+ * and the coach owns which ones count.
+ */
+export const sessionSummaryForWeek = (
+  sessions: ArcherySession[],
+  athleteId: string,
+  weekStart: string
+): SessionWeekSummary => {
+  const weekEnd = format(addDays(parseISO(weekStart), 6), "yyyy-MM-dd");
+  const inWeek = sessions
+    .filter(
+      (entry) =>
+        entry.athleteId === athleteId &&
+        entry.status === "complete" &&
+        entry.date >= weekStart &&
+        entry.date <= weekEnd
+    )
+    .toSorted((a, b) => a.date.localeCompare(b.date));
+  const arrowsShot = inWeek.reduce(
+    (total, entry) =>
+      total +
+      (entry.actualArrows ??
+        entry.ends.reduce((endTotal, end) => endTotal + end.arrowCount, 0)),
+    0
+  );
+  return {
+    arrowsShot,
+    distanceM: inWeek.at(-1)?.format.distanceM,
+    trainingDays: new Set(inWeek.map((entry) => entry.date)).size,
+  };
+};
 
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 

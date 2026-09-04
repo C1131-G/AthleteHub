@@ -7,6 +7,7 @@ import {
 import type { Athlete } from "@/features/athlete/athlete-types";
 import type { SeasonTrainingPlan } from "@/features/training-plan/training-plan-types";
 
+import type { ArcherySession } from "../session/session-types";
 import { dashboardMetrics } from "./dashboard-metrics";
 import type { WeeklyPerformanceReport } from "./report-types";
 
@@ -76,7 +77,8 @@ const run = (
   athletes: Athlete[],
   reports: WeeklyPerformanceReport[],
   filters: Partial<Parameters<typeof dashboardMetrics>[0]["filters"]> = {},
-  plans: SeasonTrainingPlan[] = []
+  plans: SeasonTrainingPlan[] = [],
+  sessions: ArcherySession[] = []
 ) =>
   dashboardMetrics({
     athletes,
@@ -93,8 +95,34 @@ const run = (
     },
     monthly: [],
     plans,
+    sessionsFor: (athleteId) =>
+      sessions.filter((session) => session.athleteId === athleteId),
     weekly: reports,
   });
+
+const trainingSession = (
+  overrides: Partial<ArcherySession>
+): ArcherySession => ({
+  athleteId: "a1",
+  createdAt: "2026-07-08T00:00:00.000Z",
+  date: "2026-07-08",
+  ends: [],
+  format: {
+    arrowsPerEnd: 6,
+    bowCategory: "recurve",
+    distanceM: 70,
+    indoor: false,
+    maxScorePerArrow: 10,
+    targetFaceCm: 122,
+  },
+  id: crypto.randomUUID(),
+  kind: "practice",
+  notes: "",
+  status: "complete",
+  technicalFocus: "",
+  updatedAt: "2026-07-08T00:00:00.000Z",
+  ...overrides,
+});
 
 bunDescribe("dashboard metrics", () => {
   bunTest("scopes arrow load by the category filter", () => {
@@ -150,6 +178,46 @@ bunDescribe("dashboard metrics", () => {
     bunExpect(
       result.attentionRows.some((row) => row.reason === "Score decline")
     ).toBe(false);
+  });
+
+  bunTest("adds session arrows to the weekly load", () => {
+    const { loadPoints } = run(
+      [athlete({})],
+      [],
+      {},
+      [trainingPlan()],
+      [trainingSession({ actualArrows: 90, date: "2026-07-08" })]
+    );
+    bunExpect(loadPoints[0]?.weekStart).toBe("2026-07-06");
+    bunExpect(loadPoints[0]?.planned).toBe(1200);
+    bunExpect(loadPoints[0]?.shot).toBe(90);
+  });
+
+  bunTest("prefers recorded sessions over the typed report figure", () => {
+    const { loadPoints } = run(
+      [athlete({})],
+      [weekly({ arrowsShot: 100, weekStart: "2026-07-06" })],
+      {},
+      [],
+      [trainingSession({ actualArrows: 130, date: "2026-07-08" })]
+    );
+    bunExpect(loadPoints).toHaveLength(1);
+    bunExpect(loadPoints[0]?.shot).toBe(130);
+  });
+
+  bunTest("flags weeks with sessions but no weekly report", () => {
+    const { attentionRows } = run(
+      [athlete({})],
+      [],
+      {},
+      [],
+      [trainingSession({ actualArrows: 90, date: "2026-07-08" })]
+    );
+    bunExpect(attentionRows).toContainEqual({
+      athlete: "Test Athlete",
+      href: "/sessions?athleteId=a1",
+      reason: "Unreported sessions",
+    });
   });
 });
 

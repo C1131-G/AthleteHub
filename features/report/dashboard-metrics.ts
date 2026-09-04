@@ -5,9 +5,18 @@ import type {
   ConditioningProgramme,
 } from "@/features/conditioning/conditioning-types";
 import type { EquipmentSetup } from "@/features/equipment/equipment-types";
+import type { ArcherySession } from "@/features/session/session-types";
 import type { SeasonTrainingPlan } from "@/features/training-plan/training-plan-types";
 
-import { scoreSummary } from "./report-calculations";
+import {
+  averageOf,
+  byDistance,
+  latestSetup,
+  openRequirementCount,
+  scoreChangesFor,
+} from "./dashboard-attention";
+import { loadPointsFor } from "./dashboard-load";
+import { scoreSummary, sessionWeekStart } from "./report-calculations";
 import type {
   MonthlyPerformanceReport,
   WeeklyPerformanceReport,
@@ -27,7 +36,8 @@ type AttentionHref =
   | `/reports?athleteId=${string}&tab=monthly`
   | `/reports/weekly/new?athleteId=${string}&month=${string}`
   | `/athletes/${string}/equipment/${string}`
-  | `/conditioning?athleteId=${string}`;
+  | `/conditioning?athleteId=${string}`
+  | `/sessions?athleteId=${string}`;
 
 export interface AttentionRow {
   athlete: string;
@@ -43,128 +53,28 @@ interface DashboardInput {
   filters: DashboardFilters;
   monthly: MonthlyPerformanceReport[];
   plans: SeasonTrainingPlan[];
+  sessionsFor: (athleteId: string) => ArcherySession[];
   weekly: WeeklyPerformanceReport[];
 }
 
-export interface LoadPoint {
-  label: string;
-  planned: number;
-  /** `undefined` means the week is planned but no report exists yet. */
-  shot: number | undefined;
-  weekStart: string;
-}
-
-// Keyed per athlete and week so two athletes planning the same week are not
-// collapsed before they are summed.
-const cellKey = (athleteId: string, weekStart: string) =>
-  `${athleteId}|${weekStart}`;
-
-/**
- * One point per week that was either reported or planned. A planned week with
- * no report keeps an undefined actual so the chart and its table can show it as
- * missing rather than as zero.
- */
-const loadPointsFor = (
-  reports: WeeklyPerformanceReport[],
-  plans: SeasonTrainingPlan[],
-  inScope: Set<string>,
-  month: string
-): LoadPoint[] => {
-  const plannedByCell = new Map<
-    string,
-    { planned: number; weekStart: string }
-  >();
-
-  for (const plan of plans) {
-    if (!inScope.has(plan.athleteId)) {
-      continue;
-    }
-    for (const week of plan.weeks) {
-      if (month && !week.weekStart.startsWith(month)) {
-        continue;
-      }
-      plannedByCell.set(cellKey(plan.athleteId, week.weekStart), {
-        planned: week.arrowsPlanned,
-        weekStart: week.weekStart,
-      });
-    }
-  }
-
-  const shotByWeek = new Map<string, number>();
-  for (const report of reports) {
-    // The report's own snapshot replaces the plan target for that week, so a
-    // target edited later never rewrites what was recorded at the time.
-    if (report.arrowsPlanned !== undefined) {
-      plannedByCell.set(cellKey(report.athleteId, report.weekStart), {
-        planned: report.arrowsPlanned,
-        weekStart: report.weekStart,
-      });
-    }
-    if (report.arrowsShot !== undefined) {
-      shotByWeek.set(
-        report.weekStart,
-        (shotByWeek.get(report.weekStart) ?? 0) + report.arrowsShot
-      );
-    }
-  }
-
-  const plannedByWeek = new Map<string, number>();
-  for (const { planned, weekStart } of plannedByCell.values()) {
-    plannedByWeek.set(weekStart, (plannedByWeek.get(weekStart) ?? 0) + planned);
-  }
-
-  const weekStarts = new Set([...plannedByWeek.keys(), ...shotByWeek.keys()]);
-  return [...weekStarts]
-    .toSorted((a, b) => a.localeCompare(b))
-    .map((weekStart) => ({
-      label: weekStart.slice(5),
-      planned: plannedByWeek.get(weekStart) ?? 0,
-      shot: shotByWeek.get(weekStart),
-      weekStart,
-    }));
-};
-
-const latestSetup = (setups: EquipmentSetup[]) =>
-  setups.toSorted((a, b) => b.recordedAt.localeCompare(a.recordedAt))[0];
-
-const openRequirementCount = (setup: EquipmentSetup | undefined) =>
-  setup?.items.filter((item) => item.requirement.trim() && !item.value.trim())
-    .length ?? 0;
-
-const averageOf = (values: number[]) =>
-  values.length
-    ? values.reduce((total, value) => total + value, 0) / values.length
-    : 0;
-
-/** Scores at 18 m and 70 m are different scales and are never comparable. */
-const byDistance = (reports: WeeklyPerformanceReport[]) => {
-  const grouped = new Map<number, WeeklyPerformanceReport[]>();
-  for (const report of reports) {
-    if (!(report.distanceM && report.scores.length)) {
-      continue;
-    }
-    grouped.set(report.distanceM, [
-      ...(grouped.get(report.distanceM) ?? []),
-      report,
-    ]);
-  }
-  return grouped;
-};
-
-/** One delta per distance: the last week's average minus the first week's. */
-const scoreChangesFor = (reports: WeeklyPerformanceReport[]) => {
-  const deltas: number[] = [];
-  for (const group of byDistance(reports).values()) {
-    const sorted = group.toSorted((a, b) =>
-      a.weekStart.localeCompare(b.weekStart)
-    );
-    const [first] = sorted;
-    const last = sorted.at(-1);
-    if (first && last && first !== last) {
-      deltas.push(averageOf(last.scores) - averageOf(first.scores));
-    }
-  }
-  return deltas;
+const sessionAttentionRows = (
+  athlete: Athlete,
+  sessions: ArcherySession[],
+  weekly: WeeklyPerformanceReport[]
+): AttentionRow[] => {
+  const reportedWeeks = new Set(weekly.map((report) => report.weekStart));
+  const unreported = sessions.some(
+    (session) => !reportedWeeks.has(sessionWeekStart(session.date))
+  );
+  return unreported
+    ? [
+        {
+          athlete: athlete.fullName,
+          href: `/sessions?athleteId=${athlete.id}`,
+          reason: "Unreported sessions",
+        },
+      ]
+    : [];
 };
 
 const attentionFor = (
@@ -174,7 +84,8 @@ const attentionFor = (
   setup: EquipmentSetup | undefined,
   month: string,
   conditioningAssessments: ConditioningAssessment[],
-  conditioningProgrammes: ConditioningProgramme[]
+  conditioningProgrammes: ConditioningProgramme[],
+  sessions: ArcherySession[]
 ): AttentionRow[] => {
   const rows: AttentionRow[] = [];
   const add = (reason: string, href: AttentionHref) =>
@@ -214,7 +125,8 @@ const attentionFor = (
       athlete: athlete.fullName,
       href: row.href,
       reason: row.reason,
-    }))
+    })),
+    ...sessionAttentionRows(athlete, sessions, weekly)
   );
   return rows;
 };
@@ -231,6 +143,7 @@ export const dashboardMetrics = ({
   filters,
   monthly,
   plans,
+  sessionsFor,
   weekly,
 }: DashboardInput) => {
   const { athleteId, category, month, rankingDistance, status } = filters;
@@ -251,6 +164,17 @@ export const dashboardMetrics = ({
     (report) =>
       (!month || report.month === month) && inScope.has(report.athleteId)
   );
+  const monthSessions: ArcherySession[] = [];
+  for (const athlete of scopedAthletes) {
+    for (const session of sessionsFor(athlete.id)) {
+      if (
+        session.status === "complete" &&
+        (!month || sessionWeekStart(session.date).startsWith(month))
+      ) {
+        monthSessions.push(session);
+      }
+    }
+  }
 
   const missingReports = scopedAthletes.filter(
     (athlete) => !monthMonthly.some((report) => report.athleteId === athlete.id)
@@ -298,7 +222,8 @@ export const dashboardMetrics = ({
         setup,
         month,
         conditioningAssessments,
-        conditioningProgrammes
+        conditioningProgrammes,
+        monthSessions.filter((session) => session.athleteId === athlete.id)
       )
     );
   }
@@ -306,7 +231,13 @@ export const dashboardMetrics = ({
   const chronological = monthWeekly.toSorted((a, b) =>
     a.weekStart.localeCompare(b.weekStart)
   );
-  const loadPoints = loadPointsFor(monthWeekly, plans, inScope, month);
+  const loadPoints = loadPointsFor(
+    monthWeekly,
+    plans,
+    inScope,
+    month,
+    monthSessions
+  );
   const plannedArrows = loadPoints.reduce(
     (total, point) => total + point.planned,
     0

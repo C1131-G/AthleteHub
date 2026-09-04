@@ -25,6 +25,7 @@ const listResponseSchema = z.array(sessionResponseSchema);
 
 /** One definition, so the query and its invalidation cannot drift apart. */
 const sessionKeys = {
+  all: ["sessions", "all"] as const,
   byAthlete: (athleteId: string) => ["sessions", "athlete", athleteId] as const,
   byId: (sessionId: string) => ["sessions", "id", sessionId] as const,
 };
@@ -77,6 +78,7 @@ export const useSessions = (athleteId: string) => {
         await queryClient.invalidateQueries({
           queryKey: sessionKeys.byAthlete(result.session.athleteId),
         });
+        await queryClient.invalidateQueries({ queryKey: sessionKeys.all });
       }
     },
   });
@@ -90,3 +92,13 @@ export const useSessions = (athleteId: string) => {
 
 export const useSession = (sessionId: string) =>
   useQuery(sessionDetailOptions(sessionId));
+
+/** Roster-wide read for the dashboard and cycle views; always enabled. */
+export const useAllSessions = () =>
+  useQuery({
+    queryFn: async (): Promise<ArcherySession[]> =>
+      listResponseSchema.parse(await api().listAll()),
+    queryKey: sessionKeys.all,
+    retry: false,
+    staleTime: 30_000,
+  });
