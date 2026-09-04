@@ -5,7 +5,7 @@ import {
   AssessmentFormSkeleton,
 } from "@/features/conditioning/components/assessment-form";
 
-export const metadata = { title: "Edit assessment | AthleteHub" };
+export const metadata = { title: "Edit assessment" };
 
 const EditAssessmentPage = ({
   params,

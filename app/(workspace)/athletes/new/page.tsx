@@ -10,7 +10,7 @@ const NewAthletePage = () => (
 
 export const metadata = {
   description: "Create an athlete profile in AthleteHub.",
-  title: "Add athlete | AthleteHub",
+  title: "Add athlete",
 };
 
 export default NewAthletePage;

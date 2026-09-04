@@ -6,7 +6,7 @@ import { EquipmentSkeleton } from "@/features/equipment/components/equipment-ske
 
 export const metadata = {
   description: "Edit an athlete equipment setup.",
-  title: "Edit equipment setup | AthleteHub",
+  title: "Edit equipment setup",
 };
 
 const EditEquipmentPage = ({

@@ -7,7 +7,7 @@ import { SessionsWorkspace } from "@/features/session/components/sessions-worksp
 
 export const metadata = {
   description: "Record and review archery sessions.",
-  title: "Sessions | AthleteHub",
+  title: "Sessions",
 };
 
 const SessionsPage = () => (

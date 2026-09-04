@@ -1,6 +1,6 @@
 import { SessionForm } from "@/features/session/components/session-form";
 
-export const metadata = { title: "Record archery session | AthleteHub" };
+export const metadata = { title: "Record archery session" };
 
 export default function NewSessionPage() {
   const athleteId = "unassigned";

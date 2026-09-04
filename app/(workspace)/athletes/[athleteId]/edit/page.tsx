@@ -6,7 +6,7 @@ import { EditAthlete } from "@/features/athlete/components/edit-athlete";
 
 export const metadata = {
   description: "Edit an athlete profile in AthleteHub.",
-  title: "Edit athlete | AthleteHub",
+  title: "Edit athlete",
 };
 
 const EditAthletePage = ({

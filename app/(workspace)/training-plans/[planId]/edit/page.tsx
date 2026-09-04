@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { TrainingPlanForm } from "@/features/training-plan/components/training-plan-form";
 import { TrainingPlanSkeleton } from "@/features/training-plan/components/training-plan-parts";
 
-export const metadata = { title: "Edit training plan | AthleteHub" };
+export const metadata = { title: "Edit training plan" };
 
 const EditTrainingPlanPage = ({
   params,

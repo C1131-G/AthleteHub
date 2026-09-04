@@ -5,7 +5,7 @@ import {
   WeeklyReportPreviewSkeleton,
 } from "@/features/report/components/weekly-report-preview";
 
-export const metadata = { title: "Weekly report | AthleteHub" };
+export const metadata = { title: "Weekly report" };
 
 const WeeklyReportPage = ({
   params,

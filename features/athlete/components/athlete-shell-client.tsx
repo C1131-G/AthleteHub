@@ -41,6 +41,7 @@ export const AthleteShellClient = ({
   return (
     <>
       {/* usePathname is dynamic, which a prerendered shell cannot resolve. */}
+      {/* RouteFocus has no visible output; its null fallback avoids layout shift. */}
       <Suspense fallback={null}>
         <RouteFocus />
       </Suspense>

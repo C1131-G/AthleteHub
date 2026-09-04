@@ -5,7 +5,7 @@ import {
   ProgrammeFormSkeleton,
 } from "@/features/conditioning/components/programme-form";
 
-export const metadata = { title: "Edit programme | AthleteHub" };
+export const metadata = { title: "Edit programme" };
 
 const EditProgrammePage = ({
   params,

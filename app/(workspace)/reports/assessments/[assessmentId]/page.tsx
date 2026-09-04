@@ -5,7 +5,7 @@ import {
   AssessmentSkeleton,
 } from "@/features/assessment/components/assessment-preview";
 
-export const metadata = { title: "Assessment | AthleteHub" };
+export const metadata = { title: "Assessment" };
 
 const AssessmentPage = ({
   params,

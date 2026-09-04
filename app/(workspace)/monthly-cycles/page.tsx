@@ -6,7 +6,7 @@ import { CycleQueueSkeleton } from "@/features/monthly-cycle/components/cycle-qu
 
 export const metadata = {
   description: "Run every athlete through the guided monthly cycle.",
-  title: "Monthly cycle | AthleteHub",
+  title: "Monthly cycle",
 };
 
 const MonthlyCyclesPage = () => (

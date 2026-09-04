@@ -44,17 +44,11 @@ export const SessionsWorkspace = () => {
         Choose an athlete to view sessions.
       </p>
     );
-  } else if (sessionsQuery.isPending) {
-    sessionContent = <p aria-live="polite">Loading sessions…</p>;
-  } else if (sessionsQuery.isError) {
-    sessionContent = (
-      <p role="alert">Sessions could not be loaded. Try again.</p>
-    );
-  } else if (sessions.length === 0) {
+  } else if (sessionsQuery.data && sessions.length === 0) {
     sessionContent = (
       <p className="text-muted-foreground">No sessions match these filters.</p>
     );
-  } else {
+  } else if (sessionsQuery.data) {
     sessionContent = (
       <ul className="space-y-3">
         {sessions.map((session) => (
@@ -79,6 +73,12 @@ export const SessionsWorkspace = () => {
         ))}
       </ul>
     );
+  } else if (sessionsQuery.isError) {
+    sessionContent = (
+      <p role="alert">Sessions could not be loaded. Try again.</p>
+    );
+  } else {
+    sessionContent = <p aria-live="polite">Loading sessions…</p>;
   }
 
   return (

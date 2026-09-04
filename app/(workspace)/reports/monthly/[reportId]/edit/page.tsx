@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { MonthlyReportForm } from "@/features/report/components/monthly-report-form";
 import { MonthlyReportFormSkeleton } from "@/features/report/components/monthly-report-form-skeleton";
 
-export const metadata = { title: "Edit monthly report | AthleteHub" };
+export const metadata = { title: "Edit monthly report" };
 
 const EditMonthlyReportPage = ({
   params,

@@ -10,7 +10,7 @@ import { ConditioningWorkspaceSkeleton } from "@/features/conditioning/component
 export const metadata = {
   description:
     "Track strength and conditioning assessments and dated training programmes.",
-  title: "Conditioning | AthleteHub",
+  title: "Conditioning",
 };
 
 const ConditioningPage = () => (

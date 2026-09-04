@@ -11,7 +11,7 @@ import {
 
 export const metadata = {
   description: "Review team performance and reporting progress.",
-  title: "Dashboard | AthleteHub",
+  title: "Dashboard",
 };
 
 const DashboardPage = () => (

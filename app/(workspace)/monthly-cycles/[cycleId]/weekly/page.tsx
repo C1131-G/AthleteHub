@@ -7,7 +7,7 @@ import {
 
 export const metadata = {
   description: "Weekly reports step of the guided monthly cycle.",
-  title: "Weekly reports | Monthly cycle | AthleteHub",
+  title: "Weekly reports | Monthly cycle",
 };
 
 const Page = ({ params }: { params: Promise<{ cycleId: string }> }) => (

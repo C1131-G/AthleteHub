@@ -1,5 +1,5 @@
 import "client-only";
-import { readStoredArray, writeStored } from "@/lib/storage";
+import { readStoredRecords, writeStored } from "@/lib/storage";
 
 import {
   monthlyReportInputSchema,
@@ -18,21 +18,6 @@ import type {
 
 const WEEKLY_KEY = "athletehub.weekly-reports.v1";
 const MONTHLY_KEY = "athletehub.monthly-reports.v1";
-
-interface ParseSchema<T> {
-  safeParse: (value: unknown) =>
-    | { data: T; success: true }
-    | {
-        error: { flatten: () => { fieldErrors: Record<string, string[]> } };
-        success: false;
-      };
-}
-
-const read = <T>(key: string, schema: ParseSchema<T>) =>
-  readStoredArray(key).flatMap((value) => {
-    const result = schema.safeParse(value);
-    return result.success ? [result.data] : [];
-  });
 
 const write = (key: string, value: unknown[]) => writeStored(key, value);
 
@@ -108,7 +93,7 @@ export const reportRepository: ReportRepository = {
     if (!valid.valid) {
       return invalid<MonthlyPerformanceReport>(valid.fieldErrors);
     }
-    const reports = read(MONTHLY_KEY, monthlyReportSchema);
+    const reports = readStoredRecords(MONTHLY_KEY, monthlyReportSchema);
     if (
       reports.some(
         (report) =>
@@ -138,7 +123,7 @@ export const reportRepository: ReportRepository = {
     if (!valid.valid) {
       return invalid<WeeklyPerformanceReport>(valid.fieldErrors);
     }
-    const reports = read(WEEKLY_KEY, weeklyReportSchema);
+    const reports = readStoredRecords(WEEKLY_KEY, weeklyReportSchema);
     if (
       reports.some(
         (report) =>
@@ -165,19 +150,23 @@ export const reportRepository: ReportRepository = {
     return { report, status: "saved" };
   },
   getMonthly: (id) =>
-    read(MONTHLY_KEY, monthlyReportSchema).find((report) => report.id === id),
+    readStoredRecords(MONTHLY_KEY, monthlyReportSchema).find(
+      (report) => report.id === id
+    ),
   getWeekly: (id) =>
-    read(WEEKLY_KEY, weeklyReportSchema).find((report) => report.id === id),
+    readStoredRecords(WEEKLY_KEY, weeklyReportSchema).find(
+      (report) => report.id === id
+    ),
   listMonthly: () =>
-    sortByDate(read(MONTHLY_KEY, monthlyReportSchema), "month"),
+    sortByDate(readStoredRecords(MONTHLY_KEY, monthlyReportSchema), "month"),
   listWeekly: () =>
-    sortByDate(read(WEEKLY_KEY, weeklyReportSchema), "weekStart"),
+    sortByDate(readStoredRecords(WEEKLY_KEY, weeklyReportSchema), "weekStart"),
   updateMonthly: (id, input) => {
     const valid = validateMonthly(input);
     if (!valid.valid) {
       return invalid<MonthlyPerformanceReport>(valid.fieldErrors);
     }
-    const reports = read(MONTHLY_KEY, monthlyReportSchema);
+    const reports = readStoredRecords(MONTHLY_KEY, monthlyReportSchema);
     const existing = reports.find((report) => report.id === id);
     if (!existing) {
       return {
@@ -216,7 +205,7 @@ export const reportRepository: ReportRepository = {
     if (!valid.valid) {
       return invalid<WeeklyPerformanceReport>(valid.fieldErrors);
     }
-    const reports = read(WEEKLY_KEY, weeklyReportSchema);
+    const reports = readStoredRecords(WEEKLY_KEY, weeklyReportSchema);
     const existing = reports.find((report) => report.id === id);
     if (!existing) {
       return {

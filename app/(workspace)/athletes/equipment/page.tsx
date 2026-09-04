@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { WorkspaceHeader } from "@/components/workspace-header";
 import { EquipmentHeaderAction } from "@/features/equipment/components/equipment-header-action";
 import { EquipmentSkeleton } from "@/features/equipment/components/equipment-skeleton";
@@ -7,14 +8,14 @@ import { EquipmentWorkspace } from "@/features/equipment/components/equipment-wo
 
 export const metadata = {
   description: "Track athlete equipment setups and requirements.",
-  title: "Equipment | AthleteHub",
+  title: "Equipment",
 };
 
 const EquipmentPage = () => (
   <>
     <WorkspaceHeader
       actions={
-        <Suspense fallback={null}>
+        <Suspense fallback={<Skeleton className="h-9 w-32" />}>
           <EquipmentHeaderAction />
         </Suspense>
       }

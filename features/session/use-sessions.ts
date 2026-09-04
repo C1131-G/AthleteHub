@@ -1,6 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { z } from "zod";
 
 import "../../types/electron";
@@ -30,15 +35,39 @@ const api = () => {
   return electronApi.backend.sessions;
 };
 
-export const useSessions = (athleteId: string) => {
-  const queryClient = useQueryClient();
-  const query = useQuery({
+const sessionQueryOptions = (athleteId: string) =>
+  queryOptions({
     enabled: Boolean(api() && athleteId),
-    queryFn: async (): Promise<ArcherySession[]> =>
-      listResponseSchema.parse(await api()?.listByAthlete(athleteId)),
+    queryFn: async (): Promise<ArcherySession[]> => {
+      const backend = api();
+      if (!backend) {
+        throw new Error("Open the AthleteHub desktop app to load sessions.");
+      }
+      return listResponseSchema.parse(await backend.listByAthlete(athleteId));
+    },
     queryKey: sessionKeys.byAthlete(athleteId),
+    retry: false,
     staleTime: 30_000,
   });
+
+const sessionDetailOptions = (sessionId: string) =>
+  queryOptions({
+    enabled: Boolean(api() && sessionId),
+    queryFn: async () => {
+      const backend = api();
+      if (!backend) {
+        throw new Error("Open the AthleteHub desktop app to load sessions.");
+      }
+      return sessionResponseSchema.parse(await backend.get(sessionId));
+    },
+    queryKey: sessionKeys.byId(sessionId),
+    retry: false,
+    staleTime: 30_000,
+  });
+
+export const useSessions = (athleteId: string) => {
+  const queryClient = useQueryClient();
+  const query = useQuery(sessionQueryOptions(athleteId));
   const save = useMutation({
     mutationFn: async ({
       input,
@@ -58,22 +87,23 @@ export const useSessions = (athleteId: string) => {
     },
     onSuccess: async (result) => {
       if (result.status === "saved") {
+        queryClient.setQueryData(
+          sessionKeys.byId(result.session.id),
+          result.session
+        );
         await queryClient.invalidateQueries({
           queryKey: sessionKeys.byAthlete(result.session.athleteId),
         });
       }
     },
   });
-  return { ...query, save };
+  return {
+    data: query.data,
+    isError: query.isError,
+    isPending: query.isPending,
+    save,
+  };
 };
 
 export const useSession = (sessionId: string) =>
-  useQuery({
-    enabled: Boolean(api() && sessionId),
-    queryFn: async () => {
-      const session = await api()?.get(sessionId);
-      return sessionResponseSchema.parse(session);
-    },
-    queryKey: sessionKeys.byId(sessionId),
-    staleTime: 30_000,
-  });
+  useQuery(sessionDetailOptions(sessionId));

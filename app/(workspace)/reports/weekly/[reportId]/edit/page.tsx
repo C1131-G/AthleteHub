@@ -5,7 +5,7 @@ import {
   WeeklyReportFormSkeleton,
 } from "@/features/report/components/weekly-report-form";
 
-export const metadata = { title: "Edit weekly report | AthleteHub" };
+export const metadata = { title: "Edit weekly report" };
 
 const EditWeeklyReportPage = ({
   params,

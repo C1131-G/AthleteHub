@@ -24,39 +24,43 @@ const isTypingTarget = (target: EventTarget | null) => {
 const ThemeHotkey = () => {
   const { resolvedTheme, setTheme } = useTheme();
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.repeat) {
-        return;
-      }
+  useEffect(
+    // oxlint-disable-next-line prefer-arrow-callback
+    function listenForThemeHotkey() {
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.defaultPrevented || event.repeat) {
+          return;
+        }
 
-      // WCAG 2.1.4 forbids an always-on single-character shortcut with no way
-      // to disable or remap it, so this requires a non-printing modifier.
-      if (!event.altKey || event.metaKey || event.ctrlKey) {
-        return;
-      }
+        // WCAG 2.1.4 forbids an always-on single-character shortcut with no way
+        // to disable or remap it, so this requires a non-printing modifier.
+        if (!event.altKey || event.metaKey || event.ctrlKey) {
+          return;
+        }
 
-      if (event.key.toLowerCase() !== "d") {
-        return;
-      }
+        if (event.key.toLowerCase() !== "d") {
+          return;
+        }
 
-      if (isTypingTarget(event.target)) {
-        return;
-      }
+        if (isTypingTarget(event.target)) {
+          return;
+        }
 
-      event.preventDefault();
+        event.preventDefault();
 
-      runThemeTransition(() =>
-        setTheme(resolvedTheme === "dark" ? "light" : "dark")
-      );
-    };
+        runThemeTransition(() =>
+          setTheme(resolvedTheme === "dark" ? "light" : "dark")
+        );
+      };
 
-    window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keydown", onKeyDown);
 
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [resolvedTheme, setTheme]);
+      return function stopListeningForThemeHotkey() {
+        window.removeEventListener("keydown", onKeyDown);
+      };
+    },
+    [resolvedTheme, setTheme]
+  );
 
   return null;
 };

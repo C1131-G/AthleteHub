@@ -12,7 +12,7 @@ import {
 export const metadata = {
   description:
     "Plan weekly arrow targets, season goals, and competition events.",
-  title: "Training plans | AthleteHub",
+  title: "Training plans",
 };
 
 const TrainingPlansPage = () => (

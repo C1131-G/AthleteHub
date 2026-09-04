@@ -33,6 +33,8 @@ import type {
   MonthlyCycleStepStatus,
 } from "./monthly-cycle-types";
 
+const unreachableStep = (step: never): never => step;
+
 export interface CycleDomainContext {
   datedAssessments?: Assessment[];
   athlete: Athlete | undefined;
@@ -321,8 +323,9 @@ export const currentSourcesFor = (
         ? sourceRefsFor([context.monthlyReport])
         : [];
     }
+    // oxlint-disable-next-line eslint(no-unreachable)
     default: {
-      return [];
+      return unreachableStep(step);
     }
   }
 };
@@ -558,8 +561,9 @@ const blockersFor = (
     case "weekly": {
       return weeklyBlockers(stored, context, month);
     }
+    // oxlint-disable-next-line eslint(no-unreachable)
     default: {
-      return [];
+      return unreachableStep(step);
     }
   }
 };

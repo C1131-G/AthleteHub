@@ -22,6 +22,8 @@ import { ReviewStep } from "./step-review";
 import { TrainingLoadStep } from "./step-training-load";
 import { WeeklyStep } from "./step-weekly";
 
+const unreachableStep = (step: never): never => step;
+
 export const CycleStepSkeleton = () => (
   <div className="space-y-6" aria-busy="true" aria-live="polite">
     <div className="bg-muted h-10 w-72 animate-pulse rounded-xl" />
@@ -124,8 +126,9 @@ export const CycleStepGate = ({
     case "review": {
       return <ReviewStep context={context} cycle={cycle} />;
     }
+    // oxlint-disable-next-line eslint(no-unreachable)
     default: {
-      return null;
+      return unreachableStep(step);
     }
   }
 };

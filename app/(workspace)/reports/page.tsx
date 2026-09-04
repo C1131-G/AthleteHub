@@ -12,7 +12,7 @@ import {
 
 export const metadata = {
   description: "Create and review weekly and monthly athlete reports.",
-  title: "Reports | AthleteHub",
+  title: "Reports",
 };
 
 const ReportsPage = () => (

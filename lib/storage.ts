@@ -12,6 +12,12 @@ const store = (): Storage | undefined => {
   }
 };
 
+export interface StorageSchema<T> {
+  safeParse: (
+    value: unknown
+  ) => { data: T; success: true } | { success: false };
+}
+
 export const readStoredArray = (key: string): unknown[] => {
   try {
     const raw = store()?.getItem(key);
@@ -24,6 +30,15 @@ export const readStoredArray = (key: string): unknown[] => {
     return [];
   }
 };
+
+export const readStoredRecords = <T>(
+  key: string,
+  schema: StorageSchema<T>
+): T[] =>
+  readStoredArray(key).flatMap((value) => {
+    const result = schema.safeParse(value);
+    return result.success ? [result.data] : [];
+  });
 
 export class StorageWriteError extends Error {
   constructor(key: string) {

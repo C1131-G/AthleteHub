@@ -2,7 +2,7 @@ import { SessionDetail } from "@/features/session/components/session-detail";
 
 export const metadata = {
   description: "Review an archery session.",
-  title: "Session | AthleteHub",
+  title: "Session",
 };
 
 export const instant = false;

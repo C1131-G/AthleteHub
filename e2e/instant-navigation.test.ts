@@ -49,6 +49,11 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
             await playwrightExpect(
               page.getByRole("heading", { level: 1, name: heading })
             ).toBeVisible();
+            if (route === "/dashboard") {
+              await playwrightExpect(page).toHaveTitle(
+                "Dashboard | AthleteHub"
+              );
+            }
           },
           { baseURL: "http://127.0.0.1:3100" }
         );

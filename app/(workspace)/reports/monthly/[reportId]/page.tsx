@@ -5,7 +5,7 @@ import {
   MonthlyReportPreviewSkeleton,
 } from "@/features/report/components/monthly-report-preview";
 
-export const metadata = { title: "Monthly report | AthleteHub" };
+export const metadata = { title: "Monthly report" };
 
 const MonthlyReportPage = ({
   params,

@@ -7,7 +7,7 @@ import {
 
 export const metadata = {
   description: "View an athlete profile in AthleteHub.",
-  title: "Athlete profile | AthleteHub",
+  title: "Athlete profile",
 };
 
 const AthletePage = ({ params }: PageProps<"/athletes/[athleteId]">) => {

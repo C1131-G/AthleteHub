@@ -1,5 +1,5 @@
 import "client-only";
-import { readStoredArray, writeStored } from "@/lib/storage";
+import { readStoredRecords, writeStored } from "@/lib/storage";
 
 import { overlappingActiveProgramme } from "./conditioning-calculations";
 import {
@@ -19,23 +19,8 @@ import type {
 const ASSESSMENTS_KEY = "athletehub.conditioning-assessments.v1";
 const PROGRAMMES_KEY = "athletehub.conditioning-programmes.v1";
 
-interface ParseSchema<T> {
-  safeParse: (value: unknown) =>
-    | { data: T; success: true }
-    | {
-        error: { flatten: () => { fieldErrors: Record<string, string[]> } };
-        success: false;
-      };
-}
-
 // Each record is parsed independently so one malformed record cannot remove
 // an athlete's valid conditioning history.
-const read = <T>(key: string, schema: ParseSchema<T>) =>
-  readStoredArray(key).flatMap((value) => {
-    const result = schema.safeParse(value);
-    return result.success ? [result.data] : [];
-  });
-
 const write = (key: string, value: unknown[]) => writeStored(key, value);
 
 const fieldErrorsOf = (error: {
@@ -111,7 +96,10 @@ export const conditioningRepository: ConditioningRepository = {
     if (!parsed.success) {
       return invalid(fieldErrorsOf(parsed.error));
     }
-    const assessments = read(ASSESSMENTS_KEY, conditioningAssessmentSchema);
+    const assessments = readStoredRecords(
+      ASSESSMENTS_KEY,
+      conditioningAssessmentSchema
+    );
     if (duplicateOnAthleteDate(assessments, parsed.data)) {
       return failure("duplicate", {
         assessedOn:
@@ -137,7 +125,10 @@ export const conditioningRepository: ConditioningRepository = {
     if (!parsed.success) {
       return invalid(fieldErrorsOf(parsed.error));
     }
-    const programmes = read(PROGRAMMES_KEY, conditioningProgrammeSchema);
+    const programmes = readStoredRecords(
+      PROGRAMMES_KEY,
+      conditioningProgrammeSchema
+    );
     if (
       parsed.data.status === "active" &&
       overlappingActiveProgramme(
@@ -164,22 +155,26 @@ export const conditioningRepository: ConditioningRepository = {
     return { record, status: "saved" };
   },
   getAssessment: (id) =>
-    read(ASSESSMENTS_KEY, conditioningAssessmentSchema).find(
+    readStoredRecords(ASSESSMENTS_KEY, conditioningAssessmentSchema).find(
       (assessment) => assessment.id === id
     ),
   getProgramme: (id) =>
-    read(PROGRAMMES_KEY, conditioningProgrammeSchema).find(
+    readStoredRecords(PROGRAMMES_KEY, conditioningProgrammeSchema).find(
       (programme) => programme.id === id
     ),
   listAssessments: () =>
-    read(ASSESSMENTS_KEY, conditioningAssessmentSchema).toSorted((a, b) =>
-      `${b.assessedOn}${b.createdAt}`.localeCompare(
-        `${a.assessedOn}${a.createdAt}`
-      )
+    readStoredRecords(ASSESSMENTS_KEY, conditioningAssessmentSchema).toSorted(
+      (a, b) =>
+        `${b.assessedOn}${b.createdAt}`.localeCompare(
+          `${a.assessedOn}${a.createdAt}`
+        )
     ),
   listProgrammes: () =>
-    read(PROGRAMMES_KEY, conditioningProgrammeSchema).toSorted((a, b) =>
-      `${b.startsOn}${b.createdAt}`.localeCompare(`${a.startsOn}${a.createdAt}`)
+    readStoredRecords(PROGRAMMES_KEY, conditioningProgrammeSchema).toSorted(
+      (a, b) =>
+        `${b.startsOn}${b.createdAt}`.localeCompare(
+          `${a.startsOn}${a.createdAt}`
+        )
     ),
   updateAssessment: (id, input) => {
     const parsed = conditioningAssessmentInputSchema.safeParse(
@@ -188,7 +183,10 @@ export const conditioningRepository: ConditioningRepository = {
     if (!parsed.success) {
       return invalid(fieldErrorsOf(parsed.error));
     }
-    const assessments = read(ASSESSMENTS_KEY, conditioningAssessmentSchema);
+    const assessments = readStoredRecords(
+      ASSESSMENTS_KEY,
+      conditioningAssessmentSchema
+    );
     const existing = assessments.find((assessment) => assessment.id === id);
     if (!existing) {
       return failure("not-found", { form: "Assessment not found." });
@@ -223,7 +221,10 @@ export const conditioningRepository: ConditioningRepository = {
     if (!parsed.success) {
       return invalid(fieldErrorsOf(parsed.error));
     }
-    const programmes = read(PROGRAMMES_KEY, conditioningProgrammeSchema);
+    const programmes = readStoredRecords(
+      PROGRAMMES_KEY,
+      conditioningProgrammeSchema
+    );
     const existing = programmes.find((programme) => programme.id === id);
     if (!existing) {
       return failure("not-found", { form: "Programme not found." });

@@ -5,7 +5,7 @@ import {
   AssessmentFormSkeleton,
 } from "@/features/conditioning/components/assessment-form";
 
-export const metadata = { title: "New assessment | AthleteHub" };
+export const metadata = { title: "New assessment" };
 
 const NewAssessmentPage = () => (
   <Suspense fallback={<AssessmentFormSkeleton />}>

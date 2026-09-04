@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/login-form";
 
 export const metadata: Metadata = {
   description: "Log in to your AthleteHub account.",
-  title: "Log in | AthleteHub",
+  title: "Log in",
 };
 
 const Page = () => (

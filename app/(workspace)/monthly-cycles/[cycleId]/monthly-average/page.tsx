@@ -7,7 +7,7 @@ import {
 
 export const metadata = {
   description: "Monthly average step of the guided monthly cycle.",
-  title: "Monthly average | Monthly cycle | AthleteHub",
+  title: "Monthly average | Monthly cycle",
 };
 
 const Page = ({ params }: { params: Promise<{ cycleId: string }> }) => (

@@ -5,7 +5,7 @@ import {
   TrainingPlanPreviewSkeleton,
 } from "@/features/training-plan/components/training-plan-preview";
 
-export const metadata = { title: "Training plan | AthleteHub" };
+export const metadata = { title: "Training plan" };
 
 const TrainingPlanPage = ({
   params,

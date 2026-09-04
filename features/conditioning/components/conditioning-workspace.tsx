@@ -3,6 +3,7 @@
 import { XIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AthletePicker } from "@/features/athlete/athlete-picker";
 import { useAthletes } from "@/features/athlete/use-athletes";
 
-import { assessmentStatusLabel, phaseLabel } from "../conditioning-types";
+import {
+  assessmentStatusLabel,
+  conditioningAssessmentStatuses,
+  conditioningPhases,
+  conditioningProgrammeStatuses,
+  phaseLabel,
+} from "../conditioning-types";
 import { useConditioning } from "../use-conditioning";
 import { AssessmentTable } from "./assessment-table";
 import { ConditioningWorkspaceSkeleton } from "./conditioning-workspace-skeleton";
@@ -37,7 +44,19 @@ const CONDITIONING_PATH = "/conditioning";
 const ALL = "all";
 
 const tabs = ["assessments", "programmes", "progress"] as const;
-type Tab = (typeof tabs)[number];
+const emptyOr = <T extends z.ZodType>(schema: T) =>
+  z.union([z.literal(""), schema]);
+const conditioningSearchSchema = z.object({
+  assessmentStatus: emptyOr(z.enum(conditioningAssessmentStatuses)).catch(""),
+  athleteId: z.string().trim().catch(""),
+  month: z
+    .string()
+    .regex(/^$|^\d{4}-\d{2}$/)
+    .catch(""),
+  phase: emptyOr(z.enum(conditioningPhases)).catch(""),
+  programmeStatus: emptyOr(z.enum(conditioningProgrammeStatuses)).catch(""),
+  tab: z.enum(tabs).catch("assessments"),
+});
 
 // SAFETY: Object.entries preserves the label map's exact key union.
 const assessmentStatusOptions = (
@@ -100,16 +119,8 @@ export const ConditioningWorkspace = () => {
     ready: conditioningReady,
   } = useConditioning();
 
-  const requestedTab = params.get("tab") ?? "assessments";
-  // SAFETY: the check narrows to the known tab literals before the assertion.
-  const tab: Tab = (tabs as readonly string[]).includes(requestedTab)
-    ? (requestedTab as Tab)
-    : "assessments";
-  const athleteId = params.get("athleteId") ?? "";
-  const month = params.get("month") ?? "";
-  const assessmentStatus = params.get("assessmentStatus") ?? "";
-  const phase = params.get("phase") ?? "";
-  const programmeStatus = params.get("programmeStatus") ?? "";
+  const { assessmentStatus, athleteId, month, phase, programmeStatus, tab } =
+    conditioningSearchSchema.parse(Object.fromEntries(params.entries()));
 
   const athleteById = useMemo(
     () => new Map(athletes.map((athlete) => [athlete.id, athlete])),

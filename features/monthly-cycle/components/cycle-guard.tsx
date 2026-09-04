@@ -81,21 +81,29 @@ export const CycleGuardProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => warnBeforeLeavingCycle(isDirty), [isDirty]);
 
-  useEffect(() => {
-    const handleNavigationRequest = (event: Event) => {
-      if (!(event instanceof CustomEvent)) {
-        return;
-      }
-      event.preventDefault();
-      confirmNavigation(event.detail);
-    };
-    window.addEventListener(CYCLE_NAVIGATION_REQUEST, handleNavigationRequest);
-    return () =>
-      window.removeEventListener(
+  useEffect(
+    // oxlint-disable-next-line prefer-arrow-callback
+    function listenForCycleNavigation() {
+      const handleNavigationRequest = (event: Event) => {
+        if (!(event instanceof CustomEvent)) {
+          return;
+        }
+        event.preventDefault();
+        confirmNavigation(event.detail);
+      };
+      window.addEventListener(
         CYCLE_NAVIGATION_REQUEST,
         handleNavigationRequest
       );
-  }, [confirmNavigation]);
+      return function stopListeningForCycleNavigation() {
+        window.removeEventListener(
+          CYCLE_NAVIGATION_REQUEST,
+          handleNavigationRequest
+        );
+      };
+    },
+    [confirmNavigation]
+  );
 
   const value = useMemo(
     () => ({ confirmNavigation, setDirty }),

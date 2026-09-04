@@ -6,7 +6,7 @@ import {
   AssessmentFormSkeleton,
 } from "@/features/assessment/components/assessment-form";
 
-export const metadata = { title: "New assessment | AthleteHub" };
+export const metadata = { title: "New assessment" };
 
 const NewAssessmentPage = ({
   searchParams,

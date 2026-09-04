@@ -5,7 +5,7 @@ import { PerformanceWorkspace } from "@/features/report/components/performance-w
 
 export const metadata = {
   description: "Compare athlete performance over time.",
-  title: "Performance | AthleteHub",
+  title: "Performance",
 };
 
 const PerformancePage = () => (
