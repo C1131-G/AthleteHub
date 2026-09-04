@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 
-import {
-  AssessmentPreview,
-  AssessmentPreviewSkeleton,
-} from "@/features/conditioning/components/assessment-preview";
+import { AssessmentPreview } from "@/features/conditioning/components/assessment-preview";
+import { AssessmentPreviewSkeleton } from "@/features/conditioning/components/assessment-preview-skeleton";
 
 export const metadata = { title: "Assessment | AthleteHub" };
 

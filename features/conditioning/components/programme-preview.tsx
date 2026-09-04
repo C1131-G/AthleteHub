@@ -7,13 +7,6 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { useAthletes } from "@/features/athlete/use-athletes";
 import { trainingPlanHref } from "@/features/training-plan/training-plan-routes";
 import type {
@@ -40,6 +33,8 @@ import type { ConditioningProgramme } from "../conditioning-types";
 import { useConditioning } from "../use-conditioning";
 import { WeeklyMinutesChart } from "./conditioning-charts";
 import type { MinutesRow } from "./conditioning-charts";
+import { ProgrammeNotFound } from "./programme-not-found";
+import { ProgrammePreviewSkeleton } from "./programme-preview-skeleton";
 
 const intensityBadgeVariant = {
   high: "default",
@@ -285,28 +280,3 @@ const WeeklyMinutesSummary = ({
   );
   return <WeeklyMinutesChart rows={rows} />;
 };
-
-export const ProgrammePreviewSkeleton = () => (
-  <div className="space-y-6">
-    <div className="bg-muted h-12 w-80 animate-pulse rounded-xl" />
-    <div className="bg-muted h-64 animate-pulse rounded-xl" />
-    <div className="bg-muted h-80 animate-pulse rounded-xl" />
-  </div>
-);
-
-const ProgrammeNotFound = () => (
-  <Empty className="min-h-96 border">
-    <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <BarbellIcon />
-      </EmptyMedia>
-      <EmptyTitle>Programme not found</EmptyTitle>
-      <EmptyDescription>
-        The programme may have been removed or the link is incorrect.
-      </EmptyDescription>
-      <Link className={buttonVariants()} href="/conditioning">
-        Back to conditioning
-      </Link>
-    </EmptyHeader>
-  </Empty>
-);

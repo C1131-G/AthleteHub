@@ -25,6 +25,7 @@ import { weeklyEntryStatuses } from "../report-types";
 import type { WeeklyEntryStatus } from "../report-types";
 import { errorId, fieldProps } from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
+import { WeeklyAbsenceField } from "./weekly-absence-field";
 
 export interface WeeklyFormState {
   absenceReason: string;
@@ -146,7 +147,7 @@ export const WeeklyReportFields = ({
           update={update}
         />
       ) : (
-        <AbsenceField errors={errors} form={form} update={update} />
+        <WeeklyAbsenceField errors={errors} form={form} update={update} />
       )}
       <Card>
         <CardHeader>
@@ -284,31 +285,6 @@ const ScoringFields = ({
           />
         </Field>
       </div>
-    </CardContent>
-  </Card>
-);
-
-const AbsenceField = ({
-  errors,
-  form,
-  update,
-}: Omit<WeeklyReportFieldsProps, "pending">) => (
-  <Card>
-    <CardContent className="pt-6">
-      <Field>
-        <FieldLabel htmlFor="absence-reason">
-          Leave or absence reason
-        </FieldLabel>
-        <Textarea
-          {...fieldProps("absence-reason", errors)}
-          id="absence-reason"
-          onChange={(event) => update("absenceReason", event.target.value)}
-          value={form.absenceReason}
-        />
-        <FieldError id={errorId("absence-reason")}>
-          {errors["absence-reason"]}
-        </FieldError>
-      </Field>
     </CardContent>
   </Card>
 );

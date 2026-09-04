@@ -1,6 +1,5 @@
 "use client";
 
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AthletePicker } from "@/features/athlete/athlete-picker";
 
+import { newEnd } from "../session-form-state";
+import type { DraftEnd } from "../session-form-state";
 import type { SessionEndInput, SessionFormat } from "../session-types";
 import { useSessions } from "../use-sessions";
+import { SessionEndsEditor } from "./session-ends-editor";
 
 const defaultFormat: SessionFormat = {
   arrowsPerEnd: 6,
@@ -23,7 +25,6 @@ const defaultFormat: SessionFormat = {
   targetFaceCm: 122,
 };
 
-type DraftEnd = SessionEndInput & { key: string };
 interface SessionFormState {
   date: string;
   ends: DraftEnd[];
@@ -32,12 +33,6 @@ interface SessionFormState {
   selectedAthleteId: string;
   technicalFocus: string;
 }
-
-const newEnd = (key: string, arrowCount: number): DraftEnd => ({
-  arrowCount,
-  key,
-  score: 0,
-});
 
 export const SessionForm = ({ athleteId }: { athleteId: string }) => {
   const [form, setForm] = useState<SessionFormState>({
@@ -215,75 +210,25 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           </div>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Ends</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-muted-foreground text-sm" aria-live="polite">
-            Running score: <strong>{scoreSummary.score}</strong>. Recorded
-            arrows: <strong>{scoreSummary.arrows}</strong>.
-          </p>
-          {form.ends.map((end, index) => (
-            <div className="flex items-end gap-3" key={end.key}>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor={`end-${index}-score`}>
-                  End {index + 1} score
-                </Label>
-                <Input
-                  id={`end-${index}-score`}
-                  min="0"
-                  onChange={(event) =>
-                    updateEnd(index, "score", event.target.value)
-                  }
-                  type="number"
-                  value={end.score}
-                />
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor={`end-${index}-arrows`}>Arrows</Label>
-                <Input
-                  id={`end-${index}-arrows`}
-                  min="1"
-                  onChange={(event) =>
-                    updateEnd(index, "arrowCount", event.target.value)
-                  }
-                  type="number"
-                  value={end.arrowCount}
-                />
-              </div>
-              <Button
-                aria-label={`Remove end ${index + 1}`}
-                disabled={form.ends.length === 1}
-                onClick={() =>
-                  updateForm({
-                    ends: form.ends.filter((_, endIndex) => endIndex !== index),
-                  })
-                }
-                size="icon"
-                type="button"
-                variant="ghost"
-              >
-                <TrashIcon aria-hidden="true" />
-              </Button>
-            </div>
-          ))}
-          <Button
-            onClick={() =>
-              updateForm({
-                ends: [
-                  ...form.ends,
-                  newEnd(crypto.randomUUID(), form.format.arrowsPerEnd),
-                ],
-              })
-            }
-            type="button"
-            variant="outline"
-          >
-            <PlusIcon aria-hidden="true" /> Add end
-          </Button>
-        </CardContent>
-      </Card>
+      <SessionEndsEditor
+        arrowsPerEnd={form.format.arrowsPerEnd}
+        ends={form.ends}
+        onAdd={() =>
+          updateForm({
+            ends: [
+              ...form.ends,
+              newEnd(crypto.randomUUID(), form.format.arrowsPerEnd),
+            ],
+          })
+        }
+        onRemove={(index) =>
+          updateForm({
+            ends: form.ends.filter((_, endIndex) => endIndex !== index),
+          })
+        }
+        onUpdate={updateEnd}
+        scoreSummary={scoreSummary}
+      />
       <Card>
         <CardHeader>
           <CardTitle>Coach notes</CardTitle>

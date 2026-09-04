@@ -28,6 +28,7 @@ import { useAthletes } from "@/features/athlete/use-athletes";
 import { assessmentStatusLabel, phaseLabel } from "../conditioning-types";
 import { useConditioning } from "../use-conditioning";
 import { AssessmentTable } from "./assessment-table";
+import { ConditioningWorkspaceSkeleton } from "./conditioning-workspace-skeleton";
 import { ProgrammeTable } from "./programme-table";
 import { ProgressPanel } from "./progress-panel";
 
@@ -296,11 +297,3 @@ export const ConditioningWorkspace = () => {
     </section>
   );
 };
-
-export const ConditioningWorkspaceSkeleton = () => (
-  <div className="space-y-6">
-    <div className="bg-muted h-12 w-80 animate-pulse rounded-xl" />
-    <div className="bg-muted h-32 animate-pulse rounded-xl" />
-    <div className="bg-muted h-72 animate-pulse rounded-xl" />
-  </div>
-);

@@ -1,25 +1,12 @@
 "use client";
 
-import {
-  ArrowDownRightIcon,
-  ArrowRightIcon,
-  ArrowUpRightIcon,
-  BarbellIcon,
-  PencilSimpleIcon,
-} from "@phosphor-icons/react";
+import { BarbellIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import {
   Table,
   TableBody,
@@ -31,7 +18,11 @@ import {
 } from "@/components/ui/table";
 import { useAthletes } from "@/features/athlete/use-athletes";
 
-import { formatDuration } from "../conditioning-calculations";
+import {
+  changeDirection,
+  formatValue,
+  unitSuffix,
+} from "../assessment-result-helpers";
 import {
   conditioningAssessmentEditHref,
   conditioningNewAssessmentHref,
@@ -43,61 +34,12 @@ import {
 } from "../conditioning-types";
 import type { ConditioningAssessment } from "../conditioning-types";
 import { useConditioning } from "../use-conditioning";
+import { AssessmentChangeIndicator } from "./assessment-change-indicator";
+import { AssessmentNotesCard } from "./assessment-notes-card";
+import { AssessmentPreviewSkeleton } from "./assessment-preview-skeleton";
+import { AssessmentNotFound } from "./assessment-preview-states";
 import { ResultComparisonChart } from "./conditioning-charts";
 import type { ComparisonRow } from "./conditioning-charts";
-
-const unitSuffix = (result: ConditioningAssessment["results"][number]) =>
-  result.unit === "custom" ? result.customUnit || "units" : result.unit;
-
-const formatValue = (
-  value: number,
-  result: ConditioningAssessment["results"][number]
-) =>
-  result.unit === "seconds"
-    ? formatDuration(value)
-    : `${value} ${unitSuffix(result)}`;
-
-const changeDirection = (
-  result: ConditioningAssessment["results"][number],
-  prior: ConditioningAssessment["results"][number] | undefined
-): "better" | "worse" | "same" => {
-  if (!prior) {
-    return "same";
-  }
-  const delta = result.value - prior.value;
-  if (delta === 0) {
-    return "same";
-  }
-  const improved =
-    result.improvementDirection === "higher" ? delta > 0 : delta < 0;
-  return improved ? "better" : "worse";
-};
-
-const ChangeIndicator = ({
-  direction,
-}: {
-  direction: "better" | "worse" | "same";
-}) => {
-  if (direction === "better") {
-    return (
-      <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-        <ArrowUpRightIcon aria-hidden="true" className="size-4" /> Better
-      </span>
-    );
-  }
-  if (direction === "worse") {
-    return (
-      <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
-        <ArrowDownRightIcon aria-hidden="true" className="size-4" /> Declined
-      </span>
-    );
-  }
-  return (
-    <span className="text-muted-foreground inline-flex items-center gap-1">
-      <ArrowRightIcon aria-hidden="true" className="size-4" /> No change
-    </span>
-  );
-};
 
 export const AssessmentPreview = ({
   assessmentId,
@@ -164,13 +106,19 @@ export const AssessmentPreview = ({
       ) : null}
       <ResultsCard assessments={assessments} assessment={assessment} />
       <div className="grid gap-4 lg:grid-cols-2">
-        <NotesCard title="Coach summary" text={assessment.coachSummary} />
-        <NotesCard title="Strengths" text={assessment.strengths.join("\n")} />
-        <NotesCard
+        <AssessmentNotesCard
+          title="Coach summary"
+          text={assessment.coachSummary}
+        />
+        <AssessmentNotesCard
+          title="Strengths"
+          text={assessment.strengths.join("\n")}
+        />
+        <AssessmentNotesCard
           title="Development areas"
           text={assessment.developmentAreas.join("\n")}
         />
-        <NotesCard
+        <AssessmentNotesCard
           title="Recommendations"
           text={assessment.recommendations.join("\n")}
         />
@@ -268,7 +216,7 @@ const ResultsCard = ({
                         {prior ? formatValue(prior.value, prior) : "—"}
                       </TableCell>
                       <TableCell>
-                        <ChangeIndicator direction={direction} />
+                        <AssessmentChangeIndicator direction={direction} />
                       </TableCell>
                       <TableCell>{ratingLabel[result.rating]}</TableCell>
                       <TableCell className="text-muted-foreground max-w-72 text-sm">
@@ -300,39 +248,3 @@ const ResultsCard = ({
     </>
   );
 };
-
-const NotesCard = ({ title, text }: { text: string; title: string }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="text-base">{title}</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <p className="whitespace-pre-wrap">{text || "None recorded."}</p>
-    </CardContent>
-  </Card>
-);
-
-export const AssessmentPreviewSkeleton = () => (
-  <div className="space-y-6">
-    <div className="bg-muted h-12 w-80 animate-pulse rounded-xl" />
-    <div className="bg-muted h-64 animate-pulse rounded-xl" />
-    <div className="bg-muted h-80 animate-pulse rounded-xl" />
-  </div>
-);
-
-const AssessmentNotFound = () => (
-  <Empty className="min-h-96 border">
-    <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <BarbellIcon />
-      </EmptyMedia>
-      <EmptyTitle>Assessment not found</EmptyTitle>
-      <EmptyDescription>
-        The assessment may have been removed or the link is incorrect.
-      </EmptyDescription>
-      <Link className={buttonVariants()} href="/conditioning">
-        Back to conditioning
-      </Link>
-    </EmptyHeader>
-  </Empty>
-);

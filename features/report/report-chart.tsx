@@ -1,11 +1,10 @@
 export {
   AthleteRankingChart,
-  ArrowLoadChart,
   ReportCompletionChart,
-  ScoreTrendChart,
-} from "./components/report-chart";
+} from "./components/report-ranking-charts";
+export { ArrowLoadChart, ScoreTrendChart } from "./components/report-chart";
 export type {
   CompletionPoint,
   RankingPoint,
-  ScoreSeries,
-} from "./components/report-chart";
+} from "./components/report-ranking-charts";
+export type { ScoreSeries } from "./components/report-chart";

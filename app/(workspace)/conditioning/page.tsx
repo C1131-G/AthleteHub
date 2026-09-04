@@ -4,10 +4,8 @@ import { Suspense } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { WorkspaceHeader } from "@/components/workspace-header";
-import {
-  ConditioningWorkspace,
-  ConditioningWorkspaceSkeleton,
-} from "@/features/conditioning/components/conditioning-workspace";
+import { ConditioningWorkspace } from "@/features/conditioning/components/conditioning-workspace";
+import { ConditioningWorkspaceSkeleton } from "@/features/conditioning/components/conditioning-workspace-skeleton";
 
 export const metadata = {
   description:

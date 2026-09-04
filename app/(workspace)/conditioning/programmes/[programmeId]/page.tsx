@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 
-import {
-  ProgrammePreview,
-  ProgrammePreviewSkeleton,
-} from "@/features/conditioning/components/programme-preview";
+import { ProgrammePreview } from "@/features/conditioning/components/programme-preview";
+import { ProgrammePreviewSkeleton } from "@/features/conditioning/components/programme-preview-skeleton";
 
 export const metadata = { title: "Programme | AthleteHub" };
 

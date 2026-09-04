@@ -25,42 +25,15 @@ import type { MonthlyPerformanceReportInput } from "../report-types";
 import { useReports } from "../use-reports";
 import { MonthlyReportFields } from "./monthly-report-fields";
 import type { MonthlyFormState } from "./monthly-report-fields";
+import { MonthlyReportFormSkeleton } from "./monthly-report-form-skeleton";
+import { numberOrUndefined, toState } from "./monthly-report-form-support";
+import type { MonthlyReportFormProps } from "./monthly-report-form-support";
 import {
   focusFirstError,
   monthlyControls,
   toFormErrors,
 } from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
-
-interface MonthlyReportFormProps {
-  reportId?: string | undefined;
-  initialAthleteId?: string | undefined;
-  initialMonth?: string | undefined;
-}
-
-const toState = (input: MonthlyPerformanceReportInput): MonthlyFormState => ({
-  actionItems: input.actionItems.join("\n"),
-  athleteId: input.athleteId,
-  coachSummary: input.coachSummary,
-  conditioningPlan: input.assessments.conditioningPlan,
-  dartfishNotes: input.assessments.dartfishNotes,
-  exceptionReason: input.exceptionReason,
-  month: input.month,
-  performanceHighlights: input.performanceHighlights,
-  planNotes: input.nextMonthPlan.notes,
-  status: input.status,
-  targetDistanceM: String(input.nextMonthPlan.targetDistanceM ?? ""),
-  targetScore: String(input.nextMonthPlan.targetScore ?? ""),
-  weeklyArrowTargets: input.nextMonthPlan.weeklyArrowTargets.join(", "),
-});
-
-const numberOrUndefined = (value: string) => {
-  if (!value.trim()) {
-    return;
-  }
-  const number = Number(value);
-  return Number.isFinite(number) ? number : undefined;
-};
 
 export const MonthlyReportForm = ({
   reportId,
@@ -300,11 +273,3 @@ const MonthlyReportFormBody = ({
     </form>
   );
 };
-
-export const MonthlyReportFormSkeleton = () => (
-  <div className="space-y-6">
-    <div className="bg-muted h-10 w-72 animate-pulse rounded-xl" />
-    <div className="bg-muted h-64 animate-pulse rounded-xl" />
-    <div className="bg-muted h-80 animate-pulse rounded-xl" />
-  </div>
-);

@@ -23,12 +23,11 @@ import { dashboardMetrics } from "../dashboard-metrics";
 import { useReports } from "../use-reports";
 import { DashboardFilters } from "./dashboard-filters";
 import { DashboardWorkspaceSkeleton, Metric } from "./dashboard-parts";
+import { ArrowLoadChart, ScoreTrendChart } from "./report-chart";
 import {
   AthleteRankingChart,
-  ArrowLoadChart,
   ReportCompletionChart,
-  ScoreTrendChart,
-} from "./report-chart";
+} from "./report-ranking-charts";
 
 export { DashboardWorkspaceSkeleton } from "./dashboard-parts";
 
