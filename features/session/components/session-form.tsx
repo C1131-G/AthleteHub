@@ -1,7 +1,7 @@
 "use client";
 
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,15 @@ const defaultFormat: SessionFormat = {
 };
 
 type DraftEnd = SessionEndInput & { key: string };
+interface SessionFormState {
+  date: string;
+  ends: DraftEnd[];
+  format: SessionFormat;
+  notes: string;
+  selectedAthleteId: string;
+  technicalFocus: string;
+}
+
 const newEnd = (key: string, arrowCount: number): DraftEnd => ({
   arrowCount,
   key,
@@ -31,29 +40,44 @@ const newEnd = (key: string, arrowCount: number): DraftEnd => ({
 });
 
 export const SessionForm = ({ athleteId }: { athleteId: string }) => {
-  const [selectedAthleteId, setSelectedAthleteId] = useState(
-    athleteId === "unassigned" ? "" : athleteId
-  );
-  const [date, setDate] = useState("");
-  const [ends, setEnds] = useState<DraftEnd[]>([
-    newEnd("end-1", defaultFormat.arrowsPerEnd),
-  ]);
+  const [form, setForm] = useState<SessionFormState>({
+    date: "",
+    ends: [newEnd("end-1", defaultFormat.arrowsPerEnd)],
+    format: defaultFormat,
+    notes: "",
+    selectedAthleteId: athleteId === "unassigned" ? "" : athleteId,
+    technicalFocus: "",
+  });
   const sessionIdRef = useRef("");
-  const [format, setFormat] = useState(defaultFormat);
-  const [notes, setNotes] = useState("");
-  const [technicalFocus, setTechnicalFocus] = useState("");
-  const [error, setError] = useState<string | undefined>();
-  const { save } = useSessions(selectedAthleteId || athleteId);
+  const [feedback, setFeedback] = useState<{
+    athleteLocked: boolean;
+    error?: string;
+    success?: string;
+  }>({ athleteLocked: false });
+  const updateForm = (patch: Partial<SessionFormState>) =>
+    setForm((current) => ({ ...current, ...patch }));
+  const scoreSummary = useMemo(
+    () => ({
+      arrows: form.ends.reduce((total, end) => total + end.arrowCount, 0),
+      score: form.ends.reduce((total, end) => total + end.score, 0),
+    }),
+    [form.ends]
+  );
+  const { save } = useSessions(form.selectedAthleteId || athleteId);
   const desktopAvailable = globalThis.window?.electronAPI !== undefined;
 
-  useEffect(() => {
+  const initializeSessionRecording = () => {
     if (!sessionIdRef.current) {
       sessionIdRef.current = crypto.randomUUID();
     }
     if (!desktopAvailable) {
-      setError("Session recording is available in the AthleteHub desktop app.");
+      setFeedback((current) => ({
+        ...current,
+        error: "Session recording is available in the AthleteHub desktop app.",
+      }));
     }
-  }, [desktopAvailable]);
+  };
+  useEffect(initializeSessionRecording, [desktopAvailable]);
 
   const updateEnd = (
     index: number,
@@ -61,43 +85,53 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
     value: string
   ) => {
     const numericValue = Number(value);
-    setEnds((current) =>
-      current.map((end, endIndex) =>
+    updateForm({
+      ends: form.ends.map((end, endIndex) =>
         endIndex === index ? { ...end, [field]: numericValue } : end
-      )
-    );
+      ),
+    });
   };
 
   const submit = (complete: boolean) => {
     if (!sessionIdRef.current) {
       sessionIdRef.current = crypto.randomUUID();
     }
-    setError(undefined);
+    setFeedback({ athleteLocked: feedback.athleteLocked });
     save.mutate(
       {
         complete,
         input: {
-          athleteId: selectedAthleteId,
-          date,
-          ends: ends.map(({ key: _key, ...end }) => end),
-          format,
+          athleteId: form.selectedAthleteId,
+          date: form.date,
+          ends: form.ends.map(({ key: _key, ...end }) => end),
+          format: form.format,
           id: sessionIdRef.current,
           kind: "practice",
-          notes,
-          technicalFocus,
+          notes: form.notes,
+          technicalFocus: form.technicalFocus,
         },
       },
       {
         onError: (mutationError) =>
-          setError(
-            mutationError instanceof Error
-              ? mutationError.message
-              : "The session could not be saved."
-          ),
+          setFeedback((current) => ({
+            ...current,
+            error:
+              mutationError instanceof Error
+                ? mutationError.message
+                : "The session could not be saved.",
+          })),
         onSuccess: (result) => {
           if (result.status === "invalid") {
-            setError(Object.values(result.fieldErrors).join(" "));
+            setFeedback((current) => ({
+              ...current,
+              error: Object.values(result.fieldErrors).join(" "),
+            }));
+            return;
           }
+          setFeedback({
+            athleteLocked: true,
+            success: complete ? "Session completed and saved." : "Draft saved.",
+          });
         },
       }
     );
@@ -120,13 +154,20 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
             <Label htmlFor="session-athlete">Athlete</Label>
             <AthletePicker
               id="session-athlete"
-              onChange={setSelectedAthleteId}
-              value={selectedAthleteId}
+              disabled={feedback.athleteLocked}
+              onChange={(selectedAthleteId) =>
+                updateForm({ selectedAthleteId })
+              }
+              value={form.selectedAthleteId}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="session-date">Date</Label>
-            <DatePicker id="session-date" onChange={setDate} value={date} />
+            <DatePicker
+              id="session-date"
+              onChange={(date) => updateForm({ date })}
+              value={form.date}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="session-distance">Distance (m)</Label>
@@ -134,13 +175,15 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
               id="session-distance"
               min="1"
               onChange={(event) =>
-                setFormat((current) => ({
-                  ...current,
-                  distanceM: Number(event.target.value),
-                }))
+                updateForm({
+                  format: {
+                    ...form.format,
+                    distanceM: Number(event.target.value),
+                  },
+                })
               }
               type="number"
-              value={format.distanceM}
+              value={form.format.distanceM}
             />
           </div>
           <div className="space-y-2">
@@ -149,21 +192,25 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
               id="session-arrows"
               min="1"
               onChange={(event) =>
-                setFormat((current) => ({
-                  ...current,
-                  arrowsPerEnd: Number(event.target.value),
-                }))
+                updateForm({
+                  format: {
+                    ...form.format,
+                    arrowsPerEnd: Number(event.target.value),
+                  },
+                })
               }
               type="number"
-              value={format.arrowsPerEnd}
+              value={form.format.arrowsPerEnd}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="session-focus">Technical focus</Label>
             <Input
               id="session-focus"
-              onChange={(event) => setTechnicalFocus(event.target.value)}
-              value={technicalFocus}
+              onChange={(event) =>
+                updateForm({ technicalFocus: event.target.value })
+              }
+              value={form.technicalFocus}
             />
           </div>
         </CardContent>
@@ -173,7 +220,11 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           <CardTitle>Ends</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {ends.map((end, index) => (
+          <p className="text-muted-foreground text-sm" aria-live="polite">
+            Running score: <strong>{scoreSummary.score}</strong>. Recorded
+            arrows: <strong>{scoreSummary.arrows}</strong>.
+          </p>
+          {form.ends.map((end, index) => (
             <div className="flex items-end gap-3" key={end.key}>
               <div className="flex-1 space-y-2">
                 <Label htmlFor={`end-${index}-score`}>
@@ -203,11 +254,11 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
               </div>
               <Button
                 aria-label={`Remove end ${index + 1}`}
-                disabled={ends.length === 1}
+                disabled={form.ends.length === 1}
                 onClick={() =>
-                  setEnds((current) =>
-                    current.filter((_, endIndex) => endIndex !== index)
-                  )
+                  updateForm({
+                    ends: form.ends.filter((_, endIndex) => endIndex !== index),
+                  })
                 }
                 size="icon"
                 type="button"
@@ -219,10 +270,12 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           ))}
           <Button
             onClick={() =>
-              setEnds((current) => [
-                ...current,
-                newEnd(crypto.randomUUID(), format.arrowsPerEnd),
-              ])
+              updateForm({
+                ends: [
+                  ...form.ends,
+                  newEnd(crypto.randomUUID(), form.format.arrowsPerEnd),
+                ],
+              })
             }
             type="button"
             variant="outline"
@@ -242,16 +295,19 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
           <Textarea
             className="min-h-28"
             id="session-notes"
-            onChange={(event) => setNotes(event.target.value)}
-            value={notes}
+            onChange={(event) => updateForm({ notes: event.target.value })}
+            value={form.notes}
           />
         </CardContent>
       </Card>
-      {error ? (
+      {feedback.error ? (
         <p className="text-destructive text-sm" role="alert">
-          {error}
+          {feedback.error}
         </p>
       ) : null}
+      <p aria-live="polite" className="text-muted-foreground text-sm">
+        {feedback.success}
+      </p>
       <div className="flex flex-wrap justify-end gap-3">
         <Button
           disabled={save.isPending || !desktopAvailable}
@@ -266,7 +322,15 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
         </Button>
         <Button
           onClick={() => {
-            window.location.reload();
+            sessionIdRef.current = crypto.randomUUID();
+            updateForm({
+              date: "",
+              ends: [newEnd(crypto.randomUUID(), form.format.arrowsPerEnd)],
+              notes: "",
+              selectedAthleteId: athleteId === "unassigned" ? "" : athleteId,
+              technicalFocus: "",
+            });
+            setFeedback({ athleteLocked: false });
           }}
           type="button"
           variant="ghost"

@@ -13,7 +13,7 @@ export interface PerformanceRow {
 }
 
 const reportAverage = (report: WeeklyPerformanceReport) => {
-  const arrows = report.scores.length;
+  const arrows = report.arrowsShot ?? report.scores.length;
   return arrows
     ? report.scores.reduce((sum, score) => sum + score, 0) / arrows
     : 0;
@@ -36,7 +36,10 @@ export const performanceRows = (
       )
       .toSorted((left, right) => left.weekStart.localeCompare(right.weekStart));
     const averages = rows.map(reportAverage);
-    const arrows = rows.reduce((sum, report) => sum + report.scores.length, 0);
+    const arrows = rows.reduce(
+      (sum, report) => sum + (report.arrowsShot ?? report.scores.length),
+      0
+    );
     const average = arrows
       ? rows.reduce(
           (sum, report) => sum + report.scores.reduce((a, b) => a + b, 0),

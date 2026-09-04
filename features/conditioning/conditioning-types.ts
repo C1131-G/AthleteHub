@@ -281,6 +281,7 @@ export const conditioningProgrammeInputSchema = conditioningProgrammeSchema
     }
   });
 
+// oxlint-disable-next-line import/no-cycle
 export type ConditioningAssessmentStatus = z.infer<
   typeof conditioningAssessmentStatusSchema
 >;
@@ -379,10 +380,6 @@ export const categoryLabel = {
   "muscular-endurance": "Muscular endurance",
 } satisfies Record<ConditioningCategory, string>;
 
-/**
- * Safe parsers for form payloads: a value outside the union falls back to the
- * first entry instead of failing, so Select changes never need assertions.
- */
 export const toAssessmentStatus = (
   value: string
 ): ConditioningAssessmentStatus =>

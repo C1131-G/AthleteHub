@@ -56,6 +56,12 @@ const monthlyStatusOptions = [
 
 const labelClass = "mb-1.5";
 
+const csvCell = (value: string | number) => {
+  const text = String(value);
+  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safe.replaceAll('"', '""')}"`;
+};
+
 export const ReportsWorkspace = () => {
   const router = useRouter();
   const params = useSearchParams();
@@ -140,6 +146,29 @@ export const ReportsWorkspace = () => {
     replaceParams(new URLSearchParams({ tab: tab ?? "weekly" }));
   };
   const hasFilters = Boolean(athleteId || month || status || query);
+  const exportContent = [
+    ["Athlete", "Date", "Status", "Type"].map(csvCell).join(","),
+    ...weeklyRows.map((row) =>
+      [
+        athleteById.get(row.athleteId)?.fullName ?? "Unknown athlete",
+        row.weekStart,
+        row.status,
+        "Weekly report",
+      ]
+        .map(csvCell)
+        .join(",")
+    ),
+    ...monthlyRows.map((row) =>
+      [
+        athleteById.get(row.athleteId)?.fullName ?? "Unknown athlete",
+        row.month,
+        row.status,
+        "Monthly report",
+      ]
+        .map(csvCell)
+        .join(",")
+    ),
+  ].join("\n");
 
   if (!(athletesReady && reportsReady && assessmentsReady)) {
     return <ReportsWorkspaceSkeleton />;
@@ -148,6 +177,7 @@ export const ReportsWorkspace = () => {
   return (
     <section aria-labelledby="reports-title" className="space-y-6">
       <ReportActions
+        content={exportContent}
         summary="AthleteHub performance report. Open the app for the full selected tables and charts."
         title="AthleteHub performance report"
       />

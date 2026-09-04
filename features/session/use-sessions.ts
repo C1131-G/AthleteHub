@@ -19,6 +19,7 @@ const listResponseSchema = z.array(sessionResponseSchema);
 /** One definition, so the query and its invalidation cannot drift apart. */
 const sessionKeys = {
   byAthlete: (athleteId: string) => ["sessions", "athlete", athleteId] as const,
+  byId: (sessionId: string) => ["sessions", "id", sessionId] as const,
 };
 
 const api = () => {
@@ -65,3 +66,14 @@ export const useSessions = (athleteId: string) => {
   });
   return { ...query, save };
 };
+
+export const useSession = (sessionId: string) =>
+  useQuery({
+    enabled: Boolean(api() && sessionId),
+    queryFn: async () => {
+      const session = await api()?.get(sessionId);
+      return sessionResponseSchema.parse(session);
+    },
+    queryKey: sessionKeys.byId(sessionId),
+    staleTime: 30_000,
+  });

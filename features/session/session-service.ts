@@ -75,7 +75,9 @@ export const createSessionService = (
     }
     const stored = await database.sessions.save({
       ...parsed.data,
-      actualArrows: parsed.data.actualArrows ?? null,
+      actualArrows:
+        parsed.data.actualArrows ??
+        parsed.data.ends.reduce((total, end) => total + end.arrowCount, 0),
       equipmentSetupId: parsed.data.equipmentSetupId ?? null,
       formatSnapshot: JSON.stringify(parsed.data.format),
       plannedArrows: parsed.data.plannedArrows ?? null,

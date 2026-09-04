@@ -35,8 +35,9 @@ export const PerformanceWorkspace = () => {
     [athletes, listWeekly, from, to]
   );
   const compared = rows.filter((row) => selectedSet.has(row.athleteId));
-  const visible = selected.length ? compared : rows;
+  const visible = compared;
   const max = Math.max(...visible.map((row) => row.average), 1);
+  const hasComparison = selected.length >= 2;
   if (!athletesReady || !reportsReady) {
     return <p aria-live="polite">Loading performance data…</p>;
   }
@@ -112,14 +113,16 @@ export const PerformanceWorkspace = () => {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Average score per arrow</CardTitle>
+          <CardTitle>Average score</CardTitle>
         </CardHeader>
         <CardContent>
-          {visible.length ? (
-            <figure
-              aria-label="Average score per arrow by athlete"
-              className="space-y-4"
-            >
+          {!hasComparison && (
+            <output>
+              Choose at least two athletes to compare performance.
+            </output>
+          )}
+          {hasComparison && visible.length > 0 && (
+            <figure aria-label="Average score by athlete" className="space-y-4">
               {visible.map((row) => (
                 <div key={row.athleteId}>
                   <div className="mb-1 flex justify-between text-sm">
@@ -138,7 +141,8 @@ export const PerformanceWorkspace = () => {
                 </div>
               ))}
             </figure>
-          ) : (
+          )}
+          {hasComparison && visible.length === 0 && (
             <p>No athletes match this period.</p>
           )}
         </CardContent>
@@ -148,49 +152,51 @@ export const PerformanceWorkspace = () => {
           <CardTitle>Performance detail</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <table>
-            <caption className="sr-only">Performance comparison</caption>
-            <thead>
-              <tr>
-                <th className="p-2 text-left" scope="col">
-                  Athlete
-                </th>
-                <th className="p-2 text-left" scope="col">
-                  Average
-                </th>
-                <th className="p-2 text-left" scope="col">
-                  Best session
-                </th>
-                <th className="p-2 text-left" scope="col">
-                  Arrows
-                </th>
-                <th className="p-2 text-left" scope="col">
-                  Sessions
-                </th>
-                <th className="p-2 text-left" scope="col">
-                  Change
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((row) => (
-                <tr className="border-t" key={row.athleteId}>
-                  <th className="p-2 text-left font-medium" scope="row">
-                    {row.athleteName}
+          {hasComparison && (
+            <table>
+              <caption className="sr-only">Performance comparison</caption>
+              <thead>
+                <tr>
+                  <th className="p-2 text-left" scope="col">
+                    Athlete
                   </th>
-                  <td className="p-2">{row.average.toFixed(2)}</td>
-                  <td className="p-2">{row.best.toFixed(2)}</td>
-                  <td className="p-2">{row.arrows}</td>
-                  <td className="p-2">{row.sessions}</td>
-                  <td className="p-2">
-                    {row.change === undefined
-                      ? "Insufficient data"
-                      : `${row.change >= 0 ? "+" : ""}${row.change.toFixed(2)}`}
-                  </td>
+                  <th className="p-2 text-left" scope="col">
+                    Average
+                  </th>
+                  <th className="p-2 text-left" scope="col">
+                    Best report
+                  </th>
+                  <th className="p-2 text-left" scope="col">
+                    Scored arrows
+                  </th>
+                  <th className="p-2 text-left" scope="col">
+                    Reports
+                  </th>
+                  <th className="p-2 text-left" scope="col">
+                    Change
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {visible.map((row) => (
+                  <tr className="border-t" key={row.athleteId}>
+                    <th className="p-2 text-left font-medium" scope="row">
+                      {row.athleteName}
+                    </th>
+                    <td className="p-2">{row.average.toFixed(2)}</td>
+                    <td className="p-2">{row.best.toFixed(2)}</td>
+                    <td className="p-2">{row.arrows}</td>
+                    <td className="p-2">{row.sessions}</td>
+                    <td className="p-2">
+                      {row.change === undefined
+                        ? "Insufficient data"
+                        : `${row.change >= 0 ? "+" : ""}${row.change.toFixed(2)}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </CardContent>
       </Card>
     </div>

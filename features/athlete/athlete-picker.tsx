@@ -18,6 +18,7 @@ interface AthletePickerProps {
   onChange: (athleteId: string) => void;
   invalid?: boolean;
   errorMessageId?: string;
+  disabled?: boolean;
 }
 
 export const AthletePicker = ({
@@ -26,6 +27,7 @@ export const AthletePicker = ({
   onChange,
   invalid = false,
   errorMessageId,
+  disabled = false,
 }: AthletePickerProps) => {
   const { athletes } = useAthletes();
   const selectedAthlete = athletes.find((athlete) => athlete.id === value);
@@ -44,6 +46,7 @@ export const AthletePicker = ({
         aria-errormessage={invalid ? errorMessageId : undefined}
         aria-invalid={invalid || undefined}
         aria-label="Select athlete"
+        disabled={disabled}
         placeholder="Search by athlete name or ID"
         showClear
       />

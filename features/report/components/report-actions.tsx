@@ -20,16 +20,26 @@ import {
 } from "@/components/ui/popover";
 
 interface ReportActionsProps {
+  content?: string;
   title: string;
   summary: string;
 }
 
 const encoded = (value: string) => encodeURIComponent(value);
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 
-export const ReportActions = ({ title, summary }: ReportActionsProps) => {
+export const ReportActions = ({
+  content = "",
+  title,
+  summary,
+}: ReportActionsProps) => {
   const [message, setMessage] = useState<string>();
   const reportHtml = () =>
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px system-ui;max-width:900px;margin:40px auto;line-height:1.5}h1{font-size:28px} @media print{body{margin:0}}</style></head><body><h1>${title}</h1><p>${summary}</p></body></html>`;
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font:16px system-ui;max-width:900px;margin:40px auto;line-height:1.5;white-space:pre-wrap}h1{font-size:28px}@media print{body{margin:0}}</style></head><body><h1>${escapeHtml(title)}</h1><p>${escapeHtml(summary)}</p><pre>${escapeHtml(content)}</pre></body></html>`;
 
   const download = () => {
     const url = URL.createObjectURL(
@@ -41,6 +51,18 @@ export const ReportActions = ({ title, summary }: ReportActionsProps) => {
     link.click();
     URL.revokeObjectURL(url);
     setMessage("Report downloaded.");
+  };
+
+  const downloadCsv = () => {
+    const url = URL.createObjectURL(
+      new Blob([content], { type: "text/csv;charset=utf-8" })
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage("CSV downloaded.");
   };
 
   const share = async () => {
@@ -78,6 +100,14 @@ export const ReportActions = ({ title, summary }: ReportActionsProps) => {
         </Button>
         <Button onClick={download} type="button" variant="outline">
           <DownloadSimpleIcon aria-hidden="true" /> Download report
+        </Button>
+        <Button
+          disabled={!content}
+          onClick={downloadCsv}
+          type="button"
+          variant="outline"
+        >
+          Download CSV
         </Button>
         <Popover>
           <PopoverTrigger
