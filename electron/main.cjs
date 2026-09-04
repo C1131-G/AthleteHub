@@ -353,9 +353,13 @@ const createWindow = async () => {
   await mainWindow.loadFile(path.join(__dirname, "splash.html"));
   mainWindow.show();
 
-  const origin = await ensureServer();
-
-  await registerBackendIpc();
+  // These startup tasks are independent. Running them together shortens the
+  // splash screen on cold launches while keeping IPC registration complete
+  // before the renderer can make its first request.
+  const originPromise = ensureServer();
+  const backendPromise = registerBackendIpc();
+  const origin = await originPromise;
+  await backendPromise;
 
   applyNavigationPolicy(mainWindow.webContents);
 
