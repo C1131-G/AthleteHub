@@ -24,7 +24,7 @@ bunDescribe("archery sessions", () => {
     database = await createDatabaseContext({
       databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
     });
-    service = createSessionService(database);
+    service = createSessionService(database.sessions);
   });
 
   bunAfterEach(async () => {
@@ -65,7 +65,7 @@ bunDescribe("archery sessions", () => {
     database = await createDatabaseContext({
       databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
     });
-    service = createSessionService(database);
+    service = createSessionService(database.sessions);
     const sessions = await service.listByAthlete("athlete-1");
     bunExpect(sessions[0]?.status).toBe("complete");
   });

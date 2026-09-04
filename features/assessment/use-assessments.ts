@@ -1,25 +1,23 @@
 "use client";
-import { useStore } from "@tanstack/react-store";
 
-import { useHydrated } from "@/hooks/use-hydrated";
+import type { ListOptions } from "@/electron/collections";
+import { collectionSchemas } from "@/features/backend/collection-services";
+import { useCollection } from "@/lib/use-collection";
 
-import {
-  assessmentStore,
-  createAssessment,
-  updateAssessment,
-} from "./assessment-store";
+export const useAssessments = (options?: ListOptions) => {
+  const { create, ready, records, ...rest } = useCollection(
+    "assessments",
+    collectionSchemas.assessments,
+    options
+  );
 
-export { hydrateAssessments } from "./assessment-store";
-export const useAssessments = () => {
-  const state = useStore(assessmentStore);
-  const hydrated = useHydrated();
-  const ready = state.ready && hydrated;
-  const assessments = ready ? state.assessments : [];
   return {
-    assessments,
-    createAssessment,
-    getAssessment: (id: string) => assessments.find((item) => item.id === id),
+    archiveAssessment: rest.archive,
+    assessments: records,
+    createAssessment: create,
+    getAssessment: (id: string) => records.find((item) => item.id === id),
     ready,
-    updateAssessment,
+    restoreAssessment: rest.restore,
+    updateAssessment: rest.update,
   };
 };

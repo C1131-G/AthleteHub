@@ -1,10 +1,13 @@
 import { createClient } from "@libsql/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 
+import { createCollections } from "./collections";
+import type { Collections } from "./collections";
 import { PrismaClient } from "./generated/client";
 
 export interface DatabaseContext {
   close: () => Promise<void>;
+  collections: Collections;
   createTestRecord: (input: { id: string; label: string }) => Promise<void>;
   healthCheck: () => Promise<{ status: "ready" }>;
   listTestRecords: () => Promise<{ id: string; label: string }[]>;
@@ -183,6 +186,143 @@ const migrations = [
       `DELETE FROM "OwnerAccount" WHERE "username" LIKE '%@%'`,
     ],
   },
+  {
+    name: "0004_collections",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS "Athlete" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "code" TEXT NOT NULL,
+      "fullName" TEXT NOT NULL,
+      "category" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "dateOfBirth" TEXT NOT NULL,
+      "profileSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE INDEX IF NOT EXISTS "Athlete_archivedAt_fullName_idx" ON "Athlete" ("archivedAt", "fullName")`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "Athlete_code_key" ON "Athlete" ("code") WHERE "archivedAt" IS NULL`,
+      `CREATE TABLE IF NOT EXISTS "EquipmentSetup" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "recordedAt" TEXT NOT NULL,
+      "itemsSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE INDEX IF NOT EXISTS "EquipmentSetup_athleteId_recordedAt_idx" ON "EquipmentSetup" ("athleteId", "recordedAt")`,
+      `CREATE TABLE IF NOT EXISTS "WeeklyReport" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "weekStart" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "reportSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "WeeklyReport_athleteId_weekStart_key" ON "WeeklyReport" ("athleteId", "weekStart") WHERE "archivedAt" IS NULL`,
+      `CREATE TABLE IF NOT EXISTS "MonthlyReport" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "month" TEXT NOT NULL,
+      "reportSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "MonthlyReport_athleteId_month_key" ON "MonthlyReport" ("athleteId", "month") WHERE "archivedAt" IS NULL`,
+      `CREATE TABLE IF NOT EXISTS "Assessment" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "date" TEXT NOT NULL,
+      "type" TEXT NOT NULL,
+      "weeklyReportId" TEXT,
+      "payloadSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE INDEX IF NOT EXISTS "Assessment_athleteId_date_idx" ON "Assessment" ("athleteId", "date")`,
+      `CREATE TABLE IF NOT EXISTS "ConditioningAssessment" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "date" TEXT NOT NULL,
+      "resultsSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE INDEX IF NOT EXISTS "ConditioningAssessment_athleteId_date_idx" ON "ConditioningAssessment" ("athleteId", "date")`,
+      `CREATE TABLE IF NOT EXISTS "ConditioningProgramme" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "startDate" TEXT NOT NULL,
+      "endDate" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "phasesSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE INDEX IF NOT EXISTS "ConditioningProgramme_athleteId_startDate_idx" ON "ConditioningProgramme" ("athleteId", "startDate")`,
+      `CREATE TABLE IF NOT EXISTS "TrainingPlan" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "seasonStart" TEXT NOT NULL,
+      "seasonEnd" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "planSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE INDEX IF NOT EXISTS "TrainingPlan_athleteId_seasonStart_idx" ON "TrainingPlan" ("athleteId", "seasonStart")`,
+      `CREATE TABLE IF NOT EXISTS "MonthlyCycle" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "athleteId" TEXT NOT NULL,
+      "month" TEXT NOT NULL,
+      "completedAt" DATETIME,
+      "stepsSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "MonthlyCycle_athleteId_month_key" ON "MonthlyCycle" ("athleteId", "month") WHERE "archivedAt" IS NULL`,
+    ],
+  },
+  {
+    name: "0005_partial_unique_keys",
+    sql: [
+      // An archived record must not keep reserving its code, week, or month;
+      // SQLite cannot drop an inline UNIQUE, so Athlete is rebuilt.
+      `CREATE TABLE IF NOT EXISTS "Athlete_new" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "code" TEXT NOT NULL,
+      "fullName" TEXT NOT NULL,
+      "category" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "dateOfBirth" TEXT NOT NULL,
+      "profileSnapshot" TEXT NOT NULL,
+      "archivedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+      `INSERT OR IGNORE INTO "Athlete_new" SELECT "id", "code", "fullName", "category", "status", "dateOfBirth", "profileSnapshot", "archivedAt", "createdAt", "updatedAt" FROM "Athlete"`,
+      `DROP TABLE "Athlete"`,
+      `ALTER TABLE "Athlete_new" RENAME TO "Athlete"`,
+      `CREATE INDEX IF NOT EXISTS "Athlete_archivedAt_fullName_idx" ON "Athlete" ("archivedAt", "fullName")`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "Athlete_code_key" ON "Athlete" ("code") WHERE "archivedAt" IS NULL`,
+      `DROP INDEX IF EXISTS "WeeklyReport_athleteId_weekStart_key"`,
+      `CREATE UNIQUE INDEX "WeeklyReport_athleteId_weekStart_key" ON "WeeklyReport" ("athleteId", "weekStart") WHERE "archivedAt" IS NULL`,
+      `DROP INDEX IF EXISTS "MonthlyReport_athleteId_month_key"`,
+      `CREATE UNIQUE INDEX "MonthlyReport_athleteId_month_key" ON "MonthlyReport" ("athleteId", "month") WHERE "archivedAt" IS NULL`,
+      `DROP INDEX IF EXISTS "MonthlyCycle_athleteId_month_key"`,
+      `CREATE UNIQUE INDEX "MonthlyCycle_athleteId_month_key" ON "MonthlyCycle" ("athleteId", "month") WHERE "archivedAt" IS NULL`,
+    ],
+  },
 ] as const;
 
 export const createDatabaseContext = async ({
@@ -347,6 +487,7 @@ export const createDatabaseContext = async ({
 
   const context: DatabaseContext = {
     close: () => prisma.$disconnect(),
+    collections: createCollections(prisma),
     createTestRecord,
     healthCheck: async () => {
       await prisma.$queryRaw`SELECT 1`;
@@ -370,6 +511,7 @@ export const createDatabaseContext = async ({
       await prisma.$transaction(async (transaction) => {
         const transactionalContext: DatabaseContext = {
           ...context,
+          collections: createCollections(transaction),
           createTestRecord: async (input) => {
             await transaction.backendProbe.create({
               data: { createdAt: new Date(), ...input },

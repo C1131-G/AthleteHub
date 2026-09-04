@@ -30,7 +30,7 @@ import type { EquipmentItem } from "@/features/equipment/equipment-types";
 import { useEquipment } from "@/features/equipment/use-equipment";
 import { formatDate } from "@/lib/format";
 
-import { confirmCycleStep } from "../cycle-step-actions";
+import { useConfirmCycleStep } from "../cycle-step-actions";
 import type {
   CycleDomainContext,
   CycleStepView,
@@ -59,6 +59,7 @@ export const EquipmentStep = ({
   stepView: CycleStepView;
 }) => {
   const router = useRouter();
+  const confirmCycleStep = useConfirmCycleStep();
   const { createSetup } = useEquipment();
   const monthEnd = monthEndDate(cycle.month);
   const effective = setupEffectiveBy(context.equipmentSetups, monthEnd);
@@ -130,12 +131,12 @@ export const EquipmentStep = ({
     return Object.keys(next).length === 0;
   };
 
-  const save = (): boolean => {
+  const save = async (): Promise<boolean> => {
     if (choice === "no-change") {
       if (!hasPreviousSetup) {
         return false;
       }
-      const confirmed = confirmCycleStep(cycle, "equipment", {
+      const confirmed = await confirmCycleStep(cycle, "equipment", {
         reason:
           notes.trim() ||
           "No equipment change this month; the existing setup remains in use.",
@@ -156,7 +157,7 @@ export const EquipmentStep = ({
         setErrors({ items: "No setup is on record for this month yet." });
         return false;
       }
-      const confirmed = confirmCycleStep(cycle, "equipment", {
+      const confirmed = await confirmCycleStep(cycle, "equipment", {
         sources: [{ id: effective.id, updatedAt: effective.updatedAt }],
         status: "complete",
       });
@@ -170,15 +171,15 @@ export const EquipmentStep = ({
     if (!validateNewSetup()) {
       return false;
     }
-    const saved = createSetup({
+    const saved = await createSetup({
       athleteId: cycle.athleteId,
       coachNotes: notes,
       items,
       recordedAt,
     });
-    if (saved) {
-      const confirmed = confirmCycleStep(cycle, "equipment", {
-        sources: [{ id: saved.id, updatedAt: saved.updatedAt }],
+    if (saved.status === "saved") {
+      const confirmed = await confirmCycleStep(cycle, "equipment", {
+        sources: [{ id: saved.record.id, updatedAt: saved.record.updatedAt }],
         status: "complete",
       });
       if (confirmed.status !== "saved") {
@@ -189,7 +190,7 @@ export const EquipmentStep = ({
       }
       markDirty(false);
     }
-    return Boolean(saved);
+    return saved.status === "saved";
   };
 
   const navigateAfterSave = () => {
@@ -351,13 +352,13 @@ export const EquipmentStep = ({
       </Card>
       <CycleStepActions
         cycleId={cycle.id}
-        onSaveContinue={() => {
-          if (save()) {
+        onSaveContinue={async () => {
+          if (await save()) {
             navigateAfterSave();
           }
         }}
-        onSaveExit={() => {
-          if (save()) {
+        onSaveExit={async () => {
+          if (await save()) {
             router.push("/monthly-cycles");
           }
         }}

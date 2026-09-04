@@ -103,7 +103,7 @@ export const AthleteForm = ({ athlete }: { athlete?: Athlete }) => {
     return Object.keys(next).length === 0;
   };
 
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate()) {
       formRef.current
@@ -112,11 +112,14 @@ export const AthleteForm = ({ athlete }: { athlete?: Athlete }) => {
       return;
     }
     const saved = athlete
-      ? updateAthlete(athlete.id, values)
-      : createAthlete(values);
-    if (saved) {
-      router.push(`/athletes/${saved.id}`);
+      ? await updateAthlete(athlete.id, values)
+      : await createAthlete(values);
+    if (saved.status === "saved") {
+      router.push(`/athletes/${saved.record.id}`);
+      return;
     }
+    // The database rejected the write; show why instead of failing silently.
+    setErrors(saved.fieldErrors);
   };
 
   return (

@@ -6,6 +6,7 @@ import { XIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { ArchivedToggle } from "@/components/archived-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +38,7 @@ import { useReports } from "../use-reports";
 import { MonthlyReportTable } from "./monthly-report-table";
 import { PerformanceWorkspace } from "./performance-workspace";
 import { ReportActions } from "./report-actions";
+import type { ReportExportColumn } from "./report-actions";
 import { WeeklyReportTable } from "./weekly-report-table";
 
 const REPORTS_PATH = "/reports";
@@ -56,18 +58,19 @@ const monthlyStatusOptions = [
 
 const labelClass = "mb-1.5";
 
-const csvCell = (value: string | number) => {
-  const text = String(value);
-  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
-  return `"${safe.replaceAll('"', '""')}"`;
-};
-
 export const ReportsWorkspace = () => {
+  const [showArchived, setShowArchived] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
   const { athletes, ready: athletesReady } = useAthletes();
-  const { listMonthly, listWeekly, ready: reportsReady } = useReports();
-  const { assessments, ready: assessmentsReady } = useAssessments();
+  const {
+    listMonthly,
+    listWeekly,
+    ready: reportsReady,
+  } = useReports(showArchived ? { archivedOnly: true } : undefined);
+  const { assessments, ready: assessmentsReady } = useAssessments(
+    showArchived ? { archivedOnly: true } : undefined
+  );
   const [query, setQuery] = useState("");
   const tab =
     params.get("tab") === "monthly" ||
@@ -146,29 +149,26 @@ export const ReportsWorkspace = () => {
     replaceParams(new URLSearchParams({ tab: tab ?? "weekly" }));
   };
   const hasFilters = Boolean(athleteId || month || status || query);
-  const exportContent = [
-    ["Athlete", "Date", "Status", "Type"].map(csvCell).join(","),
-    ...weeklyRows.map((row) =>
-      [
-        athleteById.get(row.athleteId)?.fullName ?? "Unknown athlete",
-        row.weekStart,
-        row.status,
-        "Weekly report",
-      ]
-        .map(csvCell)
-        .join(",")
-    ),
-    ...monthlyRows.map((row) =>
-      [
-        athleteById.get(row.athleteId)?.fullName ?? "Unknown athlete",
-        row.month,
-        row.status,
-        "Monthly report",
-      ]
-        .map(csvCell)
-        .join(",")
-    ),
-  ].join("\n");
+  const exportRows = [
+    ...weeklyRows.map((row) => ({
+      athlete: athleteById.get(row.athleteId)?.fullName ?? "Unknown athlete",
+      date: row.weekStart,
+      status: row.status,
+      type: "Weekly report",
+    })),
+    ...monthlyRows.map((row) => ({
+      athlete: athleteById.get(row.athleteId)?.fullName ?? "Unknown athlete",
+      date: row.month,
+      status: row.status,
+      type: "Monthly report",
+    })),
+  ];
+  const exportColumns: ReportExportColumn<(typeof exportRows)[number]>[] = [
+    { header: "Athlete", value: (row) => row.athlete },
+    { header: "Date", value: (row) => row.date },
+    { header: "Status", value: (row) => row.status },
+    { header: "Type", value: (row) => row.type },
+  ];
 
   if (!(athletesReady && reportsReady && assessmentsReady)) {
     return <ReportsWorkspaceSkeleton />;
@@ -177,21 +177,26 @@ export const ReportsWorkspace = () => {
   return (
     <section aria-labelledby="reports-title" className="space-y-6">
       <ReportActions
-        content={exportContent}
+        columns={exportColumns}
+        rows={exportRows}
         summary="AthleteHub performance report. Open the app for the full selected tables and charts."
         title="AthleteHub performance report"
       />
       <Card>
         <CardHeader>
           <CardTitle>Find reports</CardTitle>
-          {hasFilters ? (
-            <CardAction>
+          <CardAction className="flex gap-2">
+            {hasFilters ? (
               <Button onClick={clearFilters} size="sm" variant="ghost">
                 <XIcon aria-hidden="true" />
                 Clear filters
               </Button>
-            </CardAction>
-          ) : null}
+            ) : null}
+            <ArchivedToggle
+              onChange={setShowArchived}
+              showArchived={showArchived}
+            />
+          </CardAction>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-4">
           <div>
@@ -303,15 +308,24 @@ export const ReportsWorkspace = () => {
       {tab === "performance" ? (
         <PerformanceWorkspace />
       ) : tab === "weekly" ? (
-        <WeeklyReportTable athleteById={athleteById} rows={weeklyRows} />
+        <WeeklyReportTable
+          archived={showArchived}
+          athleteById={athleteById}
+          rows={weeklyRows}
+        />
       ) : tab === "monthly" ? (
         <MonthlyReportTable
+          archived={showArchived}
           athleteById={athleteById}
           month={month}
           rows={monthlyRows}
         />
       ) : (
-        <AssessmentTable athleteById={athleteById} rows={assessmentRows} />
+        <AssessmentTable
+          archived={showArchived}
+          athleteById={athleteById}
+          rows={assessmentRows}
+        />
       )}
     </section>
   );

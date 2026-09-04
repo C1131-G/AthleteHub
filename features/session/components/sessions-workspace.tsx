@@ -14,7 +14,6 @@ import { AthletePicker } from "@/features/athlete/athlete-picker";
 import { useSessions } from "../use-sessions";
 
 export const SessionsWorkspace = () => {
-  const desktopAvailable = globalThis.window?.electronAPI !== undefined;
   const [athleteId, setAthleteId] = useState("");
   const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
@@ -32,13 +31,7 @@ export const SessionsWorkspace = () => {
     [date, query, sessionsQuery.data]
   );
   let sessionContent: ReactNode;
-  if (!desktopAvailable) {
-    sessionContent = (
-      <p role="alert">
-        Session history is available in the AthleteHub desktop app.
-      </p>
-    );
-  } else if (!athleteId) {
+  if (!athleteId) {
     sessionContent = (
       <p className="text-muted-foreground">
         Choose an athlete to view sessions.

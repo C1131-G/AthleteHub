@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 
+import { ArchiveAction } from "@/components/archive-action";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { initials } from "@/lib/format";
 
 import { categoryLabel, statusLabel } from "../athlete-labels";
 import type { Athlete } from "../athlete-types";
+import { useAthletes } from "../use-athletes";
 
 export const AthleteCard = ({ athlete }: { athlete: Athlete }) => (
   <li className="flex items-start gap-3 px-6 py-4">
@@ -44,7 +46,14 @@ export const AthleteCard = ({ athlete }: { athlete: Athlete }) => (
   </li>
 );
 
-export const AthleteRow = ({ athlete }: { athlete: Athlete }) => {
+export const AthleteRow = ({
+  athlete,
+  archived,
+}: {
+  archived?: boolean;
+  athlete: Athlete;
+}) => {
+  const { archiveAthlete, restoreAthlete } = useAthletes();
   return (
     <TableRow>
       {/* The athlete names the row, so it is a header cell. */}
@@ -88,6 +97,20 @@ export const AthleteRow = ({ athlete }: { athlete: Athlete }) => {
           >
             Edit
           </Link>
+          {archived ? (
+            <Button
+              onClick={() => restoreAthlete(athlete.id)}
+              size="sm"
+              variant="outline"
+            >
+              Restore
+            </Button>
+          ) : (
+            <ArchiveAction
+              label={athlete.fullName}
+              onArchive={() => archiveAthlete(athlete.id)}
+            />
+          )}
         </div>
       </TableCell>
     </TableRow>

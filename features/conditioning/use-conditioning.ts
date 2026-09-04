@@ -1,37 +1,36 @@
 "use client";
 
-import { useStore } from "@tanstack/react-store";
+import type { ListOptions } from "@/electron/collections";
+import { collectionSchemas } from "@/features/backend/collection-services";
+import { useCollection } from "@/lib/use-collection";
 
-import { useHydrated } from "@/hooks/use-hydrated";
-
-import {
-  conditioningStore,
-  createAssessment as createAssessmentAction,
-  createProgramme as createProgrammeAction,
-  updateAssessment as updateAssessmentAction,
-  updateProgramme as updateProgrammeAction,
-} from "./conditioning-store";
-
-export { hydrateConditioning } from "./conditioning-store";
-
-export const useConditioning = () => {
-  const state = useStore(conditioningStore);
-  const hydrated = useHydrated();
-  const ready = state.ready && hydrated;
-  const assessments = ready ? state.assessments : [];
-  const programmes = ready ? state.programmes : [];
+export const useConditioning = (options?: ListOptions) => {
+  const assessments = useCollection(
+    "conditioningAssessments",
+    collectionSchemas.conditioningAssessments,
+    options
+  );
+  const programmes = useCollection(
+    "conditioningProgrammes",
+    collectionSchemas.conditioningProgrammes,
+    options
+  );
 
   return {
-    assessments,
-    createAssessment: createAssessmentAction,
-    createProgramme: createProgrammeAction,
+    archiveAssessment: assessments.archive,
+    archiveProgramme: programmes.archive,
+    assessments: assessments.records,
+    createAssessment: assessments.create,
+    createProgramme: programmes.create,
     getAssessment: (id: string) =>
-      assessments.find((assessment) => assessment.id === id),
+      assessments.records.find((assessment) => assessment.id === id),
     getProgramme: (id: string) =>
-      programmes.find((programme) => programme.id === id),
-    programmes,
-    ready,
-    updateAssessment: updateAssessmentAction,
-    updateProgramme: updateProgrammeAction,
+      programmes.records.find((programme) => programme.id === id),
+    programmes: programmes.records,
+    ready: assessments.ready && programmes.ready,
+    restoreAssessment: assessments.restore,
+    restoreProgramme: programmes.restore,
+    updateAssessment: assessments.update,
+    updateProgramme: programmes.update,
   };
 };

@@ -18,11 +18,19 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { downloadFile, slugifyReportFilename, toCsv } from "@/lib/csv";
+import type { CsvValue } from "@/lib/csv";
 
-interface ReportActionsProps {
-  content?: string;
-  title: string;
+export interface ReportExportColumn<TRow> {
+  header: string;
+  value: (row: TRow) => CsvValue;
+}
+
+interface ReportActionsProps<TRow> {
+  columns: readonly ReportExportColumn<TRow>[];
+  rows: readonly TRow[];
   summary: string;
+  title: string;
 }
 
 const encoded = (value: string) => encodeURIComponent(value);
@@ -32,36 +40,33 @@ const escapeHtml = (value: string) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 
-export const ReportActions = ({
-  content = "",
-  title,
+export const ReportActions = <TRow,>({
+  columns,
+  rows,
   summary,
-}: ReportActionsProps) => {
+  title,
+}: ReportActionsProps<TRow>) => {
   const [message, setMessage] = useState<string>();
+  // Serialised here so every download passes through the csv escaping guard.
+  const csv = toCsv(rows, columns);
   const reportHtml = () =>
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font:16px system-ui;max-width:900px;margin:40px auto;line-height:1.5;white-space:pre-wrap}h1{font-size:28px}@media print{body{margin:0}}</style></head><body><h1>${escapeHtml(title)}</h1><p>${escapeHtml(summary)}</p><pre>${escapeHtml(content)}</pre></body></html>`;
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font:16px system-ui;max-width:900px;margin:40px auto;line-height:1.5;white-space:pre-wrap}h1{font-size:28px}@media print{body{margin:0}}</style></head><body><h1>${escapeHtml(title)}</h1><p>${escapeHtml(summary)}</p><pre>${escapeHtml(csv)}</pre></body></html>`;
 
   const download = () => {
-    const url = URL.createObjectURL(
-      new Blob([reportHtml()], { type: "text/html" })
+    downloadFile(
+      slugifyReportFilename(title, "html"),
+      reportHtml(),
+      "text/html"
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}.html`;
-    link.click();
-    URL.revokeObjectURL(url);
     setMessage("Report downloaded.");
   };
 
   const downloadCsv = () => {
-    const url = URL.createObjectURL(
-      new Blob([content], { type: "text/csv;charset=utf-8" })
+    downloadFile(
+      slugifyReportFilename(title, "csv"),
+      csv,
+      "text/csv;charset=utf-8"
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
     setMessage("CSV downloaded.");
   };
 
@@ -102,7 +107,7 @@ export const ReportActions = ({
           <DownloadSimpleIcon aria-hidden="true" /> Download report
         </Button>
         <Button
-          disabled={!content}
+          disabled={rows.length === 0}
           onClick={downloadCsv}
           type="button"
           variant="outline"

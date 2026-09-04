@@ -2,9 +2,10 @@
 
 import { XIcon } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 
+import { ArchivedToggle } from "@/components/archived-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -110,6 +111,7 @@ const matchesProgramme = (
   (!filters.programmeStatus || programme.status === filters.programmeStatus);
 
 export const ConditioningWorkspace = () => {
+  const [showArchived, setShowArchived] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
   const { athletes, ready: athletesReady } = useAthletes();
@@ -117,7 +119,7 @@ export const ConditioningWorkspace = () => {
     assessments,
     programmes,
     ready: conditioningReady,
-  } = useConditioning();
+  } = useConditioning(showArchived ? { archivedOnly: true } : undefined);
 
   const { assessmentStatus, athleteId, month, phase, programmeStatus, tab } =
     conditioningSearchSchema.parse(Object.fromEntries(params.entries()));
@@ -173,15 +175,23 @@ export const ConditioningWorkspace = () => {
     <section aria-labelledby="conditioning-title" className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Find conditioning records</CardTitle>
-          {hasFilters ? (
-            <CardAction>
+          <CardTitle>
+            {showArchived
+              ? "Archived conditioning records"
+              : "Find conditioning records"}
+          </CardTitle>
+          <CardAction className="flex gap-2">
+            {hasFilters ? (
               <Button onClick={clearFilters} size="sm" variant="ghost">
                 <XIcon aria-hidden="true" />
                 Clear filters
               </Button>
-            </CardAction>
-          ) : null}
+            ) : null}
+            <ArchivedToggle
+              onChange={setShowArchived}
+              showArchived={showArchived}
+            />
+          </CardAction>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div>
@@ -297,10 +307,18 @@ export const ConditioningWorkspace = () => {
         </TabsList>
       </Tabs>
       {tab === "assessments" ? (
-        <AssessmentTable athleteById={athleteById} rows={assessmentRows} />
+        <AssessmentTable
+          archived={showArchived}
+          athleteById={athleteById}
+          rows={assessmentRows}
+        />
       ) : null}
       {tab === "programmes" ? (
-        <ProgrammeTable athleteById={athleteById} rows={programmeRows} />
+        <ProgrammeTable
+          archived={showArchived}
+          athleteById={athleteById}
+          rows={programmeRows}
+        />
       ) : null}
       {tab === "progress" ? (
         <ProgressPanel athleteId={athleteId || athletes[0]?.id || ""} />

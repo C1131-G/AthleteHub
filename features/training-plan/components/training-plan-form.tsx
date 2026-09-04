@@ -56,7 +56,7 @@ const toInput = (form: TrainingPlanFormState): SeasonTrainingPlanInput => ({
 });
 
 /**
- * Gate only. The body seeds its state from the stores on first render, so it
+ * Gate only. The body seeds its state from the queries on first render, so it
  * must not mount until those stores hold real data.
  */
 export const TrainingPlanForm = ({
@@ -101,12 +101,12 @@ const TrainingPlanFormBody = ({ planId }: { planId?: string | undefined }) => {
       focusFirstError(nextErrors);
       return;
     }
-    startTransition(() => {
+    startTransition(async () => {
       const result = planId
-        ? updatePlan(planId, toInput(form))
-        : createPlan(toInput(form));
+        ? await updatePlan(planId, toInput(form))
+        : await createPlan(toInput(form));
       if (result.status === "saved") {
-        router.push(trainingPlanHref(result.plan.id));
+        router.push(trainingPlanHref(result.record.id));
         return;
       }
       const mapped = toFormErrors(result.fieldErrors);

@@ -21,9 +21,9 @@ export interface CycleContextState {
 }
 
 /**
- * Gathers the slice of every domain store the lifecycle reads for one cycle.
- * Everything is client-side localStorage data, so `ready` gates the workflow
- * on all stores being hydrated.
+ * Gathers the slice of every domain the lifecycle reads for one cycle. Each
+ * collection is a separate query, so `ready` gates the workflow on all of them
+ * having loaded — a step must never judge coverage from a half-loaded view.
  */
 export const useCycleContext = (cycleId: string): CycleContextState => {
   const { cycles, ready: cyclesReady } = useMonthlyCycles();

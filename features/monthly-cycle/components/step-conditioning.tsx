@@ -33,7 +33,7 @@ import {
 } from "@/features/conditioning/conditioning-types";
 import { formatDate } from "@/lib/format";
 
-import { confirmCycleStep } from "../cycle-step-actions";
+import { useConfirmCycleStep } from "../cycle-step-actions";
 import { conditioningCoverageFor } from "../monthly-cycle-lifecycle";
 import type {
   CycleDomainContext,
@@ -65,6 +65,7 @@ export const ConditioningStep = ({
   stepView: CycleStepView;
 }) => {
   const router = useRouter();
+  const confirmCycleStep = useConfirmCycleStep();
   const { setDirty } = useCycleGuard();
   const coverage = conditioningCoverageFor(
     context.assessments,
@@ -79,9 +80,9 @@ export const ConditioningStep = ({
   );
   const [error, setError] = useState("");
 
-  const confirm = () => {
+  const confirm = async () => {
     if (covered && coverage.assessment && coverage.programme) {
-      const result = confirmCycleStep(cycle, "conditioning", {
+      const result = await confirmCycleStep(cycle, "conditioning", {
         sources: stepView.currentSources,
         status: "complete",
       });
@@ -98,7 +99,7 @@ export const ConditioningStep = ({
     const label =
       exceptionStatuses.find((entry) => entry.value === exceptionStatus)
         ?.label ?? exceptionStatus;
-    const result = confirmCycleStep(cycle, "conditioning", {
+    const result = await confirmCycleStep(cycle, "conditioning", {
       reason: `${label}: ${explanation.trim()}`,
       // Keep the live references so a partial exception does not become stale
       // immediately when the assessment or programme is already known.
@@ -268,13 +269,13 @@ export const ConditioningStep = ({
       ) : null}
       <CycleStepActions
         cycleId={cycle.id}
-        onSaveContinue={() => {
-          if (confirm()) {
+        onSaveContinue={async () => {
+          if (await confirm()) {
             router.push(`/monthly-cycles/${cycle.id}/review`);
           }
         }}
-        onSaveExit={() => {
-          if (confirm()) {
+        onSaveExit={async () => {
+          if (await confirm()) {
             router.push(`/monthly-cycles?month=${cycle.month}`);
           }
         }}

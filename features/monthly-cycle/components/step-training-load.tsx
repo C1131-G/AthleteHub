@@ -31,7 +31,7 @@ import type {
 import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 import { formatDate } from "@/lib/format";
 
-import { confirmCycleStep } from "../cycle-step-actions";
+import { useConfirmCycleStep } from "../cycle-step-actions";
 import type {
   CycleDomainContext,
   CycleStepView,
@@ -55,6 +55,7 @@ export const TrainingLoadStep = ({
   stepView: CycleStepView;
 }) => {
   const router = useRouter();
+  const confirmCycleStep = useConfirmCycleStep();
   const { createPlan, updatePlan } = useTrainingPlans();
   const { setDirty } = useCycleGuard();
   const plan = coveringPlanForNextMonth(
@@ -83,7 +84,9 @@ export const TrainingLoadStep = ({
     );
   };
 
-  const savePlanEdits = (source: SeasonTrainingPlan): boolean => {
+  const savePlanEdits = async (
+    source: SeasonTrainingPlan
+  ): Promise<boolean> => {
     const weeks = source.weeks.map((week) => {
       const edited = editingWeeks.find((entry) => entry.id === week.id);
       return edited ?? week;
@@ -100,15 +103,15 @@ export const TrainingLoadStep = ({
       targetScore: source.targetScore,
       weeks,
     };
-    const result = updatePlan(source.id, input);
+    const result = await updatePlan(source.id, input);
     if (result.status !== "saved") {
       setFormError(
         Object.values(result.fieldErrors)[0] ?? "Could not save the plan."
       );
       return false;
     }
-    const confirmed = confirmCycleStep(cycle, "training-load", {
-      sources: [{ id: result.plan.id, updatedAt: result.plan.updatedAt }],
+    const confirmed = await confirmCycleStep(cycle, "training-load", {
+      sources: [{ id: result.record.id, updatedAt: result.record.updatedAt }],
       status: "complete",
     });
     if (confirmed.status !== "saved") {
@@ -119,7 +122,7 @@ export const TrainingLoadStep = ({
     return true;
   };
 
-  const createQuickPlan = (): boolean => {
+  const createQuickPlan = async (): Promise<boolean> => {
     if (!nextMonth) {
       return false;
     }
@@ -151,15 +154,15 @@ export const TrainingLoadStep = ({
       strategyNotes: newNotes,
       weeks,
     };
-    const result = createPlan(input);
+    const result = await createPlan(input);
     if (result.status !== "saved") {
       setFormError(
         Object.values(result.fieldErrors)[0] ?? "Could not create the plan."
       );
       return false;
     }
-    const confirmed = confirmCycleStep(cycle, "training-load", {
-      sources: [{ id: result.plan.id, updatedAt: result.plan.updatedAt }],
+    const confirmed = await confirmCycleStep(cycle, "training-load", {
+      sources: [{ id: result.record.id, updatedAt: result.record.updatedAt }],
       status: "complete",
     });
     if (confirmed.status !== "saved") {
@@ -170,12 +173,12 @@ export const TrainingLoadStep = ({
     return true;
   };
 
-  const confirmException = (): boolean => {
+  const confirmException = async (): Promise<boolean> => {
     if (!exceptionReason.trim()) {
       setFormError("Describe the planning exception before continuing.");
       return false;
     }
-    confirmCycleStep(cycle, "training-load", {
+    await confirmCycleStep(cycle, "training-load", {
       reason: exceptionReason.trim(),
       sources: plan ? [{ id: plan.id, updatedAt: plan.updatedAt }] : [],
       status: "exception",
@@ -388,33 +391,33 @@ export const TrainingLoadStep = ({
       </Card>
       <CycleStepActions
         cycleId={cycle.id}
-        onSaveContinue={() => {
+        onSaveContinue={async () => {
           if (plan) {
-            if (savePlanEdits(plan)) {
+            if (await savePlanEdits(plan)) {
               router.push(`/monthly-cycles/${cycle.id}/conditioning`);
             }
             return;
           }
           if (newName.trim() && !exceptionReason.trim()) {
-            if (createQuickPlan()) {
+            if (await createQuickPlan()) {
               router.push(`/monthly-cycles/${cycle.id}/conditioning`);
             }
             return;
           }
-          if (confirmException()) {
+          if (await confirmException()) {
             router.push(`/monthly-cycles/${cycle.id}/conditioning`);
           }
         }}
-        onSaveExit={() => {
-          if (plan && savePlanEdits(plan)) {
+        onSaveExit={async () => {
+          if (plan && (await savePlanEdits(plan))) {
             router.push(`/monthly-cycles?month=${cycle.month}`);
             return;
           }
-          if (!plan && newName.trim() && createQuickPlan()) {
+          if (!plan && newName.trim() && (await createQuickPlan())) {
             router.push(`/monthly-cycles?month=${cycle.month}`);
             return;
           }
-          if (!plan && confirmException()) {
+          if (!plan && (await confirmException())) {
             router.push(`/monthly-cycles?month=${cycle.month}`);
           }
         }}

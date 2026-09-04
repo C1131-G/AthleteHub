@@ -55,3 +55,130 @@ model ArcheryEnd {
 
   @@unique([sessionId, sequence])
 }
+
+// Collections migrated off localStorage.
+//
+// `*Snapshot` holds the complete Zod-validated record and is the only field the
+// decoders read; the sibling columns are derived copies that exist so SQLite can
+// index, sort, and enforce uniqueness. Writing both from one parsed value keeps
+// them from diverging.
+
+model Athlete {
+  id              String    @id
+  code            String    @unique
+  fullName        String
+  category        String
+  status          String
+  dateOfBirth     String
+  profileSnapshot String
+  archivedAt      DateTime?
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  @@index([archivedAt, fullName])
+}
+
+model EquipmentSetup {
+  id            String    @id
+  athleteId     String
+  recordedAt    String
+  itemsSnapshot String
+  archivedAt    DateTime?
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  @@index([athleteId, recordedAt])
+}
+
+model WeeklyReport {
+  id             String    @id
+  athleteId      String
+  weekStart      String
+  status         String
+  reportSnapshot String
+  archivedAt     DateTime?
+  createdAt      DateTime
+  updatedAt      DateTime
+
+  @@unique([athleteId, weekStart])
+  @@index([athleteId, weekStart])
+}
+
+model MonthlyReport {
+  id             String    @id
+  athleteId      String
+  month          String
+  reportSnapshot String
+  archivedAt     DateTime?
+  createdAt      DateTime
+  updatedAt      DateTime
+
+  @@unique([athleteId, month])
+}
+
+model Assessment {
+  id              String    @id
+  athleteId       String
+  date            String
+  type            String
+  weeklyReportId  String?
+  payloadSnapshot String
+  archivedAt      DateTime?
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  @@index([athleteId, date])
+}
+
+model ConditioningAssessment {
+  id              String    @id
+  athleteId       String
+  date            String
+  resultsSnapshot String
+  archivedAt      DateTime?
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  @@index([athleteId, date])
+}
+
+model ConditioningProgramme {
+  id             String    @id
+  athleteId      String
+  startDate      String
+  endDate        String
+  status         String
+  phasesSnapshot String
+  archivedAt     DateTime?
+  createdAt      DateTime
+  updatedAt      DateTime
+
+  @@index([athleteId, startDate])
+}
+
+model TrainingPlan {
+  id           String    @id
+  athleteId    String
+  seasonStart  String
+  seasonEnd    String
+  status       String
+  planSnapshot String
+  archivedAt   DateTime?
+  createdAt    DateTime
+  updatedAt    DateTime
+
+  @@index([athleteId, seasonStart])
+}
+
+model MonthlyCycle {
+  id            String    @id
+  athleteId     String
+  month         String
+  completedAt   DateTime?
+  stepsSnapshot String
+  archivedAt    DateTime?
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  @@unique([athleteId, month])
+}

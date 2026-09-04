@@ -159,7 +159,7 @@ const EquipmentFormFields = ({
     return Object.keys(next).length === 0;
   };
 
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate()) {
       formRef.current
@@ -168,10 +168,14 @@ const EquipmentFormFields = ({
       return;
     }
     const input = { athleteId, coachNotes, items, recordedAt };
-    const saved = setup ? updateSetup(setup.id, input) : createSetup(input);
-    if (saved) {
-      router.push(equipmentSetupHref(athleteId, saved.id));
+    const saved = setup
+      ? await updateSetup(setup.id, input)
+      : await createSetup(input);
+    if (saved.status === "saved") {
+      router.push(equipmentSetupHref(athleteId, saved.record.id));
+      return;
     }
+    setErrors(saved.fieldErrors);
   };
 
   return (

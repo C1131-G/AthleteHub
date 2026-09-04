@@ -90,13 +90,17 @@ bun run dev
 
 | Command | What it does |
 | --- | --- |
-| `bun run dev` | Next.js dev server in the browser |
+| `bun run dev` | Next.js dev server in the browser (data goes to localStorage, not SQLite) |
 | `bun run electron:dev` | Electron shell against the dev server |
 | `bun run electron:preview` | Production build inside Electron, unpackaged |
 | `bun run check` / `bun run fix` | Lint and format |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bun test features lib` | Unit tests |
 | `bun run test:instant` | Playwright navigation suite |
+
+### Where the data lives
+
+Every collection — athletes, equipment, reports, assessments, conditioning, training plans, monthly cycles, and sessions — is stored in SQLite in the Electron main process and reached from the renderer over IPC. `bun run dev` in a plain browser has no main process, so it falls back to a localStorage-backed implementation of the same interface: the services, validation, and duplicate rules are identical, only the storage differs. Backups live under `<userData>/backups`, written on quit and kept for the last seven runs, and **Settings → Backup** exports and restores a portable JSON bundle.
 
 ## Build installers
 

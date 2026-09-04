@@ -9,6 +9,8 @@ import {
 import { z } from "zod";
 
 import "../../types/electron";
+import { sessionClient } from "@/lib/collection-client";
+
 import type { ArcherySession, SessionMutationResult } from "./session-types";
 import { sessionResponseSchema } from "./session-types";
 
@@ -27,24 +29,13 @@ const sessionKeys = {
   byId: (sessionId: string) => ["sessions", "id", sessionId] as const,
 };
 
-const api = () => {
-  const electronApi = globalThis.window?.electronAPI;
-  if (!electronApi) {
-    return;
-  }
-  return electronApi.backend.sessions;
-};
+const api = () => sessionClient();
 
 const sessionQueryOptions = (athleteId: string) =>
   queryOptions({
-    enabled: Boolean(api() && athleteId),
-    queryFn: async (): Promise<ArcherySession[]> => {
-      const backend = api();
-      if (!backend) {
-        throw new Error("Open the AthleteHub desktop app to load sessions.");
-      }
-      return listResponseSchema.parse(await backend.listByAthlete(athleteId));
-    },
+    enabled: Boolean(athleteId),
+    queryFn: async (): Promise<ArcherySession[]> =>
+      listResponseSchema.parse(await api().listByAthlete(athleteId)),
     queryKey: sessionKeys.byAthlete(athleteId),
     retry: false,
     staleTime: 30_000,
@@ -52,14 +43,9 @@ const sessionQueryOptions = (athleteId: string) =>
 
 const sessionDetailOptions = (sessionId: string) =>
   queryOptions({
-    enabled: Boolean(api() && sessionId),
-    queryFn: async () => {
-      const backend = api();
-      if (!backend) {
-        throw new Error("Open the AthleteHub desktop app to load sessions.");
-      }
-      return sessionResponseSchema.parse(await backend.get(sessionId));
-    },
+    enabled: Boolean(sessionId),
+    queryFn: async () =>
+      sessionResponseSchema.parse(await api().get(sessionId)),
     queryKey: sessionKeys.byId(sessionId),
     retry: false,
     staleTime: 30_000,
@@ -77,9 +63,6 @@ export const useSessions = (athleteId: string) => {
       input: unknown;
     }): Promise<SessionMutationResult> => {
       const backend = api();
-      if (!backend) {
-        throw new Error("Open the AthleteHub desktop app to save sessions.");
-      }
       const result = await (complete
         ? backend.complete(input)
         : backend.saveDraft(input));

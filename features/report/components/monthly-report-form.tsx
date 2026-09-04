@@ -213,12 +213,12 @@ const MonthlyReportFormBody = ({
       performanceHighlights: form.performanceHighlights.trim(),
       status: form.status,
     };
-    startTransition(() => {
+    startTransition(async () => {
       const result = reportId
-        ? updateMonthly(reportId, input)
-        : createMonthly(input);
+        ? await updateMonthly(reportId, input)
+        : await createMonthly(input);
       if (result.status === "saved") {
-        router.push(`/reports/monthly/${result.report.id}`);
+        router.push(`/reports/monthly/${result.record.id}`);
       } else {
         const saveErrors = toFormErrors(result.fieldErrors, monthlyControls);
         setErrors(saveErrors);

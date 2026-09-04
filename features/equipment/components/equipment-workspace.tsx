@@ -3,8 +3,9 @@
 import { ArrowRightIcon, PlusIcon, WrenchIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
+import { ArchivedToggle } from "@/components/archived-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -48,10 +49,13 @@ import { EquipmentHistory } from "./equipment-history";
 import { EquipmentSkeleton } from "./equipment-skeleton";
 
 export const EquipmentWorkspace = () => {
+  const [showArchived, setShowArchived] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { athletes, ready: athletesReady } = useAthletes();
-  const { listByAthlete, ready: equipmentReady } = useEquipment();
+  const { listByAthlete, ready: equipmentReady } = useEquipment(
+    showArchived ? { archivedOnly: true } : undefined
+  );
   const selectedAthleteId = searchParams.get("athleteId") ?? "";
   const athlete = findAthlete(athletes, selectedAthleteId);
   const setups = useMemo(
@@ -144,12 +148,18 @@ export const EquipmentWorkspace = () => {
           </Card>
 
           <Tabs defaultValue="overview" className="gap-6">
-            <TabsList aria-label="Equipment sections">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="history">
-                History ({setups.length})
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <TabsList aria-label="Equipment sections">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="history">
+                  History ({setups.length})
+                </TabsTrigger>
+              </TabsList>
+              <ArchivedToggle
+                onChange={setShowArchived}
+                showArchived={showArchived}
+              />
+            </div>
             <TabsContent value="overview">
               {current ? (
                 <EquipmentComparison
@@ -179,7 +189,11 @@ export const EquipmentWorkspace = () => {
               )}
             </TabsContent>
             <TabsContent value="history">
-              <EquipmentHistory athleteId={athlete.id} setups={setups} />
+              <EquipmentHistory
+                archived={showArchived}
+                athleteId={athlete.id}
+                setups={setups}
+              />
             </TabsContent>
           </Tabs>
         </>

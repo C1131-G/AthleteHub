@@ -1,29 +1,25 @@
 "use client";
 
-import { useStore } from "@tanstack/react-store";
+import type { ListOptions } from "@/electron/collections";
+import { collectionSchemas } from "@/features/backend/collection-services";
+import { useCollection } from "@/lib/use-collection";
 
-import { useHydrated } from "@/hooks/use-hydrated";
-
-import {
-  createTrainingPlan,
-  trainingPlanStore,
-  updateTrainingPlan,
-} from "./training-plan-store";
-
-export const useTrainingPlans = () => {
-  const { plans, ready } = useStore(trainingPlanStore);
-  const hydrated = useHydrated();
-  // Readers must not see stored plans until the client has hydrated, or the
-  // first client render disagrees with the server HTML.
-  const visible = ready && hydrated ? plans : [];
+export const useTrainingPlans = (options?: ListOptions) => {
+  const { create, ready, records, ...rest } = useCollection(
+    "trainingPlans",
+    collectionSchemas.trainingPlans,
+    options
+  );
 
   return {
-    createPlan: createTrainingPlan,
-    getPlan: (planId: string) => visible.find((plan) => plan.id === planId),
+    archivePlan: rest.archive,
+    createPlan: create,
+    getPlan: (planId: string) => records.find((plan) => plan.id === planId),
     listByAthlete: (athleteId: string) =>
-      visible.filter((plan) => plan.athleteId === athleteId),
-    plans: visible,
-    ready: ready && hydrated,
-    updatePlan: updateTrainingPlan,
+      records.filter((plan) => plan.athleteId === athleteId),
+    plans: records,
+    ready,
+    restorePlan: rest.restore,
+    updatePlan: rest.update,
   };
 };

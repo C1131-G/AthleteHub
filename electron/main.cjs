@@ -1,7 +1,15 @@
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
-const { existsSync, readFileSync, writeFileSync } = require("node:fs");
+const {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} = require("node:fs");
 const { createServer } = require("node:net");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
@@ -17,6 +25,7 @@ let serverOrigin;
 let runtime;
 const authServices = new Map();
 const sessionServices = new Map();
+const collectionServices = new Map();
 
 const findFreePort = async () => {
   const probe = createServer();
@@ -245,6 +254,24 @@ const getSessionService = async (event) => {
   return service;
 };
 
+/**
+ * Collection services are built per renderer for the same reason auth and
+ * session services are, and behind the same session gate: an unauthenticated
+ * or untrusted renderer must not reach the database.
+ */
+const getCollectionService = async (event, name) => {
+  await getAuthService(event).requireSession();
+  let services = collectionServices.get(event.sender.id);
+  if (!services) {
+    services = runtime.createCollectionServices();
+    collectionServices.set(event.sender.id, services);
+    event.sender.once("destroyed", () =>
+      collectionServices.delete(event.sender.id)
+    );
+  }
+  return services[name];
+};
+
 const registerBackendIpc = async () => {
   if (runtime) {
     return;
@@ -281,6 +308,15 @@ const registerBackendIpc = async () => {
     const service = await getSessionService(event);
     return service.complete(input);
   });
+
+  for (const name of runtime.collectionNames) {
+    for (const method of runtime.collectionMethods) {
+      ipcMain.handle(`${name}.${method}`, async (event, ...args) => {
+        const service = await getCollectionService(event, name);
+        return service[method](...args);
+      });
+    }
+  }
 };
 
 /**
@@ -366,9 +402,41 @@ app.on("window-all-closed", () => {
   }
 });
 
+const BACKUP_COUNT = 7;
+
+/**
+ * Keeps a rolling copy of the database next to it. The app is offline and
+ * single-user, so a corrupted or mistakenly emptied database would otherwise
+ * have nothing to fall back on. Runs after the client closes so the file is
+ * not mid-write, and never blocks the quit.
+ */
+const writeRollingBackup = () => {
+  try {
+    const source = path.join(app.getPath("userData"), "athletehub.db");
+    if (!existsSync(source)) {
+      return;
+    }
+    const directory = path.join(app.getPath("userData"), "backups");
+    mkdirSync(directory, { recursive: true });
+    const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
+    copyFileSync(source, path.join(directory, `athletehub-${stamp}.db`));
+
+    const existing = readdirSync(directory)
+      .filter((name) => name.startsWith("athletehub-") && name.endsWith(".db"))
+      .toSorted();
+    for (const name of existing.slice(0, -BACKUP_COUNT)) {
+      rmSync(path.join(directory, name), { force: true });
+    }
+  } catch (error) {
+    // A failed backup must never stop the app from closing.
+    console.error("Could not write the database backup.", error);
+  }
+};
+
 app.on("before-quit", async () => {
   if (runtime) {
     await runtime.close();
   }
+  writeRollingBackup();
   stopServer();
 });

@@ -223,10 +223,10 @@ const ProgrammeFormBody = ({
       return;
     }
     const input = toProgrammeInput(form);
-    startTransition(() => {
+    startTransition(async () => {
       const result = programmeId
-        ? updateProgramme(programmeId, input)
-        : createProgramme(input);
+        ? await updateProgramme(programmeId, input)
+        : await createProgramme(input);
       if (result.status === "saved") {
         router.push(`/conditioning/programmes/${result.record.id}`);
       } else {

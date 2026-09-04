@@ -59,20 +59,13 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
     [form.ends]
   );
   const { save } = useSessions(form.selectedAthleteId || athleteId);
-  const desktopAvailable = globalThis.window?.electronAPI !== undefined;
 
   const initializeSessionRecording = () => {
     if (!sessionIdRef.current) {
       sessionIdRef.current = crypto.randomUUID();
     }
-    if (!desktopAvailable) {
-      setFeedback((current) => ({
-        ...current,
-        error: "Session recording is available in the AthleteHub desktop app.",
-      }));
-    }
   };
-  useEffect(initializeSessionRecording, [desktopAvailable]);
+  useEffect(initializeSessionRecording, []);
 
   const updateEnd = (
     index: number,
@@ -255,14 +248,14 @@ export const SessionForm = ({ athleteId }: { athleteId: string }) => {
       </p>
       <div className="flex flex-wrap justify-end gap-3">
         <Button
-          disabled={save.isPending || !desktopAvailable}
+          disabled={save.isPending}
           onClick={() => submit(false)}
           type="button"
           variant="outline"
         >
           Save draft
         </Button>
-        <Button disabled={save.isPending || !desktopAvailable} type="submit">
+        <Button disabled={save.isPending} type="submit">
           {save.isPending ? "Saving…" : "Complete session"}
         </Button>
         <Button

@@ -5,7 +5,9 @@ import { createColumnHelper, useTable } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { ArchiveAction } from "@/components/archive-action";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -27,6 +29,7 @@ import type {
   ConditioningPhase,
   ConditioningProgramme,
 } from "../conditioning-types";
+import { useConditioning } from "../use-conditioning";
 import {
   conditioningTableFeatures,
   conditioningTableInitialState,
@@ -76,14 +79,34 @@ const PhaseCell = ({ row }: ProgrammeCell<unknown>) => (
   </span>
 );
 
-const ActionsCell = ({ row }: ProgrammeCell<unknown>) => (
-  <Link
-    className="underline underline-offset-4"
-    href={`/conditioning/programmes/${row.original.id}`}
-  >
-    View
-  </Link>
-);
+const ActionsCell = ({ row, table }: ProgrammeCell<unknown>) => {
+  const { archiveProgramme, restoreProgramme } = useConditioning();
+  const archived = table.options.meta?.archived === true;
+  return (
+    <div className="flex items-center justify-end gap-3">
+      <Link
+        className="underline underline-offset-4"
+        href={`/conditioning/programmes/${row.original.id}`}
+      >
+        View
+      </Link>
+      {archived ? (
+        <Button
+          onClick={() => restoreProgramme(row.original.id)}
+          size="sm"
+          variant="outline"
+        >
+          Restore
+        </Button>
+      ) : (
+        <ArchiveAction
+          label="this record"
+          onArchive={() => archiveProgramme(row.original.id)}
+        />
+      )}
+    </div>
+  );
+};
 
 const helper = createColumnHelper<
   typeof conditioningTableFeatures,
@@ -121,9 +144,11 @@ const columns = helper.columns([
 ]);
 
 export const ProgrammeTable = ({
+  archived,
   athleteById,
   rows,
 }: {
+  archived?: boolean;
   athleteById: Map<string, { fullName: string }>;
   rows: ConditioningProgramme[];
 }) => {
@@ -148,6 +173,7 @@ export const ProgrammeTable = ({
     enableSortingRemoval: false,
     features: conditioningTableFeatures,
     initialState: conditioningTableInitialState,
+    meta: { archived },
   });
 
   if (!data.length) {

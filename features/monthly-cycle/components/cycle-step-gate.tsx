@@ -33,7 +33,7 @@ export const CycleStepSkeleton = () => (
 );
 
 /**
- * Shared gate for every step route: waits for the stores, resolves the cycle
+ * Shared gate for every step route: waits for the queries, resolves the cycle
  * and its domain context, then renders the step. Direct links to a step stay
  * valid, and an unknown cycle shows a clear not-found state.
  */

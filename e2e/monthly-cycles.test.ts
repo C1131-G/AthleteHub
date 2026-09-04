@@ -5,13 +5,18 @@ import {
 } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-const ATHLETES_KEY = "athletehub.athletes.v1";
-const EQUIPMENT_KEY = "athletehub.equipment.v1";
-const PLANS_KEY = "athletehub.training-plans.v1";
-const ASSESSMENTS_KEY = "athletehub.conditioning-assessments.v1";
-const PROGRAMMES_KEY = "athletehub.conditioning-programmes.v1";
-const WEEKLY_KEY = "athletehub.weekly-reports.v1";
-const CYCLES_KEY = "athletehub.monthly-cycles.v1";
+import { seedCollections, writeCollections } from "./seed";
+import type { SeedCollection, SeedRecord } from "./seed";
+
+// Collection names rather than storage keys: the seeding helper knows how each
+// collection is laid out on disk.
+const ATHLETES_KEY = "athletes" as const;
+const EQUIPMENT_KEY = "equipment" as const;
+const PLANS_KEY = "trainingPlans" as const;
+const ASSESSMENTS_KEY = "conditioningAssessments" as const;
+const PROGRAMMES_KEY = "conditioningProgrammes" as const;
+const WEEKLY_KEY = "weeklyReports" as const;
+const CYCLES_KEY = "monthlyCycles" as const;
 
 /** The whole cycle month is in the past, so every Monday is reportable. */
 const MONTH = "2026-08";
@@ -182,33 +187,20 @@ const fullFleet = {
  * Writes the seed once after the app has loaded, so a later reload keeps
  * whatever the test saved instead of restoring the fixture.
  */
-/** Fixture payloads are written verbatim; the repositories validate on read. */
-type SeedEntry = readonly [string, readonly unknown[]];
+/** Fixture payloads are written verbatim; the services validate on read. */
+type SeedTuple = readonly [SeedCollection, readonly SeedRecord[]];
 
-const seedOnce = async (page: Page, entries: readonly SeedEntry[]) => {
+const toEntries = (tuples: readonly SeedTuple[]) =>
+  tuples.map(([collection, records]) => ({ collection, records }));
+
+const seedOnce = async (page: Page, tuples: readonly SeedTuple[]) => {
   await page.goto("/monthly-cycles?month=2026-08");
-  await page.evaluate(
-    ([fixture]) => {
-      for (const [key, value] of fixture) {
-        if (!window.localStorage.getItem(key)) {
-          window.localStorage.setItem(key, JSON.stringify(value));
-        }
-      }
-    },
-    [entries] as const
-  );
+  await writeCollections(page, toEntries(tuples));
   await page.reload();
 };
 
-const seedDirect = async (page: Page, entries: readonly SeedEntry[]) => {
-  await page.addInitScript(
-    ([fixture]) => {
-      for (const [key, value] of fixture) {
-        window.localStorage.setItem(key, JSON.stringify(value));
-      }
-    },
-    [entries] as const
-  );
+const seedDirect = async (page: Page, tuples: readonly SeedTuple[]) => {
+  await seedCollections(page, toEntries(tuples));
 };
 
 const queueRowFor = (page: Page, name: string) =>

@@ -1,26 +1,21 @@
 "use client";
 
-import { useStore } from "@tanstack/react-store";
+import type { ListOptions } from "@/electron/collections";
+import { collectionSchemas } from "@/features/backend/collection-services";
+import { useCollection } from "@/lib/use-collection";
 
-import { useHydrated } from "@/hooks/use-hydrated";
-
-import {
-  createCycle,
-  monthlyCycleStore,
-  updateCycle,
-} from "./monthly-cycle-store";
-
-/**
- * Cycle data lives in localStorage, so the store is empty until the workspace
- * shell has mounted and hydrated; `ready` is false until then.
- */
-export const useMonthlyCycles = () => {
-  const { cycles, ready } = useStore(monthlyCycleStore);
-  const hydrated = useHydrated();
+export const useMonthlyCycles = (options?: ListOptions) => {
+  const { create, ready, records, ...rest } = useCollection(
+    "monthlyCycles",
+    collectionSchemas.monthlyCycles,
+    options
+  );
   return {
-    createCycle,
-    cycles: ready && hydrated ? cycles : [],
-    ready: ready && hydrated,
-    updateCycle,
+    archiveCycle: rest.archive,
+    createCycle: create,
+    cycles: records,
+    ready,
+    restoreCycle: rest.restore,
+    updateCycle: rest.update,
   };
 };

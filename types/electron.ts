@@ -1,7 +1,34 @@
+import type { ListOptions } from "../electron/collections";
+import type {
+  CollectionName,
+  CollectionRecordMap,
+} from "../features/backend/collection-services";
 import type {
   ArcherySession,
   SessionMutationResult,
 } from "../features/session/session-types";
+import type { CollectionMutationResult } from "../lib/collection-service";
+
+/**
+ * Every migrated collection exposes this surface. Responses still cross a
+ * process boundary, so the hooks parse them before they reach the cache.
+ */
+interface ElectronCollectionApi<TRecord> {
+  archive: (id: string) => Promise<CollectionMutationResult<TRecord>>;
+  create: (input: unknown) => Promise<CollectionMutationResult<TRecord>>;
+  get: (id: string) => Promise<TRecord | undefined>;
+  importRecord: (record: unknown) => Promise<CollectionMutationResult<TRecord>>;
+  list: (options?: ListOptions) => Promise<TRecord[]>;
+  restore: (id: string) => Promise<CollectionMutationResult<TRecord>>;
+  update: (
+    id: string,
+    input: unknown
+  ) => Promise<CollectionMutationResult<TRecord>>;
+}
+
+type ElectronCollectionsApi = {
+  [TName in CollectionName]: ElectronCollectionApi<CollectionRecordMap[TName]>;
+};
 
 interface ElectronAuthApi {
   login: (input: {
@@ -31,7 +58,11 @@ interface ElectronSessionsApi {
 declare global {
   interface Window {
     electronAPI?: {
-      backend: { auth: ElectronAuthApi; sessions: ElectronSessionsApi };
+      backend: {
+        auth: ElectronAuthApi;
+        collections: ElectronCollectionsApi;
+        sessions: ElectronSessionsApi;
+      };
       platform: string;
     };
   }

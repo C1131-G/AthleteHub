@@ -15,7 +15,6 @@ import {
 import { useAthletes } from "@/features/athlete/use-athletes";
 
 import { assessmentHref, safeReturnHref } from "../assessment-routes";
-import { createAssessment, updateAssessment } from "../assessment-store";
 import {
   assessmentInputSchema,
   assessmentTypeLabel,
@@ -27,6 +26,7 @@ import type {
   AssessmentInput,
   AssessmentType,
 } from "../assessment-types";
+import { useAssessments } from "../use-assessments";
 import { AssessmentFields } from "./assessment-fields";
 
 const localToday = () => {
@@ -112,6 +112,7 @@ export const AssessmentForm = ({
 }) => {
   const router = useRouter();
   const { athletes, ready } = useAthletes();
+  const { createAssessment, updateAssessment } = useAssessments();
   const [type, setType] = useState<AssessmentType>(
     record?.assessmentType ?? "mentis"
   );
@@ -121,7 +122,7 @@ export const AssessmentForm = ({
   if (!ready) {
     return <AssessmentFormSkeleton />;
   }
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrors({});
     const input = buildInput(
@@ -152,14 +153,14 @@ export const AssessmentForm = ({
       return;
     }
     const result = record
-      ? updateAssessment(record.id, parsed.data)
-      : createAssessment(parsed.data);
+      ? await updateAssessment(record.id, parsed.data)
+      : await createAssessment(parsed.data);
     if (result.status !== "saved") {
       setErrors(result.fieldErrors);
       return;
     }
     const destination =
-      safeReturnHref(returnTo) ?? assessmentHref(result.assessment.id);
+      safeReturnHref(returnTo) ?? assessmentHref(result.record.id);
     // SAFETY: safeReturnHref only returns same-origin internal route shapes.
     router.push(destination as Parameters<typeof router.push>[0], {
       transitionTypes: ["nav-forward"],

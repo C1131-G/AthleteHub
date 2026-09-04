@@ -4,7 +4,14 @@ import {
   test as playwrightTest,
 } from "@playwright/test";
 
+import { seedCollections } from "./seed";
+
 playwrightTest.describe("reporting workspace", () => {
+  // The app no longer invents a roster, so the forms need athletes to pick.
+  playwrightTest.beforeEach(async ({ page }) => {
+    await seedCollections(page, []);
+  });
+
   playwrightTest(
     "dashboard exposes filters, chart data, and no axe violations",
     async ({ page }) => {

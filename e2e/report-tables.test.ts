@@ -4,7 +4,7 @@ import {
   test as playwrightTest,
 } from "@playwright/test";
 
-const WEEKLY_KEY = "athletehub.weekly-reports.v1";
+import { seedCollections } from "./seed";
 
 const weeklyFixtures = Array.from({ length: 12 }, (_, index) => {
   const day = String(index + 1).padStart(2, "0");
@@ -26,12 +26,9 @@ const weeklyFixtures = Array.from({ length: 12 }, (_, index) => {
 
 playwrightTest.describe("report tables", () => {
   playwrightTest.beforeEach(async ({ page }) => {
-    await page.addInitScript(
-      ([key, rows]) => {
-        window.localStorage.setItem(String(key), JSON.stringify(rows));
-      },
-      [WEEKLY_KEY, weeklyFixtures] as const
-    );
+    await seedCollections(page, [
+      { collection: "weeklyReports", records: weeklyFixtures },
+    ]);
   });
 
   playwrightTest("paginates weekly entries", async ({ page }) => {

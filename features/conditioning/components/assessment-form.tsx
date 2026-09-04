@@ -209,10 +209,10 @@ const AssessmentFormBody = ({
       return;
     }
     const input = toAssessmentInput(form);
-    startTransition(() => {
+    startTransition(async () => {
       const result = assessmentId
-        ? updateAssessment(assessmentId, input)
-        : createAssessment(input);
+        ? await updateAssessment(assessmentId, input)
+        : await createAssessment(input);
       if (result.status === "saved") {
         router.push(`/conditioning/assessments/${result.record.id}`);
       } else {

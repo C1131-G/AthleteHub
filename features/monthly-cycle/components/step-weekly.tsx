@@ -36,7 +36,7 @@ import { planWeekFor } from "@/features/training-plan/training-plan-calculations
 import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 import { formatDate } from "@/lib/format";
 
-import { confirmCycleStep } from "../cycle-step-actions";
+import { useConfirmCycleStep } from "../cycle-step-actions";
 import {
   expectedMondays,
   setupEffectiveBy,
@@ -74,6 +74,7 @@ export const WeeklyStep = ({
   stepView: CycleStepView;
 }) => {
   const router = useRouter();
+  const confirmCycleStep = useConfirmCycleStep();
   const { plans } = useTrainingPlans();
   const { createWeekly, getWeekly, updateWeekly } = useReports();
   const coverage = weeklyCoverageFor(
@@ -88,9 +89,9 @@ export const WeeklyStep = ({
     cycle.steps.weekly.reason ?? ""
   );
 
-  const confirm = () => {
+  const confirm = async () => {
     if (uncovered === 0) {
-      const result = confirmCycleStep(cycle, "weekly", {
+      const result = await confirmCycleStep(cycle, "weekly", {
         sources: stepView.currentSources,
         status: "complete",
       });
@@ -99,7 +100,7 @@ export const WeeklyStep = ({
     if (!exceptionReason.trim()) {
       return false;
     }
-    const result = confirmCycleStep(cycle, "weekly", {
+    const result = await confirmCycleStep(cycle, "weekly", {
       reason: exceptionReason.trim(),
       sources: stepView.currentSources,
       status: "exception",
@@ -171,13 +172,13 @@ export const WeeklyStep = ({
       ) : null}
       <CycleStepActions
         cycleId={cycle.id}
-        onSaveContinue={() => {
-          if (confirm()) {
+        onSaveContinue={async () => {
+          if (await confirm()) {
             router.push(`/monthly-cycles/${cycle.id}/monthly-average`);
           }
         }}
-        onSaveExit={() => {
-          if (confirm()) {
+        onSaveExit={async () => {
+          if (await confirm()) {
             router.push(`/monthly-cycles?month=${cycle.month}`);
           }
         }}
@@ -223,7 +224,7 @@ const WeekRow = ({
     value: WeeklyFormState[K]
   ) => setForm((current) => ({ ...current, [key]: value }));
 
-  const save = () => {
+  const save = async () => {
     const withWeek: WeeklyFormState = {
       ...form,
       athleteId,
@@ -241,8 +242,8 @@ const WeekRow = ({
     );
     const input = weeklyInputFromForm(withWeek, planWeek, effectiveSetup?.id);
     const result = existing
-      ? reports.updateWeekly(existing.id, input)
-      : reports.createWeekly(input);
+      ? await reports.updateWeekly(existing.id, input)
+      : await reports.createWeekly(input);
     if (result.status === "saved") {
       setErrors({});
     } else {

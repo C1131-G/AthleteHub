@@ -1,33 +1,35 @@
 "use client";
 
-import { useStore } from "@tanstack/react-store";
+import type { ListOptions } from "@/electron/collections";
+import { collectionSchemas } from "@/features/backend/collection-services";
+import { useCollection } from "@/lib/use-collection";
 
-import { useHydrated } from "@/hooks/use-hydrated";
-
-import {
-  createMonthlyReport,
-  createWeeklyReport,
-  reportStore,
-  updateMonthlyReport,
-  updateWeeklyReport,
-} from "./report-store";
-
-export const useReports = () => {
-  const state = useStore(reportStore);
-  const hydrated = useHydrated();
-  const ready = state.ready && hydrated;
-  const weekly = ready ? state.weekly : [];
-  const monthly = ready ? state.monthly : [];
+export const useReports = (options?: ListOptions) => {
+  const weekly = useCollection(
+    "weeklyReports",
+    collectionSchemas.weeklyReports
+  );
+  const monthly = useCollection(
+    "monthlyReports",
+    collectionSchemas.monthlyReports,
+    options
+  );
 
   return {
-    createMonthly: createMonthlyReport,
-    createWeekly: createWeeklyReport,
-    getMonthly: (id: string) => monthly.find((report) => report.id === id),
-    getWeekly: (id: string) => weekly.find((report) => report.id === id),
-    listMonthly: monthly,
-    listWeekly: weekly,
-    ready,
-    updateMonthly: updateMonthlyReport,
-    updateWeekly: updateWeeklyReport,
+    archiveMonthly: monthly.archive,
+    archiveWeekly: weekly.archive,
+    createMonthly: monthly.create,
+    createWeekly: weekly.create,
+    getMonthly: (id: string) =>
+      monthly.records.find((report) => report.id === id),
+    getWeekly: (id: string) =>
+      weekly.records.find((report) => report.id === id),
+    listMonthly: monthly.records,
+    listWeekly: weekly.records,
+    ready: weekly.ready && monthly.ready,
+    restoreMonthly: monthly.restore,
+    restoreWeekly: weekly.restore,
+    updateMonthly: monthly.update,
+    updateWeekly: weekly.update,
   };
 };

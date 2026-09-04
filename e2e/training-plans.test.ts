@@ -5,8 +5,8 @@ import {
 } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-const PLANS_KEY = "athletehub.training-plans.v1";
-const WEEKLY_KEY = "athletehub.weekly-reports.v1";
+import { seedCollections, writeCollections } from "./seed";
+import type { SeedRecord } from "./seed";
 
 const planWeeks = [
   ["2026-08-03", 900],
@@ -85,34 +85,26 @@ const weeklyReports = planWeeks.slice(0, 3).map(([weekStart], index) => ({
   weekStart,
 }));
 
-const seed = (page: Page, plans: unknown[], reports: unknown[] = []) =>
-  page.addInitScript(
-    ([plansKey, weeklyKey, planData, reportData]) => {
-      window.localStorage.setItem(String(plansKey), JSON.stringify(planData));
-      window.localStorage.setItem(
-        String(weeklyKey),
-        JSON.stringify(reportData)
-      );
-    },
-    [PLANS_KEY, WEEKLY_KEY, plans, reports] as const
-  );
+const seed = (page: Page, plans: SeedRecord[], reports: SeedRecord[] = []) =>
+  seedCollections(page, [
+    { collection: "trainingPlans", records: plans },
+    { collection: "weeklyReports", records: reports },
+  ]);
 
 /**
  * Writes the seed once, after the app has loaded, so a later reload keeps
  * whatever the test saved instead of restoring the fixture.
  */
-const seedOnce = async (page: Page, plans: unknown[], reports: unknown[]) => {
+const seedOnce = async (
+  page: Page,
+  plans: SeedRecord[],
+  reports: SeedRecord[]
+) => {
   await page.goto("/training-plans");
-  await page.evaluate(
-    ([plansKey, weeklyKey, planData, reportData]) => {
-      window.localStorage.setItem(String(plansKey), JSON.stringify(planData));
-      window.localStorage.setItem(
-        String(weeklyKey),
-        JSON.stringify(reportData)
-      );
-    },
-    [PLANS_KEY, WEEKLY_KEY, plans, reports] as const
-  );
+  await writeCollections(page, [
+    { collection: "trainingPlans", records: plans },
+    { collection: "weeklyReports", records: reports },
+  ]);
 };
 
 /** Picks today from an open date picker, so the test never pins a date. */
@@ -124,6 +116,12 @@ const pickToday = async (page: Page, controlId: string) => {
 };
 
 playwrightTest.describe("training plans", () => {
+  // The app no longer invents a roster, and the form needs an athlete to
+  // default to, so every test starts from a seeded one.
+  playwrightTest.beforeEach(async ({ page }) => {
+    await seedCollections(page, []);
+  });
+
   playwrightTest("creates a plan from the form", async ({ page }) => {
     await page.goto("/training-plans/new");
     await page.locator("#plan-name").fill("Autumn build");

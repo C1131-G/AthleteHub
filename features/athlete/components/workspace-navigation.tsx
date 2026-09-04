@@ -4,6 +4,7 @@ import {
   BarbellIcon,
   CalendarIcon,
   GaugeIcon,
+  GearIcon,
   NotebookIcon,
   TargetIcon,
   UsersThreeIcon,
@@ -29,6 +30,7 @@ interface NavigationItem {
     | "/monthly-cycles"
     | "/reports"
     | "/sessions"
+    | "/settings"
     | "/training-plans";
   icon: ComponentType<{ "aria-hidden"?: boolean }>;
   label: string;
@@ -43,6 +45,7 @@ const items: NavigationItem[] = [
   { href: "/sessions", icon: TargetIcon, label: "Sessions" },
   { href: "/conditioning", icon: BarbellIcon, label: "Conditioning" },
   { href: "/training-plans", icon: TargetIcon, label: "Training Load" },
+  { href: "/settings", icon: GearIcon, label: "Settings" },
 ];
 
 export const WorkspaceNavigation = () => {

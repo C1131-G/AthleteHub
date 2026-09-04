@@ -4,8 +4,7 @@ import {
   test as playwrightTest,
 } from "@playwright/test";
 
-const ASSESSMENTS_KEY = "athletehub.conditioning-assessments.v1";
-const PROGRAMMES_KEY = "athletehub.conditioning-programmes.v1";
+import { seedCollectionsIfEmpty } from "./seed";
 
 const earlier = {
   assessedOn: "2026-07-05",
@@ -98,26 +97,13 @@ const programme = {
 
 playwrightTest.describe("conditioning workspace", () => {
   playwrightTest.beforeEach(async ({ page }) => {
-    await page.addInitScript(
-      ([assessments, programmes]) => {
-        if (!window.localStorage.getItem(String(assessments[0]))) {
-          window.localStorage.setItem(
-            String(assessments[0]),
-            JSON.stringify(assessments[1])
-          );
-        }
-        if (!window.localStorage.getItem(String(programmes[0]))) {
-          window.localStorage.setItem(
-            String(programmes[0]),
-            JSON.stringify(programmes[1])
-          );
-        }
+    await seedCollectionsIfEmpty(page, [
+      {
+        collection: "conditioningAssessments",
+        records: [earlier, latest],
       },
-      [
-        [ASSESSMENTS_KEY, [earlier, latest]],
-        [PROGRAMMES_KEY, [programme]],
-      ] as const
-    );
+      { collection: "conditioningProgrammes", records: [programme] },
+    ]);
   });
 
   playwrightTest(

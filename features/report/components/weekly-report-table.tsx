@@ -5,7 +5,9 @@ import { createColumnHelper, useTable } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { ArchiveAction } from "@/components/archive-action";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -20,6 +22,7 @@ import {
   reportTableInitialState,
 } from "../report-table-config";
 import type { WeeklyPerformanceReport } from "../report-types";
+import { useReports } from "../use-reports";
 import {
   ReportCard,
   ReportEmpty,
@@ -60,14 +63,35 @@ const StatusCell = ({ getValue }: WeeklyCell<string>) => (
 
 const ActionsHeader = () => <span className="sr-only">Actions</span>;
 
-const ActionsCell = ({ row }: WeeklyCell<unknown>) => (
-  <Link
-    className="underline underline-offset-4"
-    href={`/reports/weekly/${row.original.id}`}
-  >
-    View weekly report
-  </Link>
-);
+const ActionsCell = ({ row, table }: WeeklyCell<unknown>) => {
+  const { archiveWeekly, restoreWeekly } = useReports();
+  // The table is rendered for one view at a time; meta says which.
+  const archived = table.options.meta?.archived === true;
+  return (
+    <div className="flex items-center justify-end gap-3">
+      <Link
+        className="underline underline-offset-4"
+        href={`/reports/weekly/${row.original.id}`}
+      >
+        View weekly report
+      </Link>
+      {archived ? (
+        <Button
+          onClick={() => restoreWeekly(row.original.id)}
+          size="sm"
+          variant="outline"
+        >
+          Restore
+        </Button>
+      ) : (
+        <ArchiveAction
+          label={`the ${row.original.weekStart} entry`}
+          onArchive={() => archiveWeekly(row.original.id)}
+        />
+      )}
+    </div>
+  );
+};
 
 const helper = createColumnHelper<typeof reportTableFeatures, WeeklyRow>();
 const columns = helper.columns([
@@ -104,9 +128,11 @@ const averageOf = (scores: number[]) =>
     : undefined;
 
 export const WeeklyReportTable = ({
+  archived,
   athleteById,
   rows,
 }: {
+  archived?: boolean;
   athleteById: Map<string, { fullName: string }>;
   rows: WeeklyPerformanceReport[];
 }) => {
@@ -129,6 +155,7 @@ export const WeeklyReportTable = ({
     enableSortingRemoval: false,
     features: reportTableFeatures,
     initialState: reportTableInitialState,
+    meta: { archived },
   });
 
   if (!data.length) {

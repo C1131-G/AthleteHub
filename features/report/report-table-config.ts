@@ -30,3 +30,15 @@ export const reportPageSize = 10;
 export const reportTableInitialState = {
   pagination: { pageIndex: 0, pageSize: reportPageSize },
 };
+
+declare module "@tanstack/react-table" {
+  /**
+   * The report tables render one view at a time — live records or archived
+   * ones — and the row actions differ between them. Meta carries which, since
+   * a column's cell is defined outside the component that knows.
+   */
+  // biome-ignore lint/correctness/noUnusedVariables: required by the interface
+  interface TableMeta<TFeatures, TData> {
+    archived?: boolean | undefined;
+  }
+}

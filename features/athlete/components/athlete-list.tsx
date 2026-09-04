@@ -1,9 +1,10 @@
 "use client";
 
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { MagnifyingGlassIcon, UsersThreeIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -29,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 import { useAthletes } from "../use-athletes";
 import { AthleteCard, AthleteRow } from "./athlete-list-rows";
@@ -56,8 +58,67 @@ const isCategoryFilter = (
 ): value is keyof typeof categoryFilterLabel =>
   value !== null && value in categoryFilterLabel;
 
+const AthleteListEmpty = ({
+  archived,
+  hasAthletes,
+}: {
+  archived: boolean;
+  hasAthletes: boolean;
+}) => {
+  if (archived) {
+    return (
+      <Empty className="m-6 border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <UsersThreeIcon />
+          </EmptyMedia>
+          <EmptyTitle>Nothing archived</EmptyTitle>
+          <EmptyDescription>
+            Archived athletes are kept here and can be restored.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+  if (hasAthletes) {
+    return (
+      <Empty className="m-6 border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <MagnifyingGlassIcon />
+          </EmptyMedia>
+          <EmptyTitle>No matching athletes</EmptyTitle>
+          <EmptyDescription>
+            Try changing the search or filters.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+  return (
+    <Empty className="m-6 border">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <UsersThreeIcon />
+        </EmptyMedia>
+        <EmptyTitle>No athletes yet</EmptyTitle>
+        <EmptyDescription>
+          Add the first athlete to start recording sessions, reports, and
+          monthly cycles.
+        </EmptyDescription>
+        <Link className={cn(buttonVariants(), "mt-4")} href="/athletes/new">
+          Add an athlete
+        </Link>
+      </EmptyHeader>
+    </Empty>
+  );
+};
+
 export const AthleteList = () => {
-  const { athletes, ready } = useAthletes();
+  const [showArchived, setShowArchived] = useState(false);
+  const { athletes, ready } = useAthletes(
+    showArchived ? { archivedOnly: true } : undefined
+  );
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<keyof typeof statusFilterLabel>("all");
   const [category, setCategory] =
@@ -146,21 +207,24 @@ export const AthleteList = () => {
                 <SelectItem value="barebow">Barebow</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              aria-pressed={showArchived}
+              onClick={() => {
+                setShowArchived(!showArchived);
+                setPage(1);
+              }}
+              variant={showArchived ? "default" : "outline"}
+            >
+              {showArchived ? "Back to roster" : "Archived"}
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {visible.length === 0 ? (
-            <Empty className="m-6 border">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <MagnifyingGlassIcon />
-                </EmptyMedia>
-                <EmptyTitle>No matching athletes</EmptyTitle>
-                <EmptyDescription>
-                  Try changing the search or filters.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <AthleteListEmpty
+              archived={showArchived}
+              hasAthletes={athletes.length > 0}
+            />
           ) : (
             <>
               <ul className="divide-y sm:hidden">
@@ -184,7 +248,11 @@ export const AthleteList = () => {
                   </TableHeader>
                   <TableBody>
                     {visible.map((athlete) => (
-                      <AthleteRow key={athlete.id} athlete={athlete} />
+                      <AthleteRow
+                        key={athlete.id}
+                        archived={showArchived}
+                        athlete={athlete}
+                      />
                     ))}
                   </TableBody>
                 </Table>

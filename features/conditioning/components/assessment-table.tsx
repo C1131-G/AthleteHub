@@ -5,7 +5,9 @@ import { createColumnHelper, useTable } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { ArchiveAction } from "@/components/archive-action";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -28,6 +30,7 @@ import {
 } from "../conditioning-routes";
 import { assessmentStatusLabel } from "../conditioning-types";
 import type { ConditioningAssessment } from "../conditioning-types";
+import { useConditioning } from "../use-conditioning";
 import {
   conditioningTableFeatures,
   conditioningTableInitialState,
@@ -69,14 +72,34 @@ const StatusCell = ({ getValue }: AssessmentCell<AssessmentRow["status"]>) => {
 const ResultsCell = ({ getValue }: AssessmentCell<number>) =>
   getValue() === 0 ? "—" : `${getValue()} tests`;
 
-const ActionsCell = ({ row }: AssessmentCell<unknown>) => (
-  <Link
-    className="underline underline-offset-4"
-    href={conditioningAssessmentHref(row.original.id)}
-  >
-    View
-  </Link>
-);
+const ActionsCell = ({ row, table }: AssessmentCell<unknown>) => {
+  const { archiveAssessment, restoreAssessment } = useConditioning();
+  const archived = table.options.meta?.archived === true;
+  return (
+    <div className="flex items-center justify-end gap-3">
+      <Link
+        className="underline underline-offset-4"
+        href={conditioningAssessmentHref(row.original.id)}
+      >
+        View
+      </Link>
+      {archived ? (
+        <Button
+          onClick={() => restoreAssessment(row.original.id)}
+          size="sm"
+          variant="outline"
+        >
+          Restore
+        </Button>
+      ) : (
+        <ArchiveAction
+          label="this record"
+          onArchive={() => archiveAssessment(row.original.id)}
+        />
+      )}
+    </div>
+  );
+};
 
 const helper = createColumnHelper<
   typeof conditioningTableFeatures,
@@ -108,9 +131,11 @@ const columns = helper.columns([
 ]);
 
 export const AssessmentTable = ({
+  archived,
   athleteById,
   rows,
 }: {
+  archived?: boolean;
   athleteById: Map<string, { fullName: string }>;
   rows: ConditioningAssessment[];
 }) => {
@@ -132,6 +157,7 @@ export const AssessmentTable = ({
     enableSortingRemoval: false,
     features: conditioningTableFeatures,
     initialState: conditioningTableInitialState,
+    meta: { archived },
   });
 
   if (!data.length) {

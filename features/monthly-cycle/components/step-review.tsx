@@ -23,9 +23,10 @@ import {
 } from "@/features/report/report-calculations";
 import { useReports } from "@/features/report/use-reports";
 import { weeklyArrowTargetsForMonth } from "@/features/training-plan/training-plan-calculations";
+import { collectionClient } from "@/lib/collection-client";
 import { formatDate } from "@/lib/format";
 
-import { confirmCycleStep } from "../cycle-step-actions";
+import { useConfirmCycleStep } from "../cycle-step-actions";
 import {
   conditioningCoverageFor,
   coveringPlanForNextMonth,
@@ -37,7 +38,6 @@ import {
   weeklyCoverageFor,
 } from "../monthly-cycle-lifecycle";
 import type { CycleDomainContext } from "../monthly-cycle-lifecycle";
-import { monthlyCycleRepository } from "../monthly-cycle-repository";
 import { monthlyCycleStepMeta } from "../monthly-cycle-steps";
 import { blankCycleSteps } from "../monthly-cycle-types";
 import type { MonthlyAthleteCycle } from "../monthly-cycle-types";
@@ -81,6 +81,7 @@ export const ReviewStep = ({
   cycle: MonthlyAthleteCycle;
 }) => {
   const router = useRouter();
+  const confirmCycleStep = useConfirmCycleStep();
   const { setDirty } = useCycleGuard();
   const { athletes } = useAthletes();
   const { createCycle } = useMonthlyCycles();
@@ -118,7 +119,7 @@ export const ReviewStep = ({
     existingReport?.coachSummary ?? ""
   );
 
-  const complete = () => {
+  const complete = async () => {
     const draft = createMonthlyDraft(
       cycle.athleteId,
       cycle.month,
@@ -154,22 +155,23 @@ export const ReviewStep = ({
       status: "complete" as const,
     };
     const result = existingReport
-      ? updateMonthly(existingReport.id, input)
-      : createMonthly(input);
+      ? await updateMonthly(existingReport.id, input)
+      : await createMonthly(input);
     if (result.status !== "saved") {
       return;
     }
-    const confirmed = confirmCycleStep(cycle, "review", {
-      sources: [{ id: result.report.id, updatedAt: result.report.updatedAt }],
+    const confirmed = await confirmCycleStep(cycle, "review", {
+      sources: [{ id: result.record.id, updatedAt: result.record.updatedAt }],
       status: "complete",
     });
     if (confirmed.status !== "saved") {
       return;
     }
     setDirty(false);
-    // The store commits synchronously; read the repository for the
-    // post-completion list before choosing who is next.
-    const cycles = monthlyCycleRepository.list();
+    // Read straight from the service: the just-completed cycle must be in the
+    // list before choosing who is next, and the query cache may not have
+    // refreshed yet.
+    const cycles = await collectionClient("monthlyCycles").list();
     const next = nextIncompleteAthlete(athletes, cycles, cycle.month, cycle.id);
     if (!next) {
       router.push(
@@ -184,7 +186,7 @@ export const ReviewStep = ({
     )?.id;
     let nextCycleId = existingNextCycleId;
     if (!nextCycleId) {
-      const created = createCycle({
+      const created = await createCycle({
         athleteId: next.id,
         lastVisitedStep: "profile",
         month: cycle.month,
@@ -192,7 +194,7 @@ export const ReviewStep = ({
         steps: blankCycleSteps(),
       });
       if (created.status === "saved") {
-        nextCycleId = created.cycle.id;
+        nextCycleId = created.record.id;
       }
     }
     if (!nextCycleId) {
@@ -202,19 +204,19 @@ export const ReviewStep = ({
     router.push(`/monthly-cycles/${nextCycleId}/profile`);
   };
 
-  const saveAndExit = () => {
+  const saveAndExit = async () => {
     const draft = createMonthlyDraft(
       cycle.athleteId,
       cycle.month,
       existingReport
     );
     const result = existingReport
-      ? updateMonthly(existingReport.id, {
+      ? await updateMonthly(existingReport.id, {
           ...draft,
           coachSummary: coachSummary.trim(),
           status: existingReport.status,
         })
-      : createMonthly({
+      : await createMonthly({
           ...draft,
           coachSummary: coachSummary.trim(),
           status: "draft",

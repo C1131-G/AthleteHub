@@ -63,7 +63,7 @@ const toSession = (
 };
 
 export const createSessionService = (
-  database: DatabaseContext
+  sessions: DatabaseContext["sessions"]
 ): SessionService => {
   const save = async (
     value: unknown,
@@ -73,7 +73,7 @@ export const createSessionService = (
     if (!parsed.success) {
       return validationFailure(parsed.error);
     }
-    const stored = await database.sessions.save({
+    const stored = await sessions.save({
       ...parsed.data,
       actualArrows:
         parsed.data.actualArrows ??
@@ -95,11 +95,11 @@ export const createSessionService = (
   return {
     complete: (input) => save(input, "complete"),
     get: async (sessionId) => {
-      const record = await database.sessions.get(sessionId);
+      const record = await sessions.get(sessionId);
       return toSession(record);
     },
     listByAthlete: async (athleteId) => {
-      const records = await database.sessions.listByAthlete(athleteId);
+      const records = await sessions.listByAthlete(athleteId);
       return records.flatMap((record) => {
         const session = toSession(record);
         return session ? [session] : [];

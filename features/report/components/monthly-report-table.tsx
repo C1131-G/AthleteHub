@@ -5,7 +5,9 @@ import { createColumnHelper, useTable } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { ArchiveAction } from "@/components/archive-action";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -21,6 +23,7 @@ import {
   reportTableInitialState,
 } from "../report-table-config";
 import type { MonthlyPerformanceReport } from "../report-types";
+import { useReports } from "../use-reports";
 import {
   ReportCard,
   ReportEmpty,
@@ -55,14 +58,35 @@ const StatusCell = ({ getValue }: MonthlyCell<string>) => {
 
 const ActionsHeader = () => <span className="sr-only">Actions</span>;
 
-const ActionsCell = ({ row }: MonthlyCell<unknown>) => (
-  <Link
-    className="underline underline-offset-4"
-    href={`/reports/monthly/${row.original.id}`}
-  >
-    View monthly report
-  </Link>
-);
+const ActionsCell = ({ row, table }: MonthlyCell<unknown>) => {
+  const { archiveMonthly, restoreMonthly } = useReports();
+  // The table is rendered for one view at a time; meta says which.
+  const archived = table.options.meta?.archived === true;
+  return (
+    <div className="flex items-center justify-end gap-3">
+      <Link
+        className="underline underline-offset-4"
+        href={`/reports/monthly/${row.original.id}`}
+      >
+        View monthly report
+      </Link>
+      {archived ? (
+        <Button
+          onClick={() => restoreMonthly(row.original.id)}
+          size="sm"
+          variant="outline"
+        >
+          Restore
+        </Button>
+      ) : (
+        <ArchiveAction
+          label={`the ${row.original.month} entry`}
+          onArchive={() => archiveMonthly(row.original.id)}
+        />
+      )}
+    </div>
+  );
+};
 
 const helper = createColumnHelper<typeof reportTableFeatures, MonthlyRow>();
 const columns = helper.columns([
@@ -87,10 +111,12 @@ const columns = helper.columns([
 ]);
 
 export const MonthlyReportTable = ({
+  archived,
   athleteById,
   month,
   rows,
 }: {
+  archived?: boolean;
   athleteById: Map<string, { fullName: string }>;
   month: string;
   rows: MonthlyPerformanceReport[];
@@ -118,6 +144,7 @@ export const MonthlyReportTable = ({
     enableSortingRemoval: false,
     features: reportTableFeatures,
     initialState: reportTableInitialState,
+    meta: { archived },
   });
 
   if (!data.length) {

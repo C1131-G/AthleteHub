@@ -32,7 +32,7 @@ interface WeeklyReportFormProps {
 }
 
 /**
- * Gate only. The fields below seed their state from the stores on first render,
+ * Gate only. The fields below seed their state from the queries on first render,
  * so they must not mount until those stores hold real data.
  */
 export const WeeklyReportForm = ({ reportId }: WeeklyReportFormProps) => {
@@ -106,12 +106,12 @@ const WeeklyReportFormBody = ({ reportId }: WeeklyReportFormProps) => {
       return;
     }
     const input = weeklyInputFromForm(form, planWeek);
-    startTransition(() => {
+    startTransition(async () => {
       const result = reportId
-        ? updateWeekly(reportId, input)
-        : createWeekly(input);
+        ? await updateWeekly(reportId, input)
+        : await createWeekly(input);
       if (result.status === "saved") {
-        router.push(`/reports/weekly/${result.report.id}`);
+        router.push(`/reports/weekly/${result.record.id}`);
       } else {
         const saveErrors = toFormErrors(result.fieldErrors, weeklyControls);
         setErrors(saveErrors);

@@ -15,7 +15,7 @@ import {
 import { categoryLabel, statusLabel } from "@/features/athlete/athlete-labels";
 import { formatDate } from "@/lib/format";
 
-import { confirmCycleStep } from "../cycle-step-actions";
+import { useConfirmCycleStep } from "../cycle-step-actions";
 import type { CycleDomainContext } from "../monthly-cycle-lifecycle";
 import type { MonthlyAthleteCycle } from "../monthly-cycle-types";
 import { CycleStepActions } from "./cycle-step-actions";
@@ -55,14 +55,15 @@ export const ProfileStep = ({
   status: "pending" | "complete" | "exception" | "stale";
 }) => {
   const router = useRouter();
+  const confirmCycleStep = useConfirmCycleStep();
   const rows = summaryRows(context);
   const { athlete } = context;
 
-  const confirm = () => {
+  const confirm = async () => {
     if (!athlete) {
       return;
     }
-    const result = confirmCycleStep(cycle, "profile", {
+    const result = await confirmCycleStep(cycle, "profile", {
       sources: [{ id: athlete.id, updatedAt: athlete.updatedAt }],
       status: "complete",
     });
@@ -125,9 +126,9 @@ export const ProfileStep = ({
       <CycleStepActions
         cycleId={cycle.id}
         onSaveContinue={confirm}
-        onSaveExit={() => {
+        onSaveExit={async () => {
           if (athlete) {
-            confirmCycleStep(cycle, "profile", {
+            await confirmCycleStep(cycle, "profile", {
               sources: [{ id: athlete.id, updatedAt: athlete.updatedAt }],
               status: "complete",
             });

@@ -33,7 +33,7 @@ import {
 } from "@/features/report/report-chart";
 import { formatDate } from "@/lib/format";
 
-import { confirmCycleStep } from "../cycle-step-actions";
+import { useConfirmCycleStep } from "../cycle-step-actions";
 import {
   monthlyAverageFor,
   weeklyCoverageFor,
@@ -62,6 +62,7 @@ export const MonthlyAverageStep = ({
   stepView: CycleStepView;
 }) => {
   const router = useRouter();
+  const confirmCycleStep = useConfirmCycleStep();
   const [confirmed, setConfirmed] = useState(
     cycle.steps["monthly-average"].status === "complete"
   );
@@ -122,8 +123,8 @@ export const MonthlyAverageStep = ({
         entry.report?.status === "absent"
     );
 
-  const confirm = () => {
-    const result = confirmCycleStep(cycle, "monthly-average", {
+  const confirm = async () => {
+    const result = await confirmCycleStep(cycle, "monthly-average", {
       reason: noScoring
         ? "No scoring data this month (leave or absence)."
         : undefined,

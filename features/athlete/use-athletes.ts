@@ -1,14 +1,22 @@
 "use client";
 
-import { useStore } from "@tanstack/react-store";
+import type { ListOptions } from "@/electron/collections";
+import { collectionSchemas } from "@/features/backend/collection-services";
+import { useCollection } from "@/lib/use-collection";
 
-import { useHydrated } from "@/hooks/use-hydrated";
-
-import { athleteStore, createAthlete, updateAthlete } from "./athlete-store";
-
-export const useAthletes = () => {
-  const { athletes, ready } = useStore(athleteStore);
-  const hydrated = useHydrated();
-
-  return { athletes, createAthlete, ready: ready && hydrated, updateAthlete };
+export const useAthletes = (options?: ListOptions) => {
+  const { create, isError, ready, records, ...rest } = useCollection(
+    "athletes",
+    collectionSchemas.athletes,
+    options
+  );
+  return {
+    archiveAthlete: rest.archive,
+    athletes: records,
+    createAthlete: create,
+    isError,
+    ready,
+    restoreAthlete: rest.restore,
+    updateAthlete: rest.update,
+  };
 };

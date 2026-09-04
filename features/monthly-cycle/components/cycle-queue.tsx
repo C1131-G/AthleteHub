@@ -3,11 +3,13 @@
 import { PlayIcon, PlusIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
+import { ArchiveAction } from "@/components/archive-action";
+import { ArchivedToggle } from "@/components/archived-toggle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -64,6 +66,28 @@ interface QueueRow {
   state: CycleQueueState;
 }
 
+/** Resume an existing cycle, or start the month for an athlete without one. */
+const renderCycleAction = (
+  row: QueueRow,
+  startFor: (athleteId: string) => Promise<void>
+) =>
+  row.cycle ? (
+    <Link
+      className={buttonVariants({ size: "sm", variant: "outline" })}
+      href={`/monthly-cycles/${row.cycle.id}/${row.cycle.lastVisitedStep}`}
+    >
+      <PlayIcon aria-hidden /> Resume
+    </Link>
+  ) : (
+    <button
+      className={buttonVariants({ size: "sm" })}
+      onClick={() => startFor(row.athleteId)}
+      type="button"
+    >
+      <PlusIcon aria-hidden /> Start
+    </button>
+  );
+
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 
 /**
@@ -101,7 +125,10 @@ export const CycleQueue = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { athletes } = useAthletes();
-  const { createCycle, cycles } = useMonthlyCycles();
+  const [showArchived, setShowArchived] = useState(false);
+  const { archiveCycle, createCycle, cycles, restoreCycle } = useMonthlyCycles(
+    showArchived ? { archivedOnly: true } : undefined
+  );
   const { listWeekly } = useReports();
 
   const month = searchParams.get("month") || currentMonth();
@@ -120,7 +147,7 @@ export const CycleQueue = () => {
     router.replace(`/monthly-cycles?${params.toString()}`);
   };
 
-  const startFor = (athleteId: string) => {
+  const startFor = async (athleteId: string) => {
     const existing = cycles.find(
       (entry) =>
         entry.athleteId.toLowerCase() === athleteId.toLowerCase() &&
@@ -130,7 +157,7 @@ export const CycleQueue = () => {
       router.push(`/monthly-cycles/${existing.id}/${existing.lastVisitedStep}`);
       return;
     }
-    const created = createCycle({
+    const created = await createCycle({
       athleteId,
       lastVisitedStep: "profile",
       month,
@@ -138,7 +165,7 @@ export const CycleQueue = () => {
       steps: blankCycleSteps(),
     });
     if (created.status === "saved") {
-      router.push(`/monthly-cycles/${created.cycle.id}/profile`);
+      router.push(`/monthly-cycles/${created.record.id}/profile`);
     }
   };
 
@@ -190,13 +217,16 @@ export const CycleQueue = () => {
         state,
       });
     }
-    return result;
+    // The archived view is about the cycles themselves, so athletes without
+    // one have nothing to show there.
+    return showArchived ? result.filter((row) => row.cycle) : result;
   }, [
     athletes,
     categoryFilter,
     cycles,
     listWeekly,
     month,
+    showArchived,
     statusFilter,
     today,
   ]);
@@ -228,12 +258,18 @@ export const CycleQueue = () => {
       <Card>
         <CardHeader className="gap-4">
           <div>
-            <CardTitle>Monthly cycle queue</CardTitle>
+            <CardTitle>
+              {showArchived ? "Archived cycles" : "Monthly cycle queue"}
+            </CardTitle>
             <CardDescription>
               Active athletes in roster order for {monthLabel(month)}.
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-end gap-3">
+            <ArchivedToggle
+              onChange={setShowArchived}
+              showArchived={showArchived}
+            />
             <div className="min-w-44">
               <Label
                 className="text-muted-foreground mb-1"
@@ -353,25 +389,24 @@ export const CycleQueue = () => {
                   <TableCell className="tabular-nums">{row.percent}%</TableCell>
                   <TableCell>{row.currentStep}</TableCell>
                   <TableCell>
-                    {row.cycle ? (
-                      <Link
-                        className={buttonVariants({
-                          size: "sm",
-                          variant: "outline",
-                        })}
-                        href={`/monthly-cycles/${row.cycle.id}/${row.cycle.lastVisitedStep}`}
-                      >
-                        <PlayIcon aria-hidden /> Resume
-                      </Link>
-                    ) : (
-                      <button
-                        className={buttonVariants({ size: "sm" })}
-                        onClick={() => startFor(row.athleteId)}
-                        type="button"
-                      >
-                        <PlusIcon aria-hidden /> Start
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {renderCycleAction(row, startFor)}
+                      {row.cycle && showArchived ? (
+                        <Button
+                          onClick={() => restoreCycle(row.cycle?.id ?? "")}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Restore
+                        </Button>
+                      ) : null}
+                      {row.cycle && !showArchived ? (
+                        <ArchiveAction
+                          label={`${row.fullName}'s ${monthLabel(month)} cycle`}
+                          onArchive={() => archiveCycle(row.cycle?.id ?? "")}
+                        />
+                      ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

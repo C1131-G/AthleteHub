@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { ArchiveAction } from "@/components/archive-action";
+import { ArchivedToggle } from "@/components/archived-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,10 +50,16 @@ const ALL = "all";
 const labelClass = "mb-1.5";
 
 export const TrainingPlansWorkspace = () => {
+  const [showArchived, setShowArchived] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
   const { athletes, ready: athletesReady } = useAthletes();
-  const { plans, ready: plansReady } = useTrainingPlans();
+  const {
+    archivePlan,
+    plans,
+    ready: plansReady,
+    restorePlan,
+  } = useTrainingPlans(showArchived ? { archivedOnly: true } : undefined);
   const [query, setQuery] = useState("");
   const athleteId = params.get("athleteId") ?? "";
   const season = params.get("season") ?? "";
@@ -104,15 +112,21 @@ export const TrainingPlansWorkspace = () => {
     <section aria-labelledby="training-plans-title" className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Find plans</CardTitle>
-          {hasFilters ? (
-            <CardAction>
+          <CardTitle>
+            {showArchived ? "Archived plans" : "Find plans"}
+          </CardTitle>
+          <CardAction className="flex gap-2">
+            {hasFilters ? (
               <Button onClick={clearFilters} size="sm" variant="ghost">
                 <XIcon aria-hidden="true" />
                 Clear filters
               </Button>
-            </CardAction>
-          ) : null}
+            ) : null}
+            <ArchivedToggle
+              onChange={setShowArchived}
+              showArchived={showArchived}
+            />
+          </CardAction>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -219,12 +233,28 @@ export const TrainingPlansWorkspace = () => {
                         <PlanStatusBadge status={plan.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link
-                          className="underline underline-offset-4"
-                          href={trainingPlanHref(plan.id)}
-                        >
-                          View plan
-                        </Link>
+                        <div className="flex items-center justify-end gap-3">
+                          <Link
+                            className="underline underline-offset-4"
+                            href={trainingPlanHref(plan.id)}
+                          >
+                            View plan
+                          </Link>
+                          {showArchived ? (
+                            <Button
+                              onClick={() => restorePlan(plan.id)}
+                              size="sm"
+                              variant="outline"
+                            >
+                              Restore
+                            </Button>
+                          ) : (
+                            <ArchiveAction
+                              label={plan.name}
+                              onArchive={() => archivePlan(plan.id)}
+                            />
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
