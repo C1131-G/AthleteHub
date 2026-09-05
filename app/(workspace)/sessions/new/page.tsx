@@ -1,6 +1,15 @@
+import { Suspense } from "react";
+
 import { SessionForm } from "@/features/session/components/session-form";
 
 export const metadata = { title: "Record archery session" };
+
+const SessionFormSkeleton = () => (
+  <div aria-busy="true" aria-label="Loading session form" className="space-y-4">
+    <div className="bg-muted h-24 animate-pulse rounded-xl" />
+    <div className="bg-muted h-64 animate-pulse rounded-xl" />
+  </div>
+);
 
 export default function NewSessionPage() {
   const athleteId = "unassigned";
@@ -18,7 +27,9 @@ export default function NewSessionPage() {
           Save a draft and return to it from the desktop app.
         </p>
       </div>
-      <SessionForm athleteId={athleteId} />
+      <Suspense fallback={<SessionFormSkeleton />}>
+        <SessionForm athleteId={athleteId} />
+      </Suspense>
     </section>
   );
 }

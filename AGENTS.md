@@ -31,6 +31,8 @@ Load the skill before writing the code, not after. Two or more rows can apply at
 | Any code change, in any language | `enforce-code-quality` |
 | Editing a `.ts` or `.tsx` file | `enforce-typescript-strict` |
 | Parsing, validating, or narrowing untrusted data | `type-safety-validation` |
+| Writing or auditing backend service or database tests | `test-backend` |
+| Writing Prisma queries or hand-written migrations | `prisma-client-api` |
 | Choosing feature folders or reviewing React structure | `design-frontend-architecture` |
 | Any Next.js App Router page, layout, cache, or server/client boundary | `nextjs-react-typescript` |
 | About to write or edit a `useEffect` | `audit-react-effects` |

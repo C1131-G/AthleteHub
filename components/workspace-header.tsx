@@ -15,7 +15,10 @@ export const WorkspaceHeader = ({
   id: string;
   title: string;
 }) => (
-  <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+  <header
+    className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+    data-slot="workspace-header"
+  >
     <div>
       <h1
         className="text-3xl font-semibold tracking-tight text-balance"

@@ -20,6 +20,7 @@ import {
   monthlyAverageFor,
   monthEndDate,
   nextIncompleteAthlete,
+  overdueAthletes,
   setupEffectiveBy,
   sourcesMatch,
   weeklyCoverageFor,
@@ -585,5 +586,65 @@ bunDescribe("monthly averages", () => {
     );
     bunExpect(summary.scoring).toEqual([]);
     bunExpect(summary.load.planned).toBe(0);
+  });
+
+  bunDescribe("overdue athletes", () => {
+    const roster = [
+      athlete({ fullName: "A", id: "athlete-1" }),
+      athlete({ fullName: "B", id: "athlete-2" }),
+      athlete({ fullName: "C", id: "athlete-3", status: "inactive" }),
+    ];
+
+    bunTest(
+      "lists active athletes whose current-month cycle is incomplete",
+      () => {
+        const cycles = [
+          cycle({
+            athleteId: "athlete-1",
+            id: "c1",
+            month: "2026-07",
+            status: "complete",
+          }),
+          cycle({
+            athleteId: "athlete-2",
+            id: "c2",
+            month: "2026-07",
+            status: "in-progress",
+          }),
+        ];
+        const overdue = overdueAthletes(roster, cycles, "2026-07", "2026-07");
+        bunExpect(overdue.map((entry) => entry.id)).toEqual(["athlete-2"]);
+      }
+    );
+
+    bunTest("an in-progress cycle stays overdue however far it got", () => {
+      const cycles = [
+        cycle({
+          athleteId: "athlete-1",
+          id: "c1",
+          month: "2026-07",
+          status: "in-progress",
+        }),
+      ];
+      const overdue = overdueAthletes(roster, cycles, "2026-07", "2026-07");
+      // An in-progress cycle is not finished: athletes 1 and 2 are both
+      // overdue, and the inactive athlete 3 stays out of the reminders.
+      bunExpect(overdue.map((entry) => entry.id)).toEqual([
+        "athlete-1",
+        "athlete-2",
+      ]);
+    });
+
+    bunTest("past months stay overdue without a complete cycle", () => {
+      const overdue = overdueAthletes(roster, [], "2026-06", "2026-07");
+      bunExpect(overdue.map((entry) => entry.id)).toEqual([
+        "athlete-1",
+        "athlete-2",
+      ]);
+    });
+
+    bunTest("future months are never overdue", () => {
+      bunExpect(overdueAthletes(roster, [], "2026-08", "2026-07")).toEqual([]);
+    });
   });
 });

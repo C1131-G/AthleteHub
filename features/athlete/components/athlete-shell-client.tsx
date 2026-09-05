@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
+import { CommandPalette } from "@/components/command-palette";
 import {
   Sidebar,
   SidebarContent,
@@ -84,6 +85,7 @@ export const AthleteShellClient = ({
                 <WorkspaceLogout />
               </SidebarMenu>
             </SidebarFooter>
+            <CommandPalette />
             <SidebarRail />
           </Sidebar>
           <SidebarInset className="h-dvh overflow-hidden">

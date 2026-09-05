@@ -8,6 +8,7 @@ import type { Athlete } from "@/features/athlete/athlete-types";
 import type { SeasonTrainingPlan } from "@/features/training-plan/training-plan-types";
 
 import type { ArcherySession } from "../session/session-types";
+import type { Wellness } from "../wellness/wellness-types";
 import { dashboardMetrics } from "./dashboard-metrics";
 import type { WeeklyPerformanceReport } from "./report-types";
 
@@ -73,12 +74,52 @@ const trainingPlan = (
   ...overrides,
 });
 
+const wellness = (
+  overrides: Partial<Wellness> & { date: string; sleep: number }
+): Wellness => ({
+  athleteId: "a1",
+  createdAt: `2026-07-01T00:00:00.000Z`,
+  fatigue: 8,
+  id: crypto.randomUUID(),
+  mood: 8,
+  note: "",
+  soreness: 8,
+  stress: 8,
+  updatedAt: "2026-07-01T00:00:00.000Z",
+  ...overrides,
+});
+
+const sessionFor = (athleteId: string, score: number): ArcherySession => ({
+  athleteId,
+  createdAt: "2026-07-05T00:00:00.000Z",
+  date: "2026-07-05",
+  ends: [{ arrowCount: 6, score }],
+  equipmentSetupId: undefined,
+  format: {
+    arrowsPerEnd: 6,
+    bowCategory: "recurve",
+    distanceM: 70,
+    indoor: false,
+    maxScorePerArrow: 10,
+    roundId: undefined,
+    targetFaceCm: 122,
+  },
+  id: `${athleteId}-s1`,
+  kind: "practice",
+  notes: "",
+  plannedArrows: undefined,
+  status: "complete",
+  technicalFocus: "",
+  updatedAt: "2026-07-05T00:00:00.000Z",
+});
+
 const run = (
   athletes: Athlete[],
   reports: WeeklyPerformanceReport[],
   filters: Partial<Parameters<typeof dashboardMetrics>[0]["filters"]> = {},
   plans: SeasonTrainingPlan[] = [],
-  sessions: ArcherySession[] = []
+  sessions: ArcherySession[] = [],
+  wellnessEntries: Wellness[] = []
 ) =>
   dashboardMetrics({
     athletes,
@@ -98,6 +139,8 @@ const run = (
     sessionsFor: (athleteId) =>
       sessions.filter((session) => session.athleteId === athleteId),
     weekly: reports,
+    wellnessFor: (athleteId) =>
+      wellnessEntries.filter((entry) => entry.athleteId === athleteId),
   });
 
 const trainingSession = (
@@ -274,5 +317,124 @@ bunDescribe("arrow load with a training plan", () => {
     );
     bunExpect(loadPoints).toHaveLength(1);
     bunExpect(load).toEqual({ completion: 80, planned: 500, shot: 400 });
+  });
+
+  bunTest("an acute load spike raises an attention row", () => {
+    // 28 days of 700 load (100 min × RPE 7), then a 1200/day spike week.
+    const julySessions: ArcherySession[] = [];
+    for (let day = 1; day <= 28; day += 1) {
+      const spiked = day > 21;
+      julySessions.push({
+        athleteId: "a1",
+        createdAt: "2026-07-01T00:00:00.000Z",
+        date: `2026-07-${String(day).padStart(2, "0")}`,
+        durationMin: spiked ? 150 : 100,
+        ends: [],
+        equipmentSetupId: undefined,
+        format: {
+          arrowsPerEnd: 6,
+          bowCategory: "recurve",
+          distanceM: 70,
+          indoor: false,
+          maxScorePerArrow: 10,
+          roundId: undefined,
+          targetFaceCm: 122,
+        },
+        id: `load-${day}`,
+        kind: "practice",
+        notes: "",
+        plannedArrows: undefined,
+        rpe: 7,
+        status: "complete",
+        technicalFocus: "",
+        updatedAt: "2026-07-01T00:00:00.000Z",
+      });
+    }
+
+    const spiked = run([athlete({})], [], {}, [], julySessions);
+    bunExpect(
+      spiked.attentionRows.some((row) => row.reason === "Load spike")
+    ).toBe(true);
+
+    // A steady week stays inside the sweet spot: no row.
+    const steadySessions = julySessions.filter(
+      (session) => Number(session.date.slice(-2)) <= 21
+    );
+    const steady = run([athlete({})], [], {}, [], steadySessions);
+    bunExpect(
+      steady.attentionRows.some((row) => row.reason.startsWith("Load"))
+    ).toBe(false);
+  });
+
+  bunTest("a wellness drop raises an attention row", () => {
+    const dropped = run(
+      [athlete({})],
+      [],
+      {},
+      [],
+      [],
+      [
+        wellness({ date: "2026-07-20", sleep: 8 }),
+        wellness({
+          date: "2026-07-27",
+          fatigue: 5,
+          mood: 4,
+          sleep: 4,
+          soreness: 5,
+          stress: 5,
+        }),
+      ]
+    );
+    bunExpect(
+      dropped.attentionRows.some((row) => row.reason === "Wellness drop")
+    ).toBe(true);
+
+    // A small dip stays quiet.
+    const stable = run(
+      [athlete({})],
+      [],
+      {},
+      [],
+      [],
+      [
+        wellness({ date: "2026-07-20", sleep: 8 }),
+        wellness({ date: "2026-07-27", sleep: 6 }),
+      ]
+    );
+    bunExpect(
+      stable.attentionRows.some((row) => row.reason === "Wellness drop")
+    ).toBe(false);
+  });
+
+  bunTest("compares two athletes independently", () => {
+    const second = athlete({
+      athleteId: "AH-002",
+      fullName: "Second",
+      id: "a2",
+    });
+    const sessions = [sessionFor("a1", 300), sessionFor("a2", 320)];
+
+    const reports = [
+      weekly({ athleteId: "a1", distanceM: 70, scores: [300] }),
+      weekly({ athleteId: "a2", distanceM: 70, scores: [320] }),
+    ];
+    const result = run([athlete({}), second], reports, {}, [], sessions);
+
+    // Each athlete's ranking comes from their own reports: 320 outranks 300.
+    bunExpect(result.rankingPoints.map((point) => point.label)).toEqual([
+      "Second",
+      "Test Athlete",
+    ]);
+    // Scoping to one athlete derives from that athlete's data alone.
+    const onlySecond = run(
+      [athlete({}), second],
+      reports,
+      { athleteId: "a2" },
+      [],
+      sessions
+    );
+    bunExpect(onlySecond.rankingPoints.map((point) => point.label)).toEqual([
+      "Second",
+    ]);
   });
 });

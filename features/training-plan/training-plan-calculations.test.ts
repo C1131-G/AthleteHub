@@ -8,6 +8,7 @@ import type { WeeklyPerformanceReport } from "@/features/report/report-types";
 import type { ArcherySession } from "@/features/session/session-types";
 
 import {
+  competitionCalendar,
   currentTechnicalFocus,
   monthlyPlannedTotals,
   planForMonth,
@@ -92,6 +93,21 @@ const trainingSession = (
   status: "complete",
   technicalFocus: "",
   updatedAt: "2026-03-02T00:00:00.000Z",
+  ...overrides,
+});
+
+const calendarEvent = (
+  id: string,
+  name: string,
+  overrides: Partial<SeasonTrainingPlan["events"][number]> = {}
+) => ({
+  dateStatus: "scheduled" as const,
+  id,
+  location: "Range",
+  name,
+  notes: "",
+  priority: "primary" as const,
+  startsOn: "2026-08-10",
   ...overrides,
 });
 
@@ -272,5 +288,62 @@ bunDescribe("current technical focus", () => {
     bunExpect(currentTechnicalFocus(plan({ weeks: [] }), "2026-03-12")).toBe(
       ""
     );
+  });
+
+  bunDescribe("competition calendar", () => {
+    bunTest("groups scheduled events by month, ordered", () => {
+      const calendar = competitionCalendar([
+        plan({
+          events: [
+            calendarEvent("e3", "Later shootout", { startsOn: "2026-09-05" }),
+            calendarEvent("e1", "Early shootout", { startsOn: "2026-08-03" }),
+            calendarEvent("e2", "Main event", { startsOn: "2026-08-20" }),
+          ],
+        }),
+        plan({
+          events: [
+            calendarEvent("e4", "Away shoot", { startsOn: "2026-08-15" }),
+          ],
+        }),
+      ]);
+
+      bunExpect(calendar.months.map((group) => group.month)).toEqual([
+        "2026-08",
+        "2026-09",
+      ]);
+      bunExpect(calendar.months[0]?.events.map((entry) => entry.name)).toEqual([
+        "Early shootout",
+        "Away shoot",
+        "Main event",
+      ]);
+    });
+
+    bunTest("undated events are listed separately, by name", () => {
+      const calendar = competitionCalendar([
+        plan({
+          events: [
+            calendarEvent("u2", "Zonal trials", {
+              dateStatus: "tbd",
+              startsOn: undefined,
+            }),
+            calendarEvent("u1", "Area championships", {
+              dateStatus: "tbd",
+              startsOn: undefined,
+            }),
+            calendarEvent("e1", "Dated event"),
+          ],
+        }),
+      ]);
+      bunExpect(calendar.undated.map((entry) => entry.name)).toEqual([
+        "Area championships",
+        "Zonal trials",
+      ]);
+      bunExpect(calendar.months).toEqual([
+        {
+          events: [calendarEvent("e1", "Dated event")],
+          month: "2026-08",
+        },
+      ]);
+    });
   });
 });

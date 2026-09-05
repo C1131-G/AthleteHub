@@ -36,6 +36,8 @@ model ArcherySession {
   equipmentSetupId String?
   plannedArrows    Int?
   actualArrows     Int?
+  durationMin      Int?
+  rpe              Int?
   technicalFocus   String
   notes            String
   createdAt        DateTime
@@ -51,9 +53,23 @@ model ArcheryEnd {
   sequence   Int
   arrowCount Int
   score      Int
+  arrows     ArcheryArrow[]
   session    ArcherySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, sequence])
+}
+
+model ArcheryArrow {
+  id       String     @id
+  endId    String
+  sequence Int
+  score    Int
+  // Normalised -1…1 on the target face; a score can be recorded un-plotted.
+  x        Float?
+  y        Float?
+  end      ArcheryEnd @relation(fields: [endId], references: [id], onDelete: Cascade)
+
+  @@unique([endId, sequence])
 }
 
 // Collections migrated off localStorage.
@@ -181,4 +197,40 @@ model MonthlyCycle {
   updatedAt     DateTime
 
   @@unique([athleteId, month])
+}
+
+model SightMark {
+  id         String    @id
+  athleteId  String
+  bow        String
+  arrow      String
+  distanceM  Float
+  mark       String
+  note       String
+  snapshot   String
+  archivedAt DateTime?
+  createdAt  DateTime
+  updatedAt  DateTime
+
+  @@index([athleteId, bow, arrow])
+  @@unique([athleteId, bow, arrow, distanceM])
+}
+
+model WellnessEntry {
+  id         String    @id
+  athleteId  String
+  date       String
+  sleep      Int
+  soreness   Int
+  fatigue    Int
+  stress     Int
+  mood       Int
+  note       String
+  snapshot   String
+  archivedAt DateTime?
+  createdAt  DateTime
+  updatedAt  DateTime
+
+  @@index([athleteId, date])
+  @@unique([athleteId, date])
 }

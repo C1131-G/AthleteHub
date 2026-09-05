@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { pushRoute } from "@/lib/push-route";
 
 import {
   adjacentSteps,
@@ -48,10 +49,7 @@ export const CycleStepActions = ({
     const target = previous
       ? stepMeta(previous).href(cycleId)
       : cycleQueueHref();
-    // SAFETY: this helper only returns the registered monthly-cycle queue URL.
-    confirmNavigation(() =>
-      router.push(target as Parameters<typeof router.push>[0])
-    );
+    confirmNavigation(() => pushRoute(router, target));
   };
 
   return (

@@ -472,6 +472,13 @@ const equipmentBlockers = (
   ];
 };
 
+/**
+ * Blockers for the weekly cycle step. Deliberately counts only reports and
+ * exceptions — recorded sessions alone do not unblock a week. Sessions serve as
+ * inputs that pre-fill the weekly report; they do not replace coach submission
+ * and review. Unreported sessions are surfaced proactively by the dashboard
+ * via `sessionAttentionRows` (dashboard-metrics.ts) to prompt report filing.
+ */
 const weeklyBlockers = (
   stored: MonthlyCycleStepState,
   context: CycleDomainContext,
@@ -574,6 +581,32 @@ const blockersFor = (
       return unreachableStep(step);
     }
   }
+};
+
+/**
+ * Active athletes whose cycle for `month` is not finished (complete or
+ * exception), for a month that has already started. Future months are never
+ * overdue. Roster order, so the reminder list reads like the queue.
+ */
+export const overdueAthletes = (
+  athletes: Athlete[],
+  cycles: MonthlyAthleteCycle[],
+  month: string,
+  currentMonth: string
+): Athlete[] => {
+  if (month > currentMonth) {
+    return [];
+  }
+  return athletes.filter(
+    (athlete) =>
+      athlete.status === "active" &&
+      !cycles.some(
+        (cycle) =>
+          cycle.athleteId.toLowerCase() === athlete.id.toLowerCase() &&
+          cycle.month === month &&
+          cycle.status === "complete"
+      )
+  );
 };
 
 /**

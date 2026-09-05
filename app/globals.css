@@ -213,3 +213,15 @@
     }
   }
 }
+
+/* Printing a report: keep the report itself, drop the app chrome. */
+@media print {
+  [data-sidebar="sidebar"],
+  [data-slot="workspace-header"] {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+}

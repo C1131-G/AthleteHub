@@ -8,7 +8,9 @@ const COLLECTION_NAMES = [
   "equipment",
   "monthlyCycles",
   "monthlyReports",
+  "sightMarks",
   "trainingPlans",
+  "wellness",
   "weeklyReports",
 ];
 
@@ -43,6 +45,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
       status: () => ipcRenderer.invoke("auth.status"),
     },
     collections: collectionBridge(),
+    photos: {
+      read: (name) => ipcRenderer.invoke("photos.read", name),
+      save: (input) => ipcRenderer.invoke("photos.save", input),
+    },
+    preferences: {
+      read: () => ipcRenderer.invoke("preferences.read"),
+      write: (partial) => ipcRenderer.invoke("preferences.write", partial),
+    },
     sessions: {
       complete: (input) => ipcRenderer.invoke("sessions.complete", input),
       get: (sessionId) => ipcRenderer.invoke("sessions.get", sessionId),
@@ -51,6 +61,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
         ipcRenderer.invoke("sessions.listByAthlete", athleteId),
       saveDraft: (input) => ipcRenderer.invoke("sessions.saveDraft", input),
     },
+  },
+  // Only used by the local login page; the main process rejects this channel
+  // from any other renderer and for any non-whitelisted destination.
+  desktop: {
+    continueToApp: (destination) =>
+      ipcRenderer.invoke("app.continue", destination),
   },
   platform: process.platform,
 });

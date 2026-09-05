@@ -12,13 +12,40 @@ const {
 } = require("node:fs");
 const { createServer } = require("node:net");
 const path = require("node:path");
+const { performance } = require("node:perf_hooks");
 const { pathToFileURL } = require("node:url");
 const { setTimeout: delay } = require("node:timers/promises");
+const { registerPreferenceHandlers } = require("./ipc/preferences.cjs");
+const { registerPhotoHandlers } = require("./ipc/photos.cjs");
 
 const HOST = "127.0.0.1";
 const PROJECT_ROOT = path.resolve(__dirname, "..");
+
+/**
+ * Scratch-profile override for automated Electron runs so they never touch a
+ * real database. Must be applied before anything resolves a userData path.
+ */
+if (process.env.ATHLETEHUB_USER_DATA) {
+  app.setPath("userData", process.env.ATHLETEHUB_USER_DATA);
+}
+
 const isProductionPreview = process.argv.includes("--production");
 const isProduction = app.isPackaged || isProductionPreview;
+
+/**
+ * Set ATHLETEHUB_BOOT_TRACE=1 to print milliseconds-since-process-start for
+ * each startup milestone, so regressions in time-to-interactive-login show up
+ * before they are felt.
+ */
+const bootMark = (label) => {
+  if (process.env.ATHLETEHUB_BOOT_TRACE === "1") {
+    console.error(`[boot-trace] ${label}: ${Math.round(performance.now())}ms`);
+  }
+};
+
+const loginFilePath = () => path.join(__dirname, "login.html");
+
+const loginWindowUrl = () => pathToFileURL(loginFilePath()).href;
 
 let serverProcess;
 let serverOrigin;
@@ -104,9 +131,13 @@ const resolveStandaloneEntry = () =>
 /**
  * Electron's binary doubles as a Node runtime under ELECTRON_RUN_AS_NODE, so
  * the packaged app runs the Next server without bundling a second runtime.
+ * The V8 compile cache lets the server skip recompiling its large module graph
+ * on every launch after the first.
  */
 const startProductionServer = (port) => {
   const entry = resolveStandaloneEntry();
+  const compileCachePath = path.join(app.getPath("userData"), "compile-cache");
+  mkdirSync(compileCachePath, { recursive: true });
 
   serverProcess = spawn(process.execPath, [entry], {
     cwd: path.dirname(entry),
@@ -114,12 +145,14 @@ const startProductionServer = (port) => {
       ...process.env,
       ELECTRON_RUN_AS_NODE: "1",
       HOSTNAME: HOST,
+      NODE_COMPILE_CACHE: compileCachePath,
       NODE_ENV: "production",
       PORT: String(port),
     },
     stdio: "inherit",
     windowsHide: true,
   });
+  bootMark("server spawned");
 };
 
 const startDevServer = (port) => {
@@ -134,7 +167,15 @@ const startDevServer = (port) => {
       windowsHide: true,
     }
   );
+  bootMark("server spawned");
 };
+
+/**
+ * Early probes are cheap and the server usually starts answering within a few
+ * of them, so ramping the backoff avoids idling ~125 ms past readiness on a
+ * flat 250 ms poll while still capping the total wait.
+ */
+const READINESS_DELAYS_MS = [15, 15, 25, 50, 100, 250];
 
 const waitForServer = async (origin, attempt = 0) => {
   try {
@@ -144,7 +185,9 @@ const waitForServer = async (origin, attempt = 0) => {
       throw new Error(`Next.js server at ${origin} did not start in time.`);
     }
 
-    await delay(250);
+    await delay(
+      READINESS_DELAYS_MS[Math.min(attempt, READINESS_DELAYS_MS.length - 1)]
+    );
     await waitForServer(origin, attempt + 1);
   }
 };
@@ -173,11 +216,13 @@ const stopServer = () => {
   serverProcess = undefined;
 };
 
-const ensureServer = async () => {
-  if (isServerRunning() && serverOrigin) {
-    return serverOrigin;
-  }
+/**
+ * A login can arrive while the server is still booting, so concurrent callers
+ * share one start attempt instead of the second one racing the first.
+ */
+let serverStartPromise;
 
+const startServer = async () => {
   if (!isProduction) {
     const existingDevServer = await findExistingDevServer();
     if (existingDevServer) {
@@ -204,21 +249,42 @@ const ensureServer = async () => {
   }
 
   await waitForServer(serverOrigin);
+  bootMark("server ready");
 
   return serverOrigin;
 };
 
-const applyNavigationPolicy = (contents) => {
+const ensureServer = () => {
+  if (isServerRunning() && serverOrigin) {
+    return Promise.resolve(serverOrigin);
+  }
+
+  serverStartPromise ??= startServer().finally(() => {
+    serverStartPromise = undefined;
+  });
+  return serverStartPromise;
+};
+
+/**
+ * Attached as soon as the window exists so even the local login phase is
+ * fenced: renderer-initiated navigation is allowed only back to the login file
+ * or into the app origin once it is known, and anything else opens externally.
+ */
+const attachNavigationPolicy = (contents) => {
   contents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
   });
 
   contents.on("will-navigate", (event, url) => {
-    if (!url.startsWith(`${serverOrigin}/`) && url !== serverOrigin) {
-      event.preventDefault();
-      shell.openExternal(url);
+    const isAppUrl =
+      serverOrigin &&
+      (url === serverOrigin || url.startsWith(`${serverOrigin}/`));
+    if (isAppUrl || url === loginWindowUrl()) {
+      return;
     }
+    event.preventDefault();
+    shell.openExternal(url);
   });
 };
 
@@ -227,11 +293,23 @@ const resolveBackendEntry = () =>
     ? path.join(process.resourcesPath, "backend", "electron-backend.mjs")
     : path.join(PROJECT_ROOT, ".next", "electron-backend.mjs");
 
-const getAuthService = (event) => {
+/**
+ * The login page is local, so it can never match the server origin. It is
+ * trusted by exact file-URL match only — never a prefix — and only for the
+ * auth channels; every data channel keeps the strict origin check.
+ */
+const assertTrustedSender = (event, { allowLoginWindow = false } = {}) => {
   const senderUrl = event.sender.getURL();
+  if (allowLoginWindow && senderUrl === loginWindowUrl()) {
+    return;
+  }
   if (!serverOrigin || !senderUrl.startsWith(`${serverOrigin}/`)) {
     throw new Error("Untrusted renderer.");
   }
+};
+
+const getAuthService = (event, { allowLoginWindow = false } = {}) => {
+  assertTrustedSender(event, { allowLoginWindow });
   let service = authServices.get(event.sender.id);
   if (!service) {
     service = runtime.createAuthService();
@@ -272,47 +350,17 @@ const getCollectionService = async (event, name) => {
   return services[name];
 };
 
-const registerBackendIpc = async () => {
-  if (runtime) {
-    return;
-  }
-  const backendModule = await import(pathToFileURL(resolveBackendEntry()).href);
-  runtime = await backendModule.createRuntime(
-    `file:${path.join(app.getPath("userData"), "athletehub.db")}`
-  );
+/**
+ * The backend import is the slowest startup step, so it starts as early as
+ * possible and every auth/session handler awaits it. Handlers are registered
+ * synchronously at startup, which means an early login waits a few
+ * milliseconds for the runtime instead of failing with "No handler
+ * registered" — the backend is no longer on the critical path to a usable
+ * login screen.
+ */
+let runtimeReadyPromise;
 
-  ipcMain.handle("auth.status", (event) => getAuthService(event).status());
-  ipcMain.handle("auth.setup", (event, input) =>
-    getAuthService(event).setup(input)
-  );
-  ipcMain.handle("auth.login", (event, input) =>
-    getAuthService(event).login(input)
-  );
-  ipcMain.handle("auth.recover", (event, input) =>
-    getAuthService(event).recover(input)
-  );
-  ipcMain.handle("auth.logout", (event) => getAuthService(event).logout());
-  ipcMain.handle("sessions.get", async (event, sessionId) => {
-    const service = await getSessionService(event);
-    return service.get(sessionId);
-  });
-  ipcMain.handle("sessions.listAll", async (event) => {
-    const service = await getSessionService(event);
-    return service.listAll();
-  });
-  ipcMain.handle("sessions.listByAthlete", async (event, athleteId) => {
-    const service = await getSessionService(event);
-    return service.listByAthlete(athleteId);
-  });
-  ipcMain.handle("sessions.saveDraft", async (event, input) => {
-    const service = await getSessionService(event);
-    return service.saveDraft(input);
-  });
-  ipcMain.handle("sessions.complete", async (event, input) => {
-    const service = await getSessionService(event);
-    return service.complete(input);
-  });
-
+const registerCollectionHandlers = () => {
   for (const name of runtime.collectionNames) {
     for (const method of runtime.collectionMethods) {
       ipcMain.handle(`${name}.${method}`, async (event, ...args) => {
@@ -321,6 +369,128 @@ const registerBackendIpc = async () => {
       });
     }
   }
+};
+
+const startBackendRuntime = () => {
+  runtimeReadyPromise ??= (async () => {
+    const backendModule = await import(
+      pathToFileURL(resolveBackendEntry()).href
+    );
+    runtime = await backendModule.createRuntime(
+      `file:${path.join(app.getPath("userData"), "athletehub.db")}`
+    );
+    registerCollectionHandlers();
+    bootMark("backend runtime ready");
+    return runtime;
+  })();
+  return runtimeReadyPromise;
+};
+
+/**
+ * Navigates the renderer into the app once the server can answer, on behalf
+ * of the local login page (continueToApp). Failures reject into the page's
+ * catch so the user sees them; on success the page is torn down by the
+ * navigation and the pending promise simply never settles.
+ */
+const navigateToApp = (contents, pathname = "/dashboard") =>
+  ensureServer().then((origin) => {
+    contents.once("did-finish-load", () => bootMark("first Next paint"));
+    return contents.loadURL(`${origin}${pathname}`);
+  });
+
+/** Returns the renderer from the app to the local login screen. */
+const navigateToLogin = (contents) => {
+  contents.once("did-finish-load", () => bootMark("login painted"));
+  return contents.loadFile(loginFilePath());
+};
+
+/** Destinations the local login page may ask the main process to open. */
+const AUTHENTICATED_LOGIN_DESTINATIONS = new Set(["/dashboard"]);
+
+const registerIpcHandlers = () => {
+  /**
+   * The local login page owns the whole account surface — login, first-run
+   * setup, and recovery — so those channels trust it by exact file-URL match.
+   * Logout is the exception: the app calls it, and the main process answers
+   * it by navigating the sender back to the login page.
+   */
+  const handleAuth = (channel, action, { allowLoginWindow = false } = {}) => {
+    ipcMain.handle(channel, async (event, input) => {
+      await startBackendRuntime();
+      const result = await action(
+        getAuthService(event, { allowLoginWindow }),
+        input,
+        event
+      );
+      return result;
+    });
+  };
+
+  handleAuth("auth.status", (service) => service.status(), {
+    allowLoginWindow: true,
+  });
+  handleAuth("auth.login", (service, input) => service.login(input), {
+    allowLoginWindow: true,
+  });
+  handleAuth("auth.setup", (service, input) => service.setup(input), {
+    allowLoginWindow: true,
+  });
+  handleAuth("auth.recover", (service, input) => service.recover(input), {
+    allowLoginWindow: true,
+  });
+  handleAuth("auth.logout", async (service, _input, event) => {
+    await service.logout();
+    if (event.sender.getURL() !== loginWindowUrl()) {
+      // Deferred so the invoke response reaches the renderer before the page
+      // it is rendered in is torn down by the navigation.
+      setImmediate(() => {
+        navigateToLogin(event.sender);
+      });
+    }
+  });
+
+  ipcMain.handle("app.continue", async (event, destination) => {
+    assertTrustedSender(event, { allowLoginWindow: true });
+    if (!AUTHENTICATED_LOGIN_DESTINATIONS.has(destination)) {
+      throw new Error("Unsupported destination.");
+    }
+    await startBackendRuntime();
+    await getAuthService(event, { allowLoginWindow: true }).requireSession();
+    navigateToApp(event.sender, destination);
+  });
+
+  const handleSession = (channel, action) => {
+    ipcMain.handle(channel, async (event, ...args) => {
+      await startBackendRuntime();
+      const service = await getSessionService(event);
+      return action(service, ...args);
+    });
+  };
+
+  registerPreferenceHandlers({
+    getAuthService,
+    getRuntime: () => runtime,
+    ipcMain,
+    startBackendRuntime,
+  });
+  registerPhotoHandlers({
+    getRuntime: () => runtime,
+    getSessionService,
+    ipcMain,
+    startBackendRuntime,
+  });
+
+  handleSession("sessions.get", (service, sessionId) => service.get(sessionId));
+  handleSession("sessions.listAll", (service) => service.listAll());
+  handleSession("sessions.listByAthlete", (service, athleteId) =>
+    service.listByAthlete(athleteId)
+  );
+  handleSession("sessions.saveDraft", (service, input) =>
+    service.saveDraft(input)
+  );
+  handleSession("sessions.complete", (service, input) =>
+    service.complete(input)
+  );
 };
 
 /**
@@ -344,30 +514,43 @@ const createWindow = async () => {
     },
     width: 1280,
   });
+  bootMark("window created");
+
+  attachNavigationPolicy(mainWindow.webContents);
 
   /**
-   * Show a maximized splash immediately instead of waiting on the server, so
-   * the app is on screen within a frame or two of launch.
+   * Paint the real login form instead of a spinner: it needs no server, so
+   * the user can start typing while the Next server boots in the background.
+   * A successful login navigates into the app from the main process.
    */
   mainWindow.maximize();
-  await mainWindow.loadFile(path.join(__dirname, "splash.html"));
+  mainWindow.webContents.once("did-finish-load", () =>
+    bootMark("login painted")
+  );
+  await mainWindow.loadFile(loginFilePath());
   mainWindow.show();
+};
 
-  // These startup tasks are independent. Running them together shortens the
-  // splash screen on cold launches while keeping IPC registration complete
-  // before the renderer can make its first request.
-  const originPromise = ensureServer();
-  const backendPromise = registerBackendIpc();
-  const origin = await originPromise;
-  await backendPromise;
-
-  applyNavigationPolicy(mainWindow.webContents);
-
-  await mainWindow.loadURL(origin);
+/**
+ * Both services start before the window and are awaited only by their
+ * consumers; a failure in either is fatal, so the app quits.
+ */
+const startServices = async () => {
+  try {
+    await Promise.all([startBackendRuntime(), ensureServer()]);
+  } catch (error) {
+    console.error(error);
+    app.quit();
+  }
 };
 
 const startApp = async () => {
   await app.whenReady();
+  bootMark("whenReady");
+
+  registerIpcHandlers();
+  startServices();
+
   await createWindow();
 
   app.on("activate", async () => {
@@ -410,16 +593,33 @@ app.on("window-all-closed", () => {
   }
 });
 
-const BACKUP_COUNT = 7;
-
 /**
  * Keeps a rolling copy of the database next to it. The app is offline and
  * single-user, so a corrupted or mistakenly emptied database would otherwise
  * have nothing to fall back on. Runs after the client closes so the file is
- * not mid-write, and never blocks the quit.
+ * not mid-write, and never blocks the quit. The number of copies kept is the
+ * backup-count preference; the file is read fresh so hand edits also apply.
  */
+/** Same contract as electron/preferences.ts, read without the TS module. */
+const PREFERENCES_FILE = "preferences.json";
+const readBackupCount = () => {
+  try {
+    const parsed = JSON.parse(
+      readFileSync(
+        path.join(app.getPath("userData"), PREFERENCES_FILE),
+        "utf-8"
+      )
+    );
+    const count = Number(parsed.backupCount);
+    return Number.isInteger(count) && count >= 1 && count <= 30 ? count : 7;
+  } catch {
+    return 7;
+  }
+};
+
 const writeRollingBackup = () => {
   try {
+    const { backupCount } = readBackupCount();
     const source = path.join(app.getPath("userData"), "athletehub.db");
     if (!existsSync(source)) {
       return;
@@ -432,7 +632,7 @@ const writeRollingBackup = () => {
     const existing = readdirSync(directory)
       .filter((name) => name.startsWith("athletehub-") && name.endsWith(".db"))
       .toSorted();
-    for (const name of existing.slice(0, -BACKUP_COUNT)) {
+    for (const name of existing.slice(0, -backupCount)) {
       rmSync(path.join(directory, name), { force: true });
     }
   } catch (error) {

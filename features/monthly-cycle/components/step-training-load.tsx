@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { WeeklyLoadChart } from "@/features/report/components/report-chart";
 import { monthLabel, nextMonthOf } from "@/features/report/report-calculations";
 import type {
   SeasonTrainingPlan,
@@ -30,6 +31,7 @@ import type {
 } from "@/features/training-plan/training-plan-types";
 import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 import { formatDate } from "@/lib/format";
+import { weeklyLoadForMonth } from "@/lib/training-load";
 
 import { useConfirmCycleStep } from "../cycle-step-actions";
 import type {
@@ -64,6 +66,23 @@ export const TrainingLoadStep = ({
     cycle.month
   );
   const nextMonth = nextMonthOf(cycle.month);
+  // Actual load for the month being planned, so the coach sees what the
+  // athlete actually carried while setting next month's targets.
+  const actualLoadPoints = useMemo(
+    () =>
+      weeklyLoadForMonth(
+        context.sessions.map((session) => ({
+          date: session.date,
+          durationMin: session.durationMin ?? null,
+          rpe: session.rpe ?? null,
+        })),
+        cycle.month
+      ).map((week) => ({
+        label: formatDate(week.weekStart),
+        load: week.load,
+      })),
+    [context.sessions, cycle.month]
+  );
   const [editingWeeks, setEditingWeeks] = useState<TrainingPlanWeek[]>([]);
   const [exceptionReason, setExceptionReason] = useState(
     cycle.steps["training-load"].reason ?? ""
@@ -199,6 +218,7 @@ export const TrainingLoadStep = ({
 
   return (
     <div className="space-y-6">
+      <WeeklyLoadChart month={cycle.month} points={actualLoadPoints} />
       <div>
         <p className="text-muted-foreground mt-2">
           The following month needs a season plan that covers it, or a

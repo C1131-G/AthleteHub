@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import type { DraftEnd } from "../session-form-state";
-import type { SessionEndInput } from "../session-types";
+import type { SessionArrowInput, SessionEndInput } from "../session-types";
+import { TargetFacePlot } from "./target-face-plot";
 
 interface SessionEndsEditorProps {
   arrowsPerEnd: number;
   ends: DraftEnd[];
+  maxScorePerArrow: number;
   onAdd: () => void;
   onRemove: (index: number) => void;
   onUpdate: (
@@ -20,15 +22,18 @@ interface SessionEndsEditorProps {
     field: keyof SessionEndInput,
     value: string
   ) => void;
+  onUpdateArrows: (index: number, arrows: SessionArrowInput[]) => void;
   scoreSummary: { arrows: number; score: number };
 }
 
 export const SessionEndsEditor = ({
   arrowsPerEnd,
   ends,
+  maxScorePerArrow,
   onAdd,
   onRemove,
   onUpdate,
+  onUpdateArrows,
   scoreSummary,
 }: SessionEndsEditorProps) => (
   <Card>
@@ -41,39 +46,58 @@ export const SessionEndsEditor = ({
         <strong>{scoreSummary.arrows}</strong>.
       </p>
       {ends.map((end, index) => (
-        <div className="flex items-end gap-3" key={end.key}>
-          <div className="flex-1 space-y-2">
-            <Label htmlFor={`end-${index}-score`}>End {index + 1} score</Label>
-            <Input
-              id={`end-${index}-score`}
-              min="0"
-              onChange={(event) => onUpdate(index, "score", event.target.value)}
-              type="number"
-              value={end.score}
-            />
+        <div className="space-y-2" key={end.key}>
+          <div className="flex items-end gap-3">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor={`end-${index}-score`}>
+                End {index + 1} score
+              </Label>
+              <Input
+                id={`end-${index}-score`}
+                min="0"
+                onChange={(event) =>
+                  onUpdate(index, "score", event.target.value)
+                }
+                type="number"
+                value={end.score}
+              />
+            </div>
+            <div className="flex-1 space-y-2">
+              <Label htmlFor={`end-${index}-arrows`}>Arrows</Label>
+              <Input
+                id={`end-${index}-arrows`}
+                min="1"
+                onChange={(event) =>
+                  onUpdate(index, "arrowCount", event.target.value)
+                }
+                type="number"
+                value={end.arrowCount}
+              />
+            </div>
+            <Button
+              aria-label={`Remove end ${index + 1}`}
+              disabled={ends.length === 1}
+              onClick={() => onRemove(index)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <TrashIcon aria-hidden="true" />
+            </Button>
           </div>
-          <div className="flex-1 space-y-2">
-            <Label htmlFor={`end-${index}-arrows`}>Arrows</Label>
-            <Input
-              id={`end-${index}-arrows`}
-              min="1"
-              onChange={(event) =>
-                onUpdate(index, "arrowCount", event.target.value)
-              }
-              type="number"
-              value={end.arrowCount}
-            />
-          </div>
-          <Button
-            aria-label={`Remove end ${index + 1}`}
-            disabled={ends.length === 1}
-            onClick={() => onRemove(index)}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <TrashIcon aria-hidden="true" />
-          </Button>
+          <details>
+            <summary className="hover:text-primary cursor-pointer text-sm underline underline-offset-4">
+              Plot end {index + 1} on the target face
+            </summary>
+            <div className="pt-3">
+              <TargetFacePlot
+                arrows={end.arrows ?? []}
+                maxArrows={end.arrowCount}
+                maxScore={maxScorePerArrow}
+                onChange={(arrows) => onUpdateArrows(index, arrows)}
+              />
+            </div>
+          </details>
         </div>
       ))}
       <Button onClick={onAdd} type="button" variant="outline">

@@ -50,13 +50,19 @@ const toSession = (
     athleteId: record.athleteId,
     createdAt: record.createdAt.toISOString(),
     date: record.date,
-    ends: record.ends.map(({ arrowCount, score }) => ({ arrowCount, score })),
+    durationMin: record.durationMin ?? undefined,
+    ends: record.ends.map((end) => ({
+      arrowCount: end.arrowCount,
+      arrows: end.arrows,
+      score: end.score,
+    })),
     equipmentSetupId: record.equipmentSetupId ?? undefined,
     format,
     id: record.id,
     kind: record.kind,
     notes: record.notes,
     plannedArrows: record.plannedArrows ?? undefined,
+    rpe: record.rpe ?? undefined,
     status: record.status,
     technicalFocus: record.technicalFocus,
     updatedAt: record.updatedAt.toISOString(),
@@ -79,9 +85,20 @@ export const createSessionService = (
       actualArrows:
         parsed.data.actualArrows ??
         parsed.data.ends.reduce((total, end) => total + end.arrowCount, 0),
+      durationMin: parsed.data.durationMin ?? null,
+      ends: parsed.data.ends.map((end) => ({
+        arrowCount: end.arrowCount,
+        arrows: (end.arrows ?? []).map(({ score, x, y }) => ({
+          score,
+          x: x ?? null,
+          y: y ?? null,
+        })),
+        score: end.score,
+      })),
       equipmentSetupId: parsed.data.equipmentSetupId ?? null,
       formatSnapshot: JSON.stringify(parsed.data.format),
       plannedArrows: parsed.data.plannedArrows ?? null,
+      rpe: parsed.data.rpe ?? null,
       status,
     });
     const session = toSession(stored);

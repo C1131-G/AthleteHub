@@ -13,6 +13,7 @@ import { planWeekFor } from "@/features/training-plan/training-plan-calculations
 import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
 
 import { useReports } from "../use-reports";
+import { useSessionSummary } from "../use-session-summary";
 import {
   blankWeeklyFormState,
   validateWeeklyForm,
@@ -24,7 +25,6 @@ import {
   weeklyControls,
 } from "./report-form-errors";
 import type { ReportFormErrors } from "./report-form-errors";
-import { useSessionSummary } from "./use-session-summary";
 import { WeeklyReportFields } from "./weekly-report-fields";
 import type { WeeklyFormState } from "./weekly-report-fields";
 

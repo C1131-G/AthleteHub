@@ -45,7 +45,11 @@ import type { WeeklyPerformanceReport } from "@/features/report/report-types";
 import { useReports } from "@/features/report/use-reports";
 import { initials } from "@/lib/format";
 
-import { sourcesMatch, weeklyCoverageFor } from "../monthly-cycle-lifecycle";
+import {
+  overdueAthletes,
+  sourcesMatch,
+  weeklyCoverageFor,
+} from "../monthly-cycle-lifecycle";
 import { monthlyCycleStepMeta } from "../monthly-cycle-steps";
 import { blankCycleSteps } from "../monthly-cycle-types";
 import type {
@@ -240,6 +244,26 @@ export const CycleQueue = () => {
 
   return (
     <div className="space-y-6">
+      {(() => {
+        const overdue = overdueAthletes(
+          athletes,
+          cycles,
+          month,
+          currentMonth()
+        );
+        return overdue.length > 0 ? (
+          <div aria-live="polite">
+            <Alert>
+              <AlertTitle>Cycles overdue</AlertTitle>
+              <AlertDescription>
+                {monthLabel(month)} is under way and these athletes have no
+                complete cycle yet:{" "}
+                {overdue.map((entry) => entry.fullName).join(", ")}.
+              </AlertDescription>
+            </Alert>
+          </div>
+        ) : null;
+      })()}
       {summary ? (
         <Alert>
           <AlertTitle>Month complete</AlertTitle>

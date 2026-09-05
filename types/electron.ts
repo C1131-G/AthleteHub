@@ -48,6 +48,22 @@ interface ElectronAuthApi {
   status: () => Promise<{ authenticated: boolean; configured: boolean }>;
 }
 
+export interface AppPreferences {
+  backupCount: number;
+  rankingDistance: number;
+  weekStartsOn: 0 | 1 | 6;
+}
+
+interface ElectronPhotosApi {
+  read: (name: string) => Promise<string>;
+  save: (input: { athleteId: string; dataUrl: string }) => Promise<string>;
+}
+
+interface ElectronPreferencesApi {
+  read: () => Promise<AppPreferences>;
+  write: (partial: Partial<AppPreferences>) => Promise<AppPreferences>;
+}
+
 interface ElectronSessionsApi {
   complete: (input: unknown) => Promise<SessionMutationResult>;
   get: (sessionId: string) => Promise<ArcherySession | undefined>;
@@ -62,6 +78,8 @@ declare global {
       backend: {
         auth: ElectronAuthApi;
         collections: ElectronCollectionsApi;
+        photos: ElectronPhotosApi;
+        preferences: ElectronPreferencesApi;
         sessions: ElectronSessionsApi;
       };
       platform: string;

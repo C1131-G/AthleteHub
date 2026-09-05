@@ -9,8 +9,18 @@ import {
   loadSummary,
   scoreSummary,
   sessionSummaryForWeek,
+  sessionWeekStart,
 } from "./report-calculations";
 import type { WeeklyPerformanceReport } from "./report-types";
+
+bunDescribe("session week start", () => {
+  bunTest("respects the configured week-start day", () => {
+    // 2026-09-05 is a Saturday.
+    bunExpect(sessionWeekStart("2026-09-05", 1)).toBe("2026-08-31");
+    bunExpect(sessionWeekStart("2026-09-05", 0)).toBe("2026-08-30");
+    bunExpect(sessionWeekStart("2026-09-05", 6)).toBe("2026-09-05");
+  });
+});
 
 const weekly = (
   overrides: Partial<WeeklyPerformanceReport>

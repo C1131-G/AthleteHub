@@ -233,6 +233,13 @@ export const createLocalCollections = (): Collections => ({
     sortValue: (input) => input.month,
     uniqueValue: (input) => `${input.athleteId}:${input.month}`,
   }),
+  sightMarks: owned({
+    direction: "asc",
+    key: "athletehub.local.sight-marks",
+    sortValue: (input) => `${input.bow}:${input.arrow}:${input.distanceM}`,
+    uniqueValue: (input) =>
+      `${input.athleteId}:${input.bow}:${input.arrow}:${input.distanceM}`,
+  }),
   trainingPlans: owned({
     direction: "desc",
     key: "athletehub.local.training-plans",
@@ -243,5 +250,11 @@ export const createLocalCollections = (): Collections => ({
     key: "athletehub.local.weekly-reports",
     sortValue: (input) => input.weekStart,
     uniqueValue: (input) => `${input.athleteId}:${input.weekStart}`,
+  }),
+  wellness: owned({
+    direction: "desc",
+    key: "athletehub.local.wellness",
+    sortValue: (input) => input.date,
+    uniqueValue: (input) => `${input.athleteId}:${input.date}`,
   }),
 });

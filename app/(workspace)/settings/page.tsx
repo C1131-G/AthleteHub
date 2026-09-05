@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { BackupPanel } from "@/features/backend/components/backup-panel";
+import { PreferencesPanel } from "@/features/backend/components/preferences-panel";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -15,6 +17,11 @@ const SettingsPage = () => (
         else.
       </p>
     </div>
+    <div className="space-y-2">
+      <h2 className="text-xl font-semibold">Appearance</h2>
+      <ThemeSwitcher />
+    </div>
+    <PreferencesPanel />
     <BackupPanel />
   </div>
 );

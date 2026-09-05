@@ -203,3 +203,76 @@ export const ArrowLoadChart = ({ points }: { points: LoadPoint[] }) => {
     </Card>
   );
 };
+
+export interface WeeklyLoadPoint {
+  label: string;
+  load: number;
+}
+
+/** Weekly actual sRPE load for one month, shown beside the plan editor. */
+export const WeeklyLoadChart = ({
+  month,
+  points,
+}: {
+  month: string;
+  points: WeeklyLoadPoint[];
+}) => {
+  const chartRows = useMemo(
+    () =>
+      points.map((point) => ({
+        id: `${month}-${point.label}`,
+        label: point.label,
+        value: point.load,
+      })),
+    [month, points]
+  );
+  const definition = useMemo(
+    () =>
+      defineChart(
+        {
+          marks: [
+            barY(chartRows, {
+              fill: "var(--chart-1)",
+              key: "id",
+              x: "label",
+              y: "value",
+            }),
+          ],
+          scales: {
+            x: { scale: scaleBand },
+            y: { axis: { label: "sRPE load" }, scale: scaleLinear },
+          },
+        },
+        chartOptions
+      ),
+    [chartRows]
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Actual load this month</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {chartRows.length === 0 ? (
+          <ChartEmpty label="No recorded sessions with RPE and duration yet." />
+        ) : (
+          <>
+            <Chart
+              ariaLabel={`Weekly actual session load for ${month}, one bar per week`}
+              definition={definition}
+              height={240}
+            />
+            <ChartLegend
+              series={[{ color: "var(--chart-1)", label: "Weekly sRPE load" }]}
+            />
+            <DataTable
+              headers={["Week starting", "Load (sRPE)"]}
+              rows={chartRows.map((row) => [row.label, String(row.value)])}
+            />
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

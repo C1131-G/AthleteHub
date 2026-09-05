@@ -18,18 +18,32 @@ import { readStoredArray, writeStored } from "./storage";
  */
 const STORAGE_KEY = "athletehub.local.sessions";
 
+const storedArrowSchema = z.object({
+  score: z.number().int().nonnegative(),
+  x: z.number().min(-1).max(1).nullable().optional(),
+  y: z.number().min(-1).max(1).nullable().optional(),
+});
+
 const storedSessionSchema = z.object({
   actualArrows: z.number().nullable(),
   athleteId: z.string(),
   createdAt: z.string(),
   date: z.string(),
-  ends: z.array(z.object({ arrowCount: z.number(), score: z.number() })),
+  durationMin: z.number().int().nullable().optional(),
+  ends: z.array(
+    z.object({
+      arrowCount: z.number(),
+      arrows: z.array(storedArrowSchema).optional(),
+      score: z.number(),
+    })
+  ),
   equipmentSetupId: z.string().nullable(),
   formatSnapshot: z.string(),
   id: z.string(),
   kind: z.string(),
   notes: z.string(),
   plannedArrows: z.number().nullable(),
+  rpe: z.number().int().min(1).max(10).nullable().optional(),
   status: z.string(),
   technicalFocus: z.string(),
   updatedAt: z.string(),
@@ -46,6 +60,18 @@ const readSessions = (): StoredSession[] =>
 const toRecord = (stored: StoredSession): SessionRecord => ({
   ...stored,
   createdAt: new Date(stored.createdAt),
+  durationMin: stored.durationMin ?? null,
+  // Pre-arrow sessions stored no arrow list; an empty one means un-plotted.
+  ends: stored.ends.map((end) => ({
+    arrowCount: end.arrowCount,
+    arrows: (end.arrows ?? []).map(({ score, x, y }) => ({
+      score,
+      x: x ?? null,
+      y: y ?? null,
+    })),
+    score: end.score,
+  })),
+  rpe: stored.rpe ?? null,
   updatedAt: new Date(stored.updatedAt),
 });
 

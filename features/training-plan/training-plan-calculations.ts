@@ -190,3 +190,53 @@ export const currentTechnicalFocus = (
   const week = started.at(-1) ?? sorted[0];
   return week?.technicalFocus ?? "";
 };
+
+/**
+ * The coach's competition calendar: scheduled events from every plan grouped
+ * into months (ordered), plus the to-be-dated events listed by name so they
+ * are not forgotten.
+ */
+export const competitionCalendar = (plans: SeasonTrainingPlan[]) => {
+  const seen = new Set<string>();
+  const scheduled: SeasonTrainingPlan["events"] = [];
+  for (const plan of plans) {
+    for (const event of scheduledEvents(plan)) {
+      if (!seen.has(event.id)) {
+        seen.add(event.id);
+        scheduled.push(event);
+      }
+    }
+  }
+  scheduled.sort(
+    (a, b) =>
+      (a.startsOn ?? "").localeCompare(b.startsOn ?? "") ||
+      a.name.localeCompare(b.name)
+  );
+
+  const months: {
+    events: SeasonTrainingPlan["events"];
+    month: string;
+  }[] = [];
+  for (const event of scheduled) {
+    const month = (event.startsOn ?? "").slice(0, 7);
+    const group = months.find((entry) => entry.month === month);
+    if (group) {
+      group.events.push(event);
+    } else {
+      months.push({ events: [event], month });
+    }
+  }
+
+  const undated: SeasonTrainingPlan["events"] = [];
+  for (const plan of plans) {
+    for (const event of undatedEvents(plan)) {
+      if (!seen.has(event.id)) {
+        seen.add(event.id);
+        undated.push(event);
+      }
+    }
+  }
+  undated.sort((a, b) => a.name.localeCompare(b.name));
+
+  return { months, undated };
+};

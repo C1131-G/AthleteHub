@@ -31,9 +31,15 @@ import type {
   WeeklyPerformanceReport,
 } from "../report/report-types";
 import { createWeeklyReportService } from "../report/weekly-report-service";
+import { createSightMarkService } from "../sight-mark/sight-mark-service";
+import { sightMarkSchema } from "../sight-mark/sight-mark-types";
+import type { SightMark } from "../sight-mark/sight-mark-types";
 import { createTrainingPlanService } from "../training-plan/training-plan-service";
 import { seasonTrainingPlanSchema } from "../training-plan/training-plan-types";
 import type { SeasonTrainingPlan } from "../training-plan/training-plan-types";
+import { createWellnessService } from "../wellness/wellness-service";
+import { wellnessSchema } from "../wellness/wellness-types";
+import type { Wellness } from "../wellness/wellness-types";
 
 /**
  * Browser-safe on purpose: it names no database driver, only the accessor
@@ -49,8 +55,10 @@ export const createCollectionServices = (collections: Collections) => ({
   equipment: createEquipmentSetupService(collections),
   monthlyCycles: createMonthlyCycleService(collections),
   monthlyReports: createMonthlyReportService(collections),
+  sightMarks: createSightMarkService(collections),
   trainingPlans: createTrainingPlanService(collections),
   weeklyReports: createWeeklyReportService(collections),
+  wellness: createWellnessService(collections),
 });
 
 export type CollectionServices = ReturnType<typeof createCollectionServices>;
@@ -64,7 +72,9 @@ export const collectionNames = [
   "equipment",
   "monthlyCycles",
   "monthlyReports",
+  "sightMarks",
   "trainingPlans",
+  "wellness",
   "weeklyReports",
 ] as const satisfies readonly CollectionName[];
 
@@ -91,7 +101,9 @@ export interface CollectionRecordMap {
   equipment: EquipmentSetup;
   monthlyCycles: MonthlyAthleteCycle;
   monthlyReports: MonthlyPerformanceReport;
+  sightMarks: SightMark;
   trainingPlans: SeasonTrainingPlan;
+  wellness: Wellness;
   weeklyReports: WeeklyPerformanceReport;
 }
 
@@ -104,6 +116,8 @@ export const collectionSchemas = {
   equipment: equipmentSetupSchema,
   monthlyCycles: monthlyCycleSchema,
   monthlyReports: monthlyReportSchema,
+  sightMarks: sightMarkSchema,
   trainingPlans: seasonTrainingPlanSchema,
   weeklyReports: weeklyReportSchema,
+  wellness: wellnessSchema,
 } as const;

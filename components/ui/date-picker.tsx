@@ -61,7 +61,7 @@ export const DatePicker = ({
               aria-errormessage={invalid ? errorMessageId : undefined}
               aria-invalid={invalid || undefined}
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "border-input w-full justify-start text-left font-normal",
                 !value && "text-muted-foreground"
               )}
               id={id}

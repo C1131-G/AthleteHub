@@ -1,17 +1,26 @@
 "use client";
 
+import { XIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AthletePicker } from "@/features/athlete/athlete-picker";
 
 import { useSessions } from "../use-sessions";
+
+const labelClass = "mb-1.5";
 
 export const SessionsWorkspace = () => {
   const [athleteId, setAthleteId] = useState("");
@@ -74,15 +83,32 @@ export const SessionsWorkspace = () => {
     sessionContent = <p aria-live="polite">Loading sessions…</p>;
   }
 
+  const hasFilters = Boolean(athleteId || date || query);
+  const clearFilters = () => {
+    setAthleteId("");
+    setDate("");
+    setQuery("");
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Find sessions</CardTitle>
+          {hasFilters ? (
+            <CardAction>
+              <Button onClick={clearFilters} size="sm" variant="ghost">
+                <XIcon aria-hidden="true" />
+                Clear filters
+              </Button>
+            </CardAction>
+          ) : null}
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div>
-            <Label htmlFor="sessions-athlete">Athlete</Label>
+            <Label className={labelClass} htmlFor="sessions-athlete">
+              Athlete
+            </Label>
             <AthletePicker
               id="sessions-athlete"
               onChange={setAthleteId}
@@ -90,11 +116,20 @@ export const SessionsWorkspace = () => {
             />
           </div>
           <div>
-            <Label htmlFor="sessions-date">Date</Label>
-            <DatePicker id="sessions-date" onChange={setDate} value={date} />
+            <Label className={labelClass} htmlFor="sessions-date">
+              Date
+            </Label>
+            <DatePicker
+              clearable
+              id="sessions-date"
+              onChange={setDate}
+              value={date}
+            />
           </div>
           <div>
-            <Label htmlFor="sessions-search">Search</Label>
+            <Label className={labelClass} htmlFor="sessions-search">
+              Search
+            </Label>
             <Input
               id="sessions-search"
               onChange={(event) => setQuery(event.target.value)}

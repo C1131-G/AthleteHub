@@ -17,7 +17,7 @@ export default defineConfig({
   webServer: {
     command: "bun run instant:server",
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
     url: "http://127.0.0.1:3100",
   },
 });

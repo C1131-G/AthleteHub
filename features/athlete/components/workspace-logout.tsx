@@ -11,9 +11,15 @@ export const WorkspaceLogout = () => {
   const [error, setError] = useState<string>();
 
   const performLogout = async () => {
+    // The main process navigates back to the local login screen once the
+    // session is cleared; there is no in-app login page to route to.
+    const auth = desktopAuth();
+    if (!auth) {
+      setError("Open the AthleteHub desktop app to log out.");
+      return;
+    }
     try {
-      await desktopAuth()?.logout();
-      window.location.replace("/login");
+      await auth.logout();
     } catch {
       setError("Could not log out. Your session is still active.");
     }

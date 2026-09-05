@@ -825,6 +825,193 @@ const monthlyCycleCollection = (
   },
 });
 
+export interface SightMarkSaveInput {
+  athleteId: string;
+  arrow: string;
+  bow: string;
+  distanceM: number;
+  id: string;
+  mark: string;
+  note: string;
+  snapshot: string;
+}
+
+export interface SightMarkCollection {
+  archive: (id: string) => Promise<void>;
+  get: (id: string) => Promise<OwnedCollectionRow | undefined>;
+  list: (options?: ListOptions) => Promise<OwnedCollectionRow[]>;
+  restore: (id: string) => Promise<void>;
+  save: (input: SightMarkSaveInput) => Promise<OwnedCollectionRow>;
+}
+
+const toSightMarkRow = (record: {
+  archivedAt: Date | null;
+  athleteId: string;
+  createdAt: Date;
+  id: string;
+  snapshot: string;
+  updatedAt: Date;
+}): OwnedCollectionRow => ({
+  archivedAt: record.archivedAt,
+  athleteId: record.athleteId,
+  createdAt: record.createdAt,
+  id: record.id,
+  snapshot: record.snapshot,
+  updatedAt: record.updatedAt,
+});
+
+const sightMarkCollection = (
+  client: CollectionClient
+): SightMarkCollection => ({
+  archive: async (id) => {
+    await client.sightMark.update({
+      data: { archivedAt: new Date() },
+      where: { id },
+    });
+  },
+  get: async (id) => {
+    const record = await client.sightMark.findUnique({ where: { id } });
+    return record ? toSightMarkRow(record) : undefined;
+  },
+  list: async (options) => {
+    const records = await client.sightMark.findMany({
+      orderBy: [{ bow: "asc" }, { arrow: "asc" }, { distanceM: "asc" }],
+      where: { ...archivedFilter(options), ...ownerFilter(options) },
+    });
+    return records.map(toSightMarkRow);
+  },
+  restore: async (id) => {
+    await client.sightMark.update({
+      data: { archivedAt: null },
+      where: { id },
+    });
+  },
+  save: async (input) => {
+    const now = new Date();
+    const record = await client.sightMark.upsert({
+      create: {
+        archivedAt: null,
+        arrow: input.arrow,
+        athleteId: input.athleteId,
+        bow: input.bow,
+        createdAt: now,
+        distanceM: input.distanceM,
+        id: input.id,
+        mark: input.mark,
+        note: input.note,
+        snapshot: input.snapshot,
+        updatedAt: now,
+      },
+      update: {
+        arrow: input.arrow,
+        bow: input.bow,
+        distanceM: input.distanceM,
+        mark: input.mark,
+        note: input.note,
+        snapshot: input.snapshot,
+        updatedAt: now,
+      },
+      where: { id: input.id },
+    });
+    return toSightMarkRow(record);
+  },
+});
+
+export interface WellnessSaveInput {
+  athleteId: string;
+  date: string;
+  fatigue: number;
+  id: string;
+  mood: number;
+  note: string;
+  sleep: number;
+  soreness: number;
+  snapshot: string;
+  stress: number;
+}
+
+export interface WellnessCollection {
+  archive: (id: string) => Promise<void>;
+  get: (id: string) => Promise<OwnedCollectionRow | undefined>;
+  list: (options?: ListOptions) => Promise<OwnedCollectionRow[]>;
+  restore: (id: string) => Promise<void>;
+  save: (input: WellnessSaveInput) => Promise<OwnedCollectionRow>;
+}
+
+const toWellnessRow = (record: {
+  archivedAt: Date | null;
+  athleteId: string;
+  createdAt: Date;
+  id: string;
+  snapshot: string;
+  updatedAt: Date;
+}): OwnedCollectionRow => ({
+  archivedAt: record.archivedAt,
+  athleteId: record.athleteId,
+  createdAt: record.createdAt,
+  id: record.id,
+  snapshot: record.snapshot,
+  updatedAt: record.updatedAt,
+});
+
+const wellnessCollection = (client: CollectionClient): WellnessCollection => ({
+  archive: async (id) => {
+    await client.wellnessEntry.update({
+      data: { archivedAt: new Date() },
+      where: { id },
+    });
+  },
+  get: async (id) => {
+    const record = await client.wellnessEntry.findUnique({ where: { id } });
+    return record ? toWellnessRow(record) : undefined;
+  },
+  list: async (options) => {
+    const records = await client.wellnessEntry.findMany({
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      where: { ...archivedFilter(options), ...ownerFilter(options) },
+    });
+    return records.map(toWellnessRow);
+  },
+  restore: async (id) => {
+    await client.wellnessEntry.update({
+      data: { archivedAt: null },
+      where: { id },
+    });
+  },
+  save: async (input) => {
+    const now = new Date();
+    const record = await client.wellnessEntry.upsert({
+      create: {
+        archivedAt: null,
+        athleteId: input.athleteId,
+        createdAt: now,
+        date: input.date,
+        fatigue: input.fatigue,
+        id: input.id,
+        mood: input.mood,
+        note: input.note,
+        sleep: input.sleep,
+        snapshot: input.snapshot,
+        soreness: input.soreness,
+        stress: input.stress,
+        updatedAt: now,
+      },
+      update: {
+        fatigue: input.fatigue,
+        mood: input.mood,
+        note: input.note,
+        sleep: input.sleep,
+        snapshot: input.snapshot,
+        soreness: input.soreness,
+        stress: input.stress,
+        updatedAt: now,
+      },
+      where: { id: input.id },
+    });
+    return toWellnessRow(record);
+  },
+});
+
 export interface Collections {
   assessments: AssessmentCollection;
   athletes: AthleteCollection;
@@ -833,7 +1020,9 @@ export interface Collections {
   equipment: EquipmentSetupCollection;
   monthlyCycles: MonthlyCycleCollection;
   monthlyReports: MonthlyReportCollection;
+  sightMarks: SightMarkCollection;
   trainingPlans: TrainingPlanCollection;
+  wellness: WellnessCollection;
   weeklyReports: WeeklyReportCollection;
 }
 
@@ -845,6 +1034,8 @@ export const createCollections = (client: CollectionClient): Collections => ({
   equipment: equipmentSetupCollection(client),
   monthlyCycles: monthlyCycleCollection(client),
   monthlyReports: monthlyReportCollection(client),
+  sightMarks: sightMarkCollection(client),
   trainingPlans: trainingPlanCollection(client),
   weeklyReports: weeklyReportCollection(client),
+  wellness: wellnessCollection(client),
 });

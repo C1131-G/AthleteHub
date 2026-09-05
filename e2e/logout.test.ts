@@ -3,26 +3,22 @@ import {
   test as playwrightTest,
 } from "@playwright/test";
 
+/**
+ * In a plain browser there is no desktop bridge, so logout explains itself
+ * instead of navigating: the session lives in the Electron main process, and
+ * returning to the login screen is the desktop app's job. The real logout
+ * round-trip is covered by the Electron-driven desktop-login spec.
+ */
 playwrightTest.describe("workspace logout", () => {
   playwrightTest(
-    "logs out from the expanded desktop sidebar",
+    "logout without the desktop bridge explains itself and stays put",
     async ({ page }) => {
       await page.goto("/dashboard");
-      await page.getByRole("button", { name: "Log out" }).click();
-      await playwrightExpect(page).toHaveURL(/\/login$/);
-    }
-  );
-
-  playwrightTest(
-    "logs out from the collapsed desktop sidebar",
-    async ({ page }) => {
-      await page.goto("/dashboard");
-      await page
-        .getByRole("banner")
-        .getByRole("button", { name: "Toggle Sidebar" })
-        .click();
-      await page.getByRole("button", { name: "Log out" }).click();
-      await playwrightExpect(page).toHaveURL(/\/login$/);
+      await page.getByRole("button", { name: "Log out" }).first().click();
+      await playwrightExpect(
+        page.getByText("Open the AthleteHub desktop app to log out.")
+      ).toBeVisible();
+      await playwrightExpect(page).toHaveURL(/\/dashboard/);
     }
   );
 });

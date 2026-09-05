@@ -79,9 +79,12 @@ export interface SessionWeekSummary {
   trainingDays: number;
 }
 
-/** Monday-start weeks match the report calendar. */
-export const sessionWeekStart = (date: string) =>
-  format(startOfWeek(parseISO(date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+/**
+ * Buckets a session date into its report week. The week-start day follows the
+ * app preference (Monday by default, matching the report calendar).
+ */
+export const sessionWeekStart = (date: string, weekStartsOn: 0 | 1 | 6 = 1) =>
+  format(startOfWeek(parseISO(date), { weekStartsOn }), "yyyy-MM-dd");
 
 /**
  * Completed sessions inside the athlete's week, for pre-filling a weekly

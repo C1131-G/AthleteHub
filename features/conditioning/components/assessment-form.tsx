@@ -38,13 +38,9 @@ import { AssessmentResultsEditor } from "./assessment-results-editor";
 import { errorId, focusFirstError } from "./conditioning-form-errors";
 import type { ConditioningFormErrors } from "./conditioning-form-errors";
 
-// SAFETY: Object.entries preserves the label map's exact key union.
-const statusChoices = (
-  Object.entries(assessmentStatusLabel) as [
-    keyof typeof assessmentStatusLabel,
-    string,
-  ][]
-).map(([value, label]) => ({ label, value }));
+const statusChoices = Object.entries(assessmentStatusLabel).map(
+  ([value, label]) => ({ label, value })
+);
 
 const numberValue = (draft: { unit: string; valueText: string }) => {
   if (draft.unit === "seconds") {

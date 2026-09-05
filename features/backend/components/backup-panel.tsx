@@ -72,6 +72,7 @@ export const BackupPanel = () => {
           </Button>
           <input
             accept="application/json"
+            aria-label="Backup file to restore"
             className="sr-only"
             onChange={(event) => {
               const [file] = event.target.files ?? [];

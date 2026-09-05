@@ -30,7 +30,6 @@ import {
   toConditioningPhase,
   toProgrammeStatus,
 } from "../conditioning-types";
-import type { ConditioningPhase } from "../conditioning-types";
 import { useConditioning } from "../use-conditioning";
 import { errorId, focusFirstError } from "./conditioning-form-errors";
 import type { ConditioningFormErrors } from "./conditioning-form-errors";
@@ -45,11 +44,10 @@ import type {
 import type { SessionHandlers } from "./programme-sessions-editor";
 import { ProgrammeSessionsEditor } from "./programme-sessions-editor";
 
-// SAFETY: Object.keys of a Record keyed by the union yields that union.
-const phaseOptions = (Object.keys(phaseLabel) as ConditioningPhase[]).map(
-  // SAFETY: phaseLabel's keys are exactly the ConditioningPhase union.
-  (phase) => ({ label: phaseLabel[phase], value: phase })
-);
+const phaseOptions = Object.entries(phaseLabel).map(([value, label]) => ({
+  label,
+  value,
+}));
 
 const statusOptions = [
   { label: "Draft", value: "draft" },

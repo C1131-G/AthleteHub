@@ -88,7 +88,7 @@ export const MonthPicker = ({
               aria-errormessage={invalid ? errorMessageId : undefined}
               aria-invalid={invalid || undefined}
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "border-input w-full justify-start text-left font-normal",
                 !selected && "text-muted-foreground"
               )}
               id={id}

@@ -22,6 +22,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { monthLabel } from "@/features/report/report-calculations";
 import { initials } from "@/lib/format";
+import { pushRoute } from "@/lib/push-route";
 
 import type { CycleStepView } from "../monthly-cycle-lifecycle";
 import { cycleQueueHref, monthlyCycleStepMeta } from "../monthly-cycle-steps";
@@ -142,9 +143,7 @@ export const CycleShell = ({
       }
       event.preventDefault();
       confirmNavigation(() => {
-        // SAFETY: href is built by monthly-cycle-steps from the typed route
-        // map, so it always matches a registered App Router route.
-        router.push(href as Parameters<typeof router.push>[0], {
+        pushRoute(router, href, {
           transitionTypes: [transitionType],
         });
       });

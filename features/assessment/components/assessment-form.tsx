@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAthletes } from "@/features/athlete/use-athletes";
+import { pushRoute } from "@/lib/push-route";
 
 import { assessmentHref, safeReturnHref } from "../assessment-routes";
 import {
@@ -161,8 +162,7 @@ export const AssessmentForm = ({
     }
     const destination =
       safeReturnHref(returnTo) ?? assessmentHref(result.record.id);
-    // SAFETY: safeReturnHref only returns same-origin internal route shapes.
-    router.push(destination as Parameters<typeof router.push>[0], {
+    pushRoute(router, destination, {
       transitionTypes: ["nav-forward"],
     });
   };

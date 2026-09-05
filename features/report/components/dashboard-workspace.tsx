@@ -19,6 +19,8 @@ import { useConditioning } from "@/features/conditioning/use-conditioning";
 import { useEquipment } from "@/features/equipment/use-equipment";
 import { useAllSessions } from "@/features/session/use-sessions";
 import { useTrainingPlans } from "@/features/training-plan/use-training-plans";
+import { useWellness } from "@/features/wellness/use-wellness";
+import { usePreferences } from "@/lib/use-preferences";
 
 import { dashboardMetrics } from "../dashboard-metrics";
 import { useReports } from "../use-reports";
@@ -46,8 +48,13 @@ export const DashboardWorkspace = () => {
   const { listByAthlete, ready: equipmentReady } = useEquipment();
   const { plans, ready: plansReady } = useTrainingPlans();
   const conditioning = useConditioning();
+  const wellness = useWellness();
   const { data: sessions, isPending: sessionsPending } = useAllSessions();
-  const rankingDistance = Number(searchParams.get("distance") ?? "70") || 70;
+  const { preferences, ready: preferencesReady } = usePreferences();
+  // An explicit URL parameter wins; otherwise the Settings preference rules.
+  const rankingDistance =
+    Number(searchParams.get("distance")) || preferences.rankingDistance;
+  const { weekStartsOn } = preferences;
   const {
     attentionRows,
     averageScoreChange,
@@ -72,12 +79,14 @@ export const DashboardWorkspace = () => {
       month,
       rankingDistance,
       status: statusFilter,
+      weekStartsOn,
     },
     monthly: listMonthly,
     plans,
     sessionsFor: (athleteId) =>
       (sessions ?? []).filter((session) => session.athleteId === athleteId),
     weekly: listWeekly,
+    wellnessFor: wellness.listByAthlete,
   });
 
   if (
@@ -86,6 +95,8 @@ export const DashboardWorkspace = () => {
       conditioning.ready &&
       equipmentReady &&
       plansReady &&
+      preferencesReady &&
+      wellness.ready &&
       reportsReady &&
       !sessionsPending
     )

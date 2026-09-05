@@ -26,6 +26,12 @@ export const resolveAthleteBackTarget = (
     return undefined;
   }
 
+  // Equipment has its own contextual navigation; avoid adding a second
+  // athlete-level back link above those pages.
+  if (segments[2] === "equipment") {
+    return undefined;
+  }
+
   if (
     segments.length === EDIT_PATH_DEPTH &&
     segments[EDIT_PATH_DEPTH - 1] === EDIT_SEGMENT
