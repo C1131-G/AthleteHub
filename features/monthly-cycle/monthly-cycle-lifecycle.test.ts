@@ -396,7 +396,11 @@ const trainingSession = (
 
 bunDescribe("derive cycle view", () => {
   bunTest("a fresh cycle starts at profile with zero progress", () => {
-    const view = deriveCycleView(cycle({ month: "2026-09" }), context());
+    const view = deriveCycleView(
+      cycle({ month: "2026-09" }),
+      context(),
+      "2026-09-01"
+    );
     bunExpect(view.currentStep).toBe("profile");
     bunExpect(view.nextOpenStep).toBe("profile");
     bunExpect(view.percent).toBe(0);

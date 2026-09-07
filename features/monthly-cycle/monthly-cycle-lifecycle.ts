@@ -387,7 +387,10 @@ export const reviewBlockedBy = (
 
 export const deriveCycleView = (
   cycle: MonthlyAthleteCycle,
-  context: CycleDomainContext
+  context: CycleDomainContext,
+  // A Monday only counts as uncovered once it has passed, so the comparison
+  // needs today's date. Injectable so tests are not tied to the wall clock.
+  today: string = format(new Date(), "yyyy-MM-dd")
 ): CycleView => {
   const { month } = cycle;
   const viewFor = (step: MonthlyCycleStep): CycleStepView => {
@@ -433,10 +436,7 @@ export const deriveCycleView = (
     context.weeklyReports,
     cycle.athleteId,
     month
-  ).some(
-    (entry) =>
-      !entry.counts && entry.weekStart <= format(new Date(), "yyyy-MM-dd")
-  );
+  ).some((entry) => !entry.counts && entry.weekStart <= today);
   let queueState: CycleQueueState = "in-progress";
   if (hasStale || pastUncovered) {
     queueState = "needs-attention";
