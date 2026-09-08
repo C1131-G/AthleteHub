@@ -61,6 +61,7 @@ export interface AuthService {
   requireSession: () => Promise<void>;
   setup: (input: unknown) => Promise<{ recoveryCode: string }>;
   status: () => Promise<{ authenticated: boolean; configured: boolean }>;
+  verifyPassword: (password: unknown) => Promise<boolean>;
 }
 
 const validateCredentials = (username: string, password: string) => {
@@ -266,6 +267,24 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
     return { authenticated: true as const, recoveryCode: nextRecoveryCode };
   };
 
+  /**
+   * Re-checks the account password without touching session or lockout
+   * state — used to gate sensitive changes (like relocating storage) for an
+   * already-logged-in renderer, as a lightweight second factor.
+   */
+  const verifyPassword = async (password: unknown) => {
+    const parsedPassword = z.string().min(8).safeParse(password);
+    if (!parsedPassword.success) {
+      return false;
+    }
+    const owner = await getOwner();
+    if (!owner) {
+      return false;
+    }
+    const passwordHash = await derive(parsedPassword.data, owner.passwordSalt);
+    return matches(passwordHash, owner.passwordHash);
+  };
+
   return {
     isAuthenticated: () => authenticated,
     login,
@@ -284,5 +303,6 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
     },
     setup,
     status,
+    verifyPassword,
   };
 };

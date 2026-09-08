@@ -1,8 +1,18 @@
-const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  nativeTheme,
+  shell,
+} = require("electron");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
 const {
+  accessSync,
+  constants: fsConstants,
   copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -15,6 +25,7 @@ const path = require("node:path");
 const { performance } = require("node:perf_hooks");
 const { pathToFileURL } = require("node:url");
 const { setTimeout: delay } = require("node:timers/promises");
+const { z } = require("zod");
 const { registerPreferenceHandlers } = require("./ipc/preferences.cjs");
 const { registerPhotoHandlers } = require("./ipc/photos.cjs");
 
@@ -294,6 +305,80 @@ const resolveBackendEntry = () =>
     : path.join(PROJECT_ROOT, ".next", "electron-backend.mjs");
 
 /**
+ * Where the database and rolling backups live, chosen on first run and
+ * changeable later from Settings. Same contract as
+ * electron/location-config.ts, read here without the TS module since this
+ * must resolve before the backend bundle (and therefore the database) exists.
+ */
+const LOCATION_CONFIG_FILE = "location.json";
+
+const locationConfigPath = () =>
+  path.join(app.getPath("userData"), LOCATION_CONFIG_FILE);
+
+const legacyDatabasePath = () =>
+  path.join(app.getPath("userData"), "athletehub.db");
+
+const defaultLocationConfig = () => ({
+  backupPath: path.join(app.getPath("userData"), "backups"),
+  storagePath: app.getPath("userData"),
+});
+
+const folderPathSchema = z.string().trim().min(1);
+/** Same shape whether it's read back from disk or submitted from a form. */
+const locationConfigSchema = z.object({
+  backupPath: folderPathSchema,
+  storagePath: folderPathSchema,
+});
+const locationUpdateSchema = z.object({
+  backupPath: folderPathSchema.optional(),
+  password: z.string().min(1),
+  storagePath: folderPathSchema.optional(),
+});
+
+const readLocationConfig = () => {
+  try {
+    const parsed = locationConfigSchema.safeParse(
+      JSON.parse(readFileSync(locationConfigPath(), "utf-8"))
+    );
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeLocationConfig = (config) => {
+  writeFileSync(locationConfigPath(), JSON.stringify(config, null, 2), "utf-8");
+  return config;
+};
+
+/**
+ * Installs that already have a database from before this feature existed are
+ * treated as already configured at today's default paths the first time this
+ * runs, so upgrading never shows the location picker or moves anything. Only
+ * a genuinely fresh install (no location.json AND no pre-existing database)
+ * is unconfigured.
+ */
+const ensureLocationConfig = () => {
+  const existing = readLocationConfig();
+  if (existing) {
+    return existing;
+  }
+  if (existsSync(legacyDatabasePath())) {
+    return writeLocationConfig(defaultLocationConfig());
+  }
+  return null;
+};
+
+const databasePath = () =>
+  path.join(
+    (ensureLocationConfig() ?? defaultLocationConfig()).storagePath,
+    "athletehub.db"
+  );
+
+const backupDirectory = () =>
+  (ensureLocationConfig() ?? defaultLocationConfig()).backupPath;
+
+/**
  * The login page is local, so it can never match the server origin. It is
  * trusted by exact file-URL match only — never a prefix — and only for the
  * auth channels; every data channel keeps the strict origin check.
@@ -376,9 +461,7 @@ const startBackendRuntime = () => {
     const backendModule = await import(
       pathToFileURL(resolveBackendEntry()).href
     );
-    runtime = await backendModule.createRuntime(
-      `file:${path.join(app.getPath("userData"), "athletehub.db")}`
-    );
+    runtime = await backendModule.createRuntime(`file:${databasePath()}`);
     registerCollectionHandlers();
     bootMark("backend runtime ready");
     return runtime;
@@ -459,6 +542,105 @@ const registerIpcHandlers = () => {
     navigateToApp(event.sender, destination);
   });
 
+  /**
+   * Reachable from the local login page (before any account or database
+   * exists) as well as from the running app's Settings page, so every handler
+   * here trusts the login window in addition to the server origin.
+   */
+  ipcMain.handle("location.status", (event) => {
+    assertTrustedSender(event, { allowLoginWindow: true });
+    const config = ensureLocationConfig();
+    return {
+      backupPath: config?.backupPath ?? null,
+      configured: Boolean(config),
+      storagePath: config?.storagePath ?? null,
+    };
+  });
+
+  ipcMain.handle("location.choose", async (event) => {
+    assertTrustedSender(event, { allowLoginWindow: true });
+    const parentWindow = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showOpenDialog(parentWindow ?? undefined, {
+      properties: ["openDirectory", "createDirectory"],
+    });
+    return result.canceled || result.filePaths.length === 0
+      ? null
+      : result.filePaths[0];
+  });
+
+  ipcMain.handle("location.setup", (event, input) => {
+    assertTrustedSender(event, { allowLoginWindow: true });
+    if (ensureLocationConfig()) {
+      throw new Error("Storage locations are already configured.");
+    }
+    const parsedInput = locationConfigSchema.safeParse(input);
+    if (!parsedInput.success) {
+      throw new Error("Choose both a storage folder and a backup folder.");
+    }
+    const { backupPath, storagePath } = parsedInput.data;
+    for (const candidate of [storagePath, backupPath]) {
+      mkdirSync(candidate, { recursive: true });
+      accessSync(candidate, fsConstants.W_OK);
+    }
+    return writeLocationConfig({ backupPath, storagePath });
+  });
+
+  ipcMain.handle("location.update", async (event, input) => {
+    await startBackendRuntime();
+    const service = getAuthService(event);
+    await service.requireSession();
+    const parsedInput = locationUpdateSchema.safeParse(input);
+    if (!parsedInput.success) {
+      throw new Error("A password is required to change the storage location.");
+    }
+    const verified = await service.verifyPassword(parsedInput.data.password);
+    if (!verified) {
+      throw new Error("The password is incorrect.");
+    }
+
+    const current = ensureLocationConfig() ?? defaultLocationConfig();
+    const nextStoragePath = parsedInput.data.storagePath ?? current.storagePath;
+    const nextBackupPath = parsedInput.data.backupPath ?? current.backupPath;
+
+    mkdirSync(nextStoragePath, { recursive: true });
+    mkdirSync(nextBackupPath, { recursive: true });
+    accessSync(nextStoragePath, fsConstants.W_OK);
+    accessSync(nextBackupPath, fsConstants.W_OK);
+
+    if (runtime) {
+      await runtime.close();
+      runtime = undefined;
+      runtimeReadyPromise = undefined;
+    }
+
+    const currentDbPath = path.join(current.storagePath, "athletehub.db");
+    const nextDbPath = path.join(nextStoragePath, "athletehub.db");
+    if (nextStoragePath !== current.storagePath && existsSync(currentDbPath)) {
+      copyFileSync(currentDbPath, nextDbPath);
+    }
+    if (
+      nextBackupPath !== current.backupPath &&
+      existsSync(current.backupPath)
+    ) {
+      cpSync(current.backupPath, nextBackupPath, { recursive: true });
+    }
+
+    writeLocationConfig({
+      backupPath: nextBackupPath,
+      storagePath: nextStoragePath,
+    });
+
+    // The libSQL client can't be re-pointed at a new file in place, so the
+    // simplest safe path is to relaunch: the next startBackendRuntime() call
+    // reads the just-written location.json and opens the database there.
+    setImmediate(() => {
+      app.relaunch();
+      app.exit(0);
+    });
+
+    return { restarting: true };
+  });
+
   const handleSession = (channel, action) => {
     ipcMain.handle(channel, async (event, ...args) => {
       await startBackendRuntime();
@@ -537,7 +719,15 @@ const createWindow = async () => {
  */
 const startServices = async () => {
   try {
-    await Promise.all([startBackendRuntime(), ensureServer()]);
+    // A fresh install has not chosen a storage location yet, so the backend
+    // (and its database) must wait for the login page's location.setup call
+    // instead of starting eagerly here — starting it against a location the
+    // user has not confirmed would create the database in the wrong place.
+    const tasks = [ensureServer()];
+    if (ensureLocationConfig()) {
+      tasks.push(startBackendRuntime());
+    }
+    await Promise.all(tasks);
   } catch (error) {
     console.error(error);
     app.quit();
@@ -619,12 +809,12 @@ const readBackupCount = () => {
 
 const writeRollingBackup = () => {
   try {
-    const { backupCount } = readBackupCount();
-    const source = path.join(app.getPath("userData"), "athletehub.db");
+    const backupCount = readBackupCount();
+    const source = databasePath();
     if (!existsSync(source)) {
       return;
     }
-    const directory = path.join(app.getPath("userData"), "backups");
+    const directory = backupDirectory();
     mkdirSync(directory, { recursive: true });
     const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
     copyFileSync(source, path.join(directory, `athletehub-${stamp}.db`));

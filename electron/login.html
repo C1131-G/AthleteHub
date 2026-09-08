@@ -150,6 +150,22 @@
         inline-size: 1.125rem;
       }
 
+      .path-field {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .path-field input {
+        color: var(--muted-foreground);
+        flex: 1;
+        min-inline-size: 0;
+      }
+
+      .path-field button {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
       button {
         background: var(--primary);
         border: none;
@@ -292,6 +308,36 @@
         <button class="text-button" id="show-recovery" type="button">
           Forgot your password?
         </button>
+      </form>
+
+      <section class="intro" data-view="location" hidden id="location-view">
+        <h1>Choose where AthleteHub keeps your data</h1>
+        <p>
+          Pick a folder to store your data and a separate folder for backups.
+        </p>
+      </section>
+      <form data-view="location" hidden id="location-form">
+        <label for="storage-path-display">Data folder</label>
+        <div class="path-field">
+          <input
+            id="storage-path-display"
+            readonly
+            type="text"
+            value="Not selected"
+          />
+          <button data-target="storage" type="button">Choose folder…</button>
+        </div>
+        <label for="backup-path-display">Backup folder</label>
+        <div class="path-field">
+          <input
+            id="backup-path-display"
+            readonly
+            type="text"
+            value="Not selected"
+          />
+          <button data-target="backup" type="button">Choose folder…</button>
+        </div>
+        <button type="submit">Continue</button>
       </form>
 
       <section class="intro" data-view="setup" hidden id="setup-view">
@@ -501,6 +547,7 @@
     </main>
     <script>
       const auth = window.electronAPI?.backend?.auth;
+      const location = window.electronAPI?.backend?.location;
       const desktop = window.electronAPI?.desktop;
       // Each view is a section plus (except the code view) its form, paired
       // by data-view so the pair is shown and hidden together.
@@ -535,6 +582,14 @@
       const requireDesktop = () => {
         if (!auth || !desktop) {
           setError("Open the AthleteHub desktop app to manage your account.");
+          return false;
+        }
+        return true;
+      };
+
+      const requireLocation = () => {
+        if (!location) {
+          setError("Open the AthleteHub desktop app to choose folders.");
           return false;
         }
         return true;
@@ -657,6 +712,58 @@
           }
         });
 
+      const locationForm = document.getElementById("location-form");
+      const storagePathDisplay = document.getElementById(
+        "storage-path-display"
+      );
+      const backupPathDisplay = document.getElementById("backup-path-display");
+      let chosenStoragePath = "";
+      let chosenBackupPath = "";
+
+      for (const chooseButton of locationForm.querySelectorAll(
+        "button[data-target]"
+      )) {
+        chooseButton.addEventListener("click", async () => {
+          if (!requireLocation()) {
+            return;
+          }
+          const picked = await location.choose();
+          if (!picked) {
+            return;
+          }
+          if (chooseButton.dataset.target === "storage") {
+            chosenStoragePath = picked;
+            storagePathDisplay.value = picked;
+          } else {
+            chosenBackupPath = picked;
+            backupPathDisplay.value = picked;
+          }
+        });
+      }
+
+      locationForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!requireLocation()) {
+          return;
+        }
+        if (!chosenStoragePath || !chosenBackupPath) {
+          setError("Choose both a data folder and a backup folder.");
+          return;
+        }
+        const submitButton = locationForm.querySelector("button[type=submit]");
+        setPending(submitButton, "Saving…");
+        try {
+          await location.setup({
+            backupPath: chosenBackupPath,
+            storagePath: chosenStoragePath,
+          });
+          showView("setup-view");
+        } catch (error) {
+          setPending(submitButton, null);
+          setError(readableError(error));
+        }
+      });
+
       document
         .getElementById("recovery-form")
         .addEventListener("submit", async (event) => {
@@ -697,17 +804,36 @@
         showView("login-view");
       });
 
-      auth
-        ?.status()
-        .then(({ configured }) => {
+      const bootstrap = async () => {
+        if (!location || !auth) {
+          setError("Open the AthleteHub desktop app to continue.");
+          return;
+        }
+        let locationStatus;
+        try {
+          locationStatus = await location.status();
+        } catch {
+          setError(
+            "Could not check the storage location. Try restarting the app."
+          );
+          return;
+        }
+        if (!locationStatus.configured) {
+          showView("location-view");
+          return;
+        }
+        try {
+          const { configured } = await auth.status();
           showView(configured ? "login-view" : "setup-view");
-        })
-        .catch(() => {
+        } catch {
           showView("login-view");
           setError(
             "Could not check the account state. Try restarting the app."
           );
-        });
+        }
+      };
+
+      bootstrap();
     </script>
   </body>
 </html>

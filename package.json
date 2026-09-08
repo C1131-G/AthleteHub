@@ -39,7 +39,7 @@
     "release": "bun run dist:prepare && electron-builder --publish always",
     "standalone": "bun scripts/prepare-standalone.mjs",
     "start": "next start",
-    "test": "bun test features lib",
+    "test": "bun test electron features lib",
     "test:instant": "playwright test",
     "typecheck": "tsc --noEmit"
   },

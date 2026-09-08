@@ -64,6 +64,26 @@ interface ElectronPreferencesApi {
   write: (partial: Partial<AppPreferences>) => Promise<AppPreferences>;
 }
 
+export interface LocationStatus {
+  backupPath: string | null;
+  configured: boolean;
+  storagePath: string | null;
+}
+
+interface ElectronLocationApi {
+  choose: () => Promise<string | null>;
+  setup: (input: {
+    backupPath: string;
+    storagePath: string;
+  }) => Promise<{ backupPath: string; storagePath: string }>;
+  status: () => Promise<LocationStatus>;
+  update: (input: {
+    backupPath?: string;
+    password: string;
+    storagePath?: string;
+  }) => Promise<{ restarting: true }>;
+}
+
 interface ElectronSessionsApi {
   complete: (input: unknown) => Promise<SessionMutationResult>;
   get: (sessionId: string) => Promise<ArcherySession | undefined>;
@@ -78,6 +98,7 @@ declare global {
       backend: {
         auth: ElectronAuthApi;
         collections: ElectronCollectionsApi;
+        location: ElectronLocationApi;
         photos: ElectronPhotosApi;
         preferences: ElectronPreferencesApi;
         sessions: ElectronSessionsApi;

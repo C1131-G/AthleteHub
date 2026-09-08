@@ -45,6 +45,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
       status: () => ipcRenderer.invoke("auth.status"),
     },
     collections: collectionBridge(),
+    location: {
+      choose: () => ipcRenderer.invoke("location.choose"),
+      setup: (input) => ipcRenderer.invoke("location.setup", input),
+      status: () => ipcRenderer.invoke("location.status"),
+      update: (input) => ipcRenderer.invoke("location.update", input),
+    },
     photos: {
       read: (name) => ipcRenderer.invoke("photos.read", name),
       save: (input) => ipcRenderer.invoke("photos.save", input),

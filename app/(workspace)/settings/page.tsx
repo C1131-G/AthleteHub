@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { BackupPanel } from "@/features/backend/components/backup-panel";
 import { PreferencesPanel } from "@/features/backend/components/preferences-panel";
+import { StoragePanel } from "@/features/backend/components/storage-panel";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -22,6 +23,7 @@ const SettingsPage = () => (
       <ThemeSwitcher />
     </div>
     <PreferencesPanel />
+    <StoragePanel />
     <BackupPanel />
   </div>
 );
