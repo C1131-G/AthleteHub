@@ -613,6 +613,9 @@
         const input = document.getElementById(
           toggle.getAttribute("aria-controls")
         );
+        if (!input) {
+          continue;
+        }
         const [eyeOpen, eyeClosed] = toggle.querySelectorAll("svg");
         const setHidden = (element, hidden) => {
           if (hidden) {
@@ -826,9 +829,12 @@
           const { configured } = await auth.status();
           showView(configured ? "login-view" : "setup-view");
         } catch {
-          showView("login-view");
+          // Default to setup so a fresh install can still create an account.
+          // If an account already exists, submitting the setup form returns a
+          // clear "already configured" error and the user can restart instead.
+          showView("setup-view");
           setError(
-            "Could not check the account state. Try restarting the app."
+            "Could not verify your account. Create one below, or restart the app if you already have an account."
           );
         }
       };
