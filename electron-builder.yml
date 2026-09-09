@@ -51,6 +51,13 @@ extraResources:
 asar: true
 afterPack: scripts/after-pack.mjs
 
+# The app has no i18n — every string is hard-coded English — so Electron's
+# other ~54 bundled Chromium locale .pak files (~47 MB) are pure dead weight.
+# Native OS dialogs (open/save, etc.) render in English regardless of system
+# language, which is the accepted tradeoff until the app itself is localized.
+electronLanguages:
+  - en-US
+
 # Every runtime dependency ships inside `.next/standalone`, and `@libsql` uses
 # prebuilt binaries rather than node-gyp, so there is nothing to rebuild — and
 # rebuilding would fail anyway now that `node_modules` is excluded from `files`.
@@ -81,6 +88,19 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: AthleteHub
+  # Adds the data/backup folder page (build-resources/installer.nsh) right
+  # after the install-location page, so first-run folder choice happens
+  # during the installer instead of the app's own first-launch screen.
+  include: build-resources/installer.nsh
+  # The bundled NSIS compiler (3.0.4, from 2018) emits a false-positive
+  # "not referenced - zeroing code out" for our page-callback functions —
+  # they're only reachable through electron-builder's own
+  # customPageAfterChangeDir macro (in a different, later-processed file),
+  # which its dead-code scanner doesn't see across. GetFunctionAddress (in
+  # installer.nsh's customInit) didn't change the warning either. Confirmed
+  # by actually running the built installer that the page and its
+  # functions work correctly with this off — see build-resources/installer.nsh.
+  warningsAsErrors: false
 
 mac:
   category: public.app-category.healthcare-fitness
