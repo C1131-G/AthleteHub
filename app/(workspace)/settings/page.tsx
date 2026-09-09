@@ -5,6 +5,7 @@ import { BackupPanel } from "@/features/backend/components/backup-panel";
 import { ChangePasswordPanel } from "@/features/backend/components/change-password-panel";
 import { PreferencesPanel } from "@/features/backend/components/preferences-panel";
 import { StoragePanel } from "@/features/backend/components/storage-panel";
+import { UpdatePanel } from "@/features/backend/components/update-panel";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -27,6 +28,7 @@ const SettingsPage = () => (
     <StoragePanel />
     <BackupPanel />
     <ChangePasswordPanel />
+    <UpdatePanel />
   </div>
 );
 
