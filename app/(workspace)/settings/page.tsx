@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { BackupPanel } from "@/features/backend/components/backup-panel";
+import { ChangePasswordPanel } from "@/features/backend/components/change-password-panel";
 import { PreferencesPanel } from "@/features/backend/components/preferences-panel";
 import { StoragePanel } from "@/features/backend/components/storage-panel";
 
@@ -25,6 +26,7 @@ const SettingsPage = () => (
     <PreferencesPanel />
     <StoragePanel />
     <BackupPanel />
+    <ChangePasswordPanel />
   </div>
 );
 

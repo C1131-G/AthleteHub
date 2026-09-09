@@ -31,6 +31,10 @@ type ElectronCollectionsApi = {
 };
 
 interface ElectronAuthApi {
+  changePassword: (input: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<{ success: true }>;
   login: (input: {
     password: string;
     username: string;
@@ -92,6 +96,25 @@ interface ElectronSessionsApi {
   saveDraft: (input: unknown) => Promise<SessionMutationResult>;
 }
 
+/**
+ * Mirrors electron/ipc/updates.cjs's broadcast shape. "downloading" covers
+ * both the initial "found one" moment and progress ticks — `percent` only
+ * shows up once the first tick arrives.
+ */
+export type UpdateStatus =
+  | { state: "idle" }
+  | { state: "checking" }
+  | { percent?: number; state: "downloading"; version: string }
+  | { state: "ready"; version: string }
+  | { message: string; state: "error" };
+
+interface ElectronUpdateApi {
+  check: () => Promise<UpdateStatus>;
+  install: () => Promise<void>;
+  onChange: (listener: (status: UpdateStatus) => void) => () => void;
+  status: () => Promise<UpdateStatus>;
+}
+
 declare global {
   interface Window {
     electronAPI?: {
@@ -102,6 +125,7 @@ declare global {
         photos: ElectronPhotosApi;
         preferences: ElectronPreferencesApi;
         sessions: ElectronSessionsApi;
+        update: ElectronUpdateApi;
       };
       platform: string;
     };

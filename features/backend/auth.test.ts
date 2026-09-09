@@ -169,6 +169,37 @@ bunDescribe("owner authentication", () => {
   );
 
   bunTest(
+    "changes the password only when the current one is confirmed",
+    async () => {
+      await auth.setup({
+        password: "password one",
+        username: "owner",
+      });
+
+      bunExpect(
+        auth.changePassword({
+          currentPassword: "wrong password",
+          newPassword: "password two",
+        })
+      ).rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
+
+      const changed = await auth.changePassword({
+        currentPassword: "password one",
+        newPassword: "password two",
+      });
+      bunExpect(changed.success).toBe(true);
+
+      await auth.logout();
+      bunExpect(
+        auth.login({ password: "password one", username: "owner" })
+      ).rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
+      bunExpect(
+        auth.login({ password: "password two", username: "owner" })
+      ).resolves.toMatchObject({ authenticated: true });
+    }
+  );
+
+  bunTest(
     "clears an email-based owner so the install is set up again",
     async () => {
       await database.close();

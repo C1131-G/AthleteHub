@@ -29,6 +29,7 @@ import {
   WorkspaceNavigation,
   WorkspaceNavigationSkeleton,
 } from "./workspace-navigation";
+import { WorkspaceUpdateNotice } from "./workspace-update-notice";
 
 interface AthleteShellClientProps {
   backLink: ReactNode;
@@ -82,6 +83,7 @@ export const AthleteShellClient = ({
             </SidebarContent>
             <SidebarFooter>
               <SidebarMenu>
+                <WorkspaceUpdateNotice />
                 <WorkspaceLogout />
               </SidebarMenu>
             </SidebarFooter>

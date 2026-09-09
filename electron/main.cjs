@@ -28,6 +28,7 @@ const { setTimeout: delay } = require("node:timers/promises");
 const { z } = require("zod");
 const { registerPreferenceHandlers } = require("./ipc/preferences.cjs");
 const { registerPhotoHandlers } = require("./ipc/photos.cjs");
+const { registerUpdateHandlers } = require("./ipc/updates.cjs");
 
 const HOST = "127.0.0.1";
 const PROJECT_ROOT = path.resolve(__dirname, "..");
@@ -521,6 +522,10 @@ const registerIpcHandlers = () => {
   handleAuth("auth.recover", (service, input) => service.recover(input), {
     allowLoginWindow: true,
   });
+  handleAuth("auth.changePassword", async (service, input) => {
+    await service.requireSession();
+    return service.changePassword(input);
+  });
   handleAuth("auth.logout", async (service, _input, event) => {
     await service.logout();
     if (event.sender.getURL() !== loginWindowUrl()) {
@@ -654,6 +659,15 @@ const registerIpcHandlers = () => {
     getRuntime: () => runtime,
     ipcMain,
     startBackendRuntime,
+  });
+  registerUpdateHandlers({
+    assertTrustedSender: (event) => assertTrustedSender(event),
+    getWindows: () => BrowserWindow.getAllWindows(),
+    ipcMain,
+    // Strictly app.isPackaged, not isProduction: a --production preview run
+    // has no app-update.yml (electron-builder only writes one when it
+    // packages), so checking there would just surface a stray error banner.
+    isPackaged: app.isPackaged,
   });
   registerPhotoHandlers({
     getRuntime: () => runtime,

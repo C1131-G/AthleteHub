@@ -33,6 +33,10 @@ const recoverySchema = z.object({
   recoveryCode: z.string().min(16),
   username: usernameSchema,
 });
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(8),
+  newPassword: z.string().min(8),
+});
 
 export type AuthErrorCode =
   | "ALREADY_CONFIGURED"
@@ -52,6 +56,7 @@ export class AuthError extends Error {
 }
 
 export interface AuthService {
+  changePassword: (input: unknown) => Promise<{ success: true }>;
   isAuthenticated: () => boolean;
   login: (input: unknown) => Promise<{ authenticated: true }>;
   logout: () => Promise<void>;
@@ -285,7 +290,45 @@ export const createAuthService = (database: DatabaseContext): AuthService => {
     return matches(passwordHash, owner.passwordHash);
   };
 
+  /**
+   * Rotates the owner's password from within an already-authenticated
+   * session (the Settings page). The recovery code is left untouched — it is
+   * an independent secret, not derived from the password.
+   */
+  const changePassword = async (input: unknown) => {
+    const parsed = changePasswordSchema.safeParse(input);
+    if (!parsed.success) {
+      throw new AuthError(
+        "VALIDATION_ERROR",
+        "A valid current and new password are required."
+      );
+    }
+    const owner = await getOwner();
+    if (!owner) {
+      throw new AuthError("UNAUTHENTICATED", "Log in to continue.");
+    }
+    const currentHash = await derive(
+      parsed.data.currentPassword,
+      owner.passwordSalt
+    );
+    if (!matches(currentHash, owner.passwordHash)) {
+      throw new AuthError(
+        "INVALID_CREDENTIALS",
+        "The current password is incorrect."
+      );
+    }
+    const passwordSalt = ownedBytes(randomBytes(16));
+    const passwordHash = await derive(parsed.data.newPassword, passwordSalt);
+    await database.owner.update({
+      passwordHash,
+      passwordSalt,
+      updatedAt: new Date(),
+    });
+    return { success: true as const };
+  };
+
   return {
+    changePassword,
     isAuthenticated: () => authenticated,
     login,
     logout: () => {

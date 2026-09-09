@@ -12,6 +12,27 @@ files:
   - electron/**/*
   - package.json
   - "!node_modules/**"
+  # electron-updater runs in the main process (electron/ipc/updates.cjs), so
+  # unlike renderer/backend dependencies it isn't bundled by anything — it
+  # and its runtime dependency closure have to ship in the asar explicitly.
+  # Kept as one list per package (rather than a single "electron-updater/**")
+  # so a missing transitive dependency fails loudly as a packaging error
+  # instead of a runtime "Cannot find module" in the shipped app.
+  - node_modules/electron-updater/**/*
+  - node_modules/builder-util-runtime/**/*
+  - node_modules/fs-extra/**/*
+  - node_modules/js-yaml/**/*
+  - node_modules/lazy-val/**/*
+  - node_modules/lodash.escaperegexp/**/*
+  - node_modules/lodash.isequal/**/*
+  - node_modules/semver/**/*
+  - node_modules/tiny-typed-emitter/**/*
+  - node_modules/debug/**/*
+  - node_modules/sax/**/*
+  - node_modules/graceful-fs/**/*
+  - node_modules/jsonfile/**/*
+  - node_modules/universalify/**/*
+  - node_modules/ms/**/*
 
 # Kept outside the asar: the Next server resolves `.next` and `public` from the
 # real filesystem relative to server.js.
