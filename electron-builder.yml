@@ -33,6 +33,7 @@ files:
   - node_modules/jsonfile/**/*
   - node_modules/universalify/**/*
   - node_modules/ms/**/*
+  - node_modules/zod/**/*
 
 # Kept outside the asar: the Next server resolves `.next` and `public` from the
 # real filesystem relative to server.js.
