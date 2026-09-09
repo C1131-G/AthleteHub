@@ -547,7 +547,12 @@
     </main>
     <script>
       const auth = window.electronAPI?.backend?.auth;
-      const location = window.electronAPI?.backend?.location;
+      // Named locationApi, not location: `const location = ...` throws a
+      // SyntaxError ("Identifier 'location' has already been declared")
+      // because `location` is the window's built-in, non-configurable
+      // global — and that error kills parsing of this whole inline script,
+      // silently stranding every view on its default HTML visibility.
+      const locationApi = window.electronAPI?.backend?.location;
       const desktop = window.electronAPI?.desktop;
       // Each view is a section plus (except the code view) its form, paired
       // by data-view so the pair is shown and hidden together.
@@ -588,7 +593,7 @@
       };
 
       const requireLocation = () => {
-        if (!location) {
+        if (!locationApi) {
           setError("Open the AthleteHub desktop app to choose folders.");
           return false;
         }
@@ -730,7 +735,7 @@
           if (!requireLocation()) {
             return;
           }
-          const picked = await location.choose();
+          const picked = await locationApi.choose();
           if (!picked) {
             return;
           }
@@ -756,7 +761,7 @@
         const submitButton = locationForm.querySelector("button[type=submit]");
         setPending(submitButton, "Saving…");
         try {
-          await location.setup({
+          await locationApi.setup({
             backupPath: chosenBackupPath,
             storagePath: chosenStoragePath,
           });
@@ -808,13 +813,13 @@
       });
 
       const bootstrap = async () => {
-        if (!location || !auth) {
+        if (!locationApi || !auth) {
           setError("Open the AthleteHub desktop app to continue.");
           return;
         }
         let locationStatus;
         try {
-          locationStatus = await location.status();
+          locationStatus = await locationApi.status();
         } catch {
           setError(
             "Could not check the storage location. Try restarting the app."
