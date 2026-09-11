@@ -50,7 +50,7 @@ export const buildBackupBundle = async (): Promise<BackupBundle> => {
 export const exportBackup = async () => {
   const bundle = await buildBackupBundle();
   downloadFile(
-    `athletehub-backup-${timestamp()}.json`,
+    `athlete360-backup-${timestamp()}.json`,
     JSON.stringify(bundle, null, 2),
     "application/json"
   );
@@ -72,11 +72,13 @@ export const restoreBackup = async (
   try {
     parsed = JSON.parse(contents);
   } catch {
-    return { error: "That file is not a readable AthleteHub backup." };
+    return { error: "That file is not a readable SSAIT Athlete360 backup." };
   }
   const bundle = bundleSchema.safeParse(parsed);
   if (!bundle.success) {
-    return { error: "That file is not an AthleteHub backup of this version." };
+    return {
+      error: "That file is not an SSAIT Athlete360 backup of this version.",
+    };
   }
 
   const counts = await Promise.all(

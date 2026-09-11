@@ -7,7 +7,7 @@
       content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AthleteHub — Log in</title>
+    <title>SSAIT Athlete360 — Log in</title>
     <style>
       :root {
         --background: #ffffff;
@@ -150,22 +150,6 @@
         inline-size: 1.125rem;
       }
 
-      .path-field {
-        display: flex;
-        gap: 0.5rem;
-      }
-
-      .path-field input {
-        color: var(--muted-foreground);
-        flex: 1;
-        min-inline-size: 0;
-      }
-
-      .path-field button {
-        flex-shrink: 0;
-        white-space: nowrap;
-      }
-
       button {
         background: var(--primary);
         border: none;
@@ -219,6 +203,33 @@
         margin: 1rem 0 0;
       }
 
+      .recovery-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .recovery-actions button {
+        flex: 1;
+      }
+
+      button.secondary {
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--foreground);
+      }
+
+      button.secondary:hover:enabled {
+        background: var(--card);
+        opacity: 1;
+      }
+
+      .recovery-status {
+        color: var(--muted-foreground);
+        font-size: 0.875rem;
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+
       .recovery-code {
         background: var(--card);
         border: 1px solid var(--border);
@@ -243,7 +254,7 @@
     <main>
       <section class="intro" data-view="login" id="login-view">
         <h1>Welcome back</h1>
-        <p>Log in to your AthleteHub account</p>
+        <p>Log in to your SSAIT Athlete360 account</p>
       </section>
       <form data-view="login" id="login-form">
         <label for="login-username">Username</label>
@@ -310,38 +321,8 @@
         </button>
       </form>
 
-      <section class="intro" data-view="location" hidden id="location-view">
-        <h1>Choose where AthleteHub keeps your data</h1>
-        <p>
-          Pick a folder to store your data and a separate folder for backups.
-        </p>
-      </section>
-      <form data-view="location" hidden id="location-form">
-        <label for="storage-path-display">Data folder</label>
-        <div class="path-field">
-          <input
-            id="storage-path-display"
-            readonly
-            type="text"
-            value="Not selected"
-          />
-          <button data-target="storage" type="button">Choose folder…</button>
-        </div>
-        <label for="backup-path-display">Backup folder</label>
-        <div class="path-field">
-          <input
-            id="backup-path-display"
-            readonly
-            type="text"
-            value="Not selected"
-          />
-          <button data-target="backup" type="button">Choose folder…</button>
-        </div>
-        <button type="submit">Continue</button>
-      </form>
-
       <section class="intro" data-view="setup" hidden id="setup-view">
-        <h1>Welcome to AthleteHub</h1>
+        <h1>Welcome to SSAIT Athlete360</h1>
         <p>Create your account to get started.</p>
       </section>
       <form data-view="setup" hidden id="setup-form">
@@ -538,8 +519,22 @@
           if you forget your password. You will not be shown it again.
         </p>
         <output class="recovery-code" id="recovery-code-value"></output>
+        <div class="recovery-actions">
+          <button class="secondary" id="copy-recovery-code" type="button">
+            Copy code
+          </button>
+          <button class="secondary" id="save-recovery-code" type="button">
+            Save as text file
+          </button>
+        </div>
+        <p
+          class="recovery-status"
+          hidden
+          id="recovery-status"
+          role="status"
+        ></p>
         <button id="continue-to-app" type="button">
-          Continue to AthleteHub
+          Continue to SSAIT Athlete360
         </button>
       </section>
 
@@ -547,12 +542,6 @@
     </main>
     <script>
       const auth = window.electronAPI?.backend?.auth;
-      // Named locationApi, not location: `const location = ...` throws a
-      // SyntaxError ("Identifier 'location' has already been declared")
-      // because `location` is the window's built-in, non-configurable
-      // global — and that error kills parsing of this whole inline script,
-      // silently stranding every view on its default HTML visibility.
-      const locationApi = window.electronAPI?.backend?.location;
       const desktop = window.electronAPI?.desktop;
       // Each view is a section plus (except the code view) its form, paired
       // by data-view so the pair is shown and hidden together.
@@ -577,8 +566,16 @@
         errorParagraph.hidden = message === "";
       };
 
+      const recoveryStatus = document.getElementById("recovery-status");
+
+      const setRecoveryStatus = (message) => {
+        recoveryStatus.textContent = message;
+        recoveryStatus.hidden = message === "";
+      };
+
       const showView = (id) => {
         setError("");
+        setRecoveryStatus("");
         for (const view of views) {
           view.hidden = view.dataset.view !== id.replace("-view", "");
         }
@@ -586,15 +583,9 @@
 
       const requireDesktop = () => {
         if (!auth || !desktop) {
-          setError("Open the AthleteHub desktop app to manage your account.");
-          return false;
-        }
-        return true;
-      };
-
-      const requireLocation = () => {
-        if (!locationApi) {
-          setError("Open the AthleteHub desktop app to choose folders.");
+          setError(
+            "Open the SSAIT Athlete360 desktop app to manage your account."
+          );
           return false;
         }
         return true;
@@ -606,7 +597,7 @@
       };
 
       for (const button of document.querySelectorAll(
-        "form button[type=submit], #continue-to-app"
+        "form button[type=submit], #continue-to-app, #save-recovery-code"
       )) {
         button.dataset.label = button.textContent;
       }
@@ -644,7 +635,7 @@
       }
 
       const continueToApp = async (button) => {
-        setPending(button, "Starting AthleteHub…");
+        setPending(button, "Starting SSAIT Athlete360…");
         try {
           await desktop.continueToApp("/dashboard");
           // On success the navigation tears this page down first.
@@ -682,7 +673,7 @@
             return;
           }
           // The login itself succeeded; what is left is reaching the app.
-          setPending(submitButton, "Starting AthleteHub…");
+          setPending(submitButton, "Starting SSAIT Athlete360…");
           try {
             await desktop.continueToApp("/dashboard");
             // On success the navigation tears this page down first.
@@ -720,58 +711,6 @@
           }
         });
 
-      const locationForm = document.getElementById("location-form");
-      const storagePathDisplay = document.getElementById(
-        "storage-path-display"
-      );
-      const backupPathDisplay = document.getElementById("backup-path-display");
-      let chosenStoragePath = "";
-      let chosenBackupPath = "";
-
-      for (const chooseButton of locationForm.querySelectorAll(
-        "button[data-target]"
-      )) {
-        chooseButton.addEventListener("click", async () => {
-          if (!requireLocation()) {
-            return;
-          }
-          const picked = await locationApi.choose();
-          if (!picked) {
-            return;
-          }
-          if (chooseButton.dataset.target === "storage") {
-            chosenStoragePath = picked;
-            storagePathDisplay.value = picked;
-          } else {
-            chosenBackupPath = picked;
-            backupPathDisplay.value = picked;
-          }
-        });
-      }
-
-      locationForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        if (!requireLocation()) {
-          return;
-        }
-        if (!chosenStoragePath || !chosenBackupPath) {
-          setError("Choose both a data folder and a backup folder.");
-          return;
-        }
-        const submitButton = locationForm.querySelector("button[type=submit]");
-        setPending(submitButton, "Saving…");
-        try {
-          await locationApi.setup({
-            backupPath: chosenBackupPath,
-            storagePath: chosenStoragePath,
-          });
-          showView("setup-view");
-        } catch (error) {
-          setPending(submitButton, null);
-          setError(readableError(error));
-        }
-      });
-
       document
         .getElementById("recovery-form")
         .addEventListener("submit", async (event) => {
@@ -805,6 +744,41 @@
           }
         });
 
+      document
+        .getElementById("copy-recovery-code")
+        .addEventListener("click", async () => {
+          if (!requireDesktop()) {
+            return;
+          }
+          try {
+            await desktop.copyRecoveryCode(recoveryCodeValue.textContent);
+            setRecoveryStatus("Recovery code copied to the clipboard.");
+          } catch (error) {
+            setRecoveryStatus("");
+            setError(readableError(error));
+          }
+        });
+
+      document
+        .getElementById("save-recovery-code")
+        .addEventListener("click", async (event) => {
+          if (!requireDesktop()) {
+            return;
+          }
+          const button = event.currentTarget;
+          setPending(button, "Saving…");
+          try {
+            const result = await desktop.saveRecoveryCode(
+              recoveryCodeValue.textContent
+            );
+            setRecoveryStatus(result.saved ? `Saved to ${result.path}` : "");
+          } catch (error) {
+            setRecoveryStatus("");
+            setError(readableError(error));
+          }
+          setPending(button, null);
+        });
+
       document.getElementById("show-recovery").addEventListener("click", () => {
         showView("recovery-view");
       });
@@ -812,22 +786,15 @@
         showView("login-view");
       });
 
+      /**
+       * Where data lives is not asked here: the Windows installer writes
+       * location.json, and every other build falls back to the defaults under
+       * userData. Either way there is always a usable location by now, and it
+       * stays changeable in Settings, so this goes straight to the account.
+       */
       const bootstrap = async () => {
-        if (!locationApi || !auth) {
-          setError("Open the AthleteHub desktop app to continue.");
-          return;
-        }
-        let locationStatus;
-        try {
-          locationStatus = await locationApi.status();
-        } catch {
-          setError(
-            "Could not check the storage location. Try restarting the app."
-          );
-          return;
-        }
-        if (!locationStatus.configured) {
-          showView("location-view");
+        if (!auth) {
+          setError("Open the SSAIT Athlete360 desktop app to continue.");
           return;
         }
         try {

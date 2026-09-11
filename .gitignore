@@ -47,3 +47,10 @@ next-env.d.ts
 # Local backend bundle experiments
 /.tmp-backend-build/
 /electron/generated/
+
+# AI assistant / editor scratch — machine-local, not part of the app
+/.agents/
+/.claude/skills/
+/.windsurf/
+/.zcode/
+/skills-lock.json

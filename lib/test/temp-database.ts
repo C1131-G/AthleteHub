@@ -13,13 +13,13 @@ export interface TempDatabase {
 }
 
 const databaseUrlFor = (directory: string) =>
-  `file:${path.join(directory, "athletehub.db")}`;
+  `file:${path.join(directory, "athlete360.db")}`;
 
 export const createTempDatabase = async (
   label: string
 ): Promise<TempDatabase> => {
   const directory = await mkdtemp(
-    path.join(os.tmpdir(), `athletehub-${label}-`)
+    path.join(os.tmpdir(), `athlete360-${label}-`)
   );
   let database = await createDatabaseContext({
     databaseUrl: databaseUrlFor(directory),

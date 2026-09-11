@@ -30,9 +30,9 @@ let assessments: ConditioningAssessmentService;
 let programmes: ConditioningProgrammeService;
 
 bunBeforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-cond-"));
+  directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-cond-"));
   database = await createDatabaseContext({
-    databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+    databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
   });
   assessments = createConditioningAssessmentService(database.collections);
   programmes = createConditioningProgrammeService(database.collections);

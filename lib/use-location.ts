@@ -8,7 +8,6 @@ const LOCATION_KEY = ["storage-location"] as const;
 
 const DEFAULT_STATUS: LocationStatus = {
   backupPath: null,
-  configured: false,
   storagePath: null,
 };
 

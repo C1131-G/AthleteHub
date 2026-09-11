@@ -8,7 +8,7 @@ const NotFound = () => (
       aria-labelledby="not-found-title"
       className="flex min-h-96 flex-col items-center justify-center gap-4 text-center"
     >
-      <title>Page not found | AthleteHub</title>
+      <title>Page not found | SSAIT Athlete360</title>
       <h1 className="text-2xl font-semibold" id="not-found-title">
         Page not found
       </h1>

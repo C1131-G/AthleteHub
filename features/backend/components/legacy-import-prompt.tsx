@@ -78,10 +78,10 @@ export const LegacyImportPrompt = () => {
         <AlertDialogHeader>
           <AlertDialogTitle>Import your existing data</AlertDialogTitle>
           <AlertDialogDescription>
-            AthleteHub now stores athletes, reports, assessments, conditioning
-            and cycles in its own database instead of the browser. Import what
-            is already on this device to carry it across. Your existing data is
-            left untouched either way.
+            SSAIT Athlete360 now stores athletes, reports, assessments,
+            conditioning and cycles in its own database instead of the browser.
+            Import what is already on this device to carry it across. Your
+            existing data is left untouched either way.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

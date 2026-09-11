@@ -1,6 +1,7 @@
 const {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
   nativeTheme,
@@ -37,20 +38,20 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
  * Scratch-profile override for automated Electron runs so they never touch a
  * real database. Must be applied before anything resolves a userData path.
  */
-if (process.env.ATHLETEHUB_USER_DATA) {
-  app.setPath("userData", process.env.ATHLETEHUB_USER_DATA);
+if (process.env.ATHLETE360_USER_DATA) {
+  app.setPath("userData", process.env.ATHLETE360_USER_DATA);
 }
 
 const isProductionPreview = process.argv.includes("--production");
 const isProduction = app.isPackaged || isProductionPreview;
 
 /**
- * Set ATHLETEHUB_BOOT_TRACE=1 to print milliseconds-since-process-start for
+ * Set ATHLETE360_BOOT_TRACE=1 to print milliseconds-since-process-start for
  * each startup milestone, so regressions in time-to-interactive-login show up
  * before they are felt.
  */
 const bootMark = (label) => {
-  if (process.env.ATHLETEHUB_BOOT_TRACE === "1") {
+  if (process.env.ATHLETE360_BOOT_TRACE === "1") {
     console.error(`[boot-trace] ${label}: ${Math.round(performance.now())}ms`);
   }
 };
@@ -245,7 +246,9 @@ const startServer = async () => {
 
   const savedPort = readPersistedPort();
   if (savedPort !== null && !(await isPortAvailable(savedPort))) {
-    throw new Error(`AthleteHub server port ${savedPort} is already in use.`);
+    throw new Error(
+      `SSAIT Athlete360 server port ${savedPort} is already in use.`
+    );
   }
   const port = savedPort ?? (await findFreePort());
   if (savedPort === null) {
@@ -317,7 +320,7 @@ const locationConfigPath = () =>
   path.join(app.getPath("userData"), LOCATION_CONFIG_FILE);
 
 const legacyDatabasePath = () =>
-  path.join(app.getPath("userData"), "athletehub.db");
+  path.join(app.getPath("userData"), "athlete360.db");
 
 const defaultLocationConfig = () => ({
   backupPath: path.join(app.getPath("userData"), "backups"),
@@ -373,7 +376,7 @@ const ensureLocationConfig = () => {
 const databasePath = () =>
   path.join(
     (ensureLocationConfig() ?? defaultLocationConfig()).storagePath,
-    "athletehub.db"
+    "athlete360.db"
   );
 
 const backupDirectory = () =>
@@ -491,6 +494,35 @@ const navigateToLogin = (contents) => {
 /** Destinations the local login page may ask the main process to open. */
 const AUTHENTICATED_LOGIN_DESTINATIONS = new Set(["/dashboard"]);
 
+/**
+ * Recovery codes are four groups of four from electron/auth.ts's alphabet.
+ * Anything else is rejected rather than copied or written to disk, so these
+ * channels stay a recovery-code feature rather than a general-purpose
+ * clipboard and file writer for the renderer.
+ */
+const recoveryCodeSchema = z.string().regex(/^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/);
+
+const parseRecoveryCode = (value) => {
+  const parsed = recoveryCodeSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new Error("That is not a recovery code.");
+  }
+  return parsed.data;
+};
+
+const recoveryCodeDocument = (code) =>
+  [
+    "SSAIT Athlete360 — recovery code",
+    "",
+    code,
+    "",
+    "This code is the only way to reset your password if you forget it.",
+    "Keep this file somewhere safe, and separate from this computer.",
+    "",
+    `Saved ${new Date().toISOString().slice(0, 10)}`,
+    "",
+  ].join("\r\n");
+
 const registerIpcHandlers = () => {
   /**
    * The local login page owns the whole account surface — login, first-run
@@ -547,18 +579,48 @@ const registerIpcHandlers = () => {
     navigateToApp(event.sender, destination);
   });
 
+  ipcMain.handle("app.copyRecoveryCode", (event, code) => {
+    assertTrustedSender(event, { allowLoginWindow: true });
+    clipboard.writeText(parseRecoveryCode(code));
+  });
+
+  /**
+   * The renderer hands over the code and nothing else — the surrounding text
+   * and the extension are composed here, so this channel can never be used to
+   * write chosen bytes to a chosen path. The user still picks the location.
+   */
+  ipcMain.handle("app.saveRecoveryCode", async (event, code) => {
+    assertTrustedSender(event, { allowLoginWindow: true });
+    const recoveryCode = parseRecoveryCode(code);
+    const parentWindow = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showSaveDialog(parentWindow ?? undefined, {
+      defaultPath: "ssait-athlete360-recovery-code.txt",
+      filters: [{ extensions: ["txt"], name: "Text file" }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { saved: false };
+    }
+    writeFileSync(result.filePath, recoveryCodeDocument(recoveryCode), "utf-8");
+    return { path: result.filePath, saved: true };
+  });
+
   /**
    * Reachable from the local login page (before any account or database
    * exists) as well as from the running app's Settings page, so every handler
    * here trusts the login window in addition to the server origin.
    */
+  /**
+   * Reports the paths actually in use, falling back to the defaults when
+   * nothing has been configured — the app no longer asks where to put its
+   * data, so there is always an effective answer, and Settings should show it
+   * rather than "not configured".
+   */
   ipcMain.handle("location.status", (event) => {
     assertTrustedSender(event, { allowLoginWindow: true });
-    const config = ensureLocationConfig();
+    const config = ensureLocationConfig() ?? defaultLocationConfig();
     return {
-      backupPath: config?.backupPath ?? null,
-      configured: Boolean(config),
-      storagePath: config?.storagePath ?? null,
+      backupPath: config.backupPath,
+      storagePath: config.storagePath,
     };
   });
 
@@ -571,23 +633,6 @@ const registerIpcHandlers = () => {
     return result.canceled || result.filePaths.length === 0
       ? null
       : result.filePaths[0];
-  });
-
-  ipcMain.handle("location.setup", (event, input) => {
-    assertTrustedSender(event, { allowLoginWindow: true });
-    if (ensureLocationConfig()) {
-      throw new Error("Storage locations are already configured.");
-    }
-    const parsedInput = locationConfigSchema.safeParse(input);
-    if (!parsedInput.success) {
-      throw new Error("Choose both a storage folder and a backup folder.");
-    }
-    const { backupPath, storagePath } = parsedInput.data;
-    for (const candidate of [storagePath, backupPath]) {
-      mkdirSync(candidate, { recursive: true });
-      accessSync(candidate, fsConstants.W_OK);
-    }
-    return writeLocationConfig({ backupPath, storagePath });
   });
 
   ipcMain.handle("location.update", async (event, input) => {
@@ -618,8 +663,8 @@ const registerIpcHandlers = () => {
       runtimeReadyPromise = undefined;
     }
 
-    const currentDbPath = path.join(current.storagePath, "athletehub.db");
-    const nextDbPath = path.join(nextStoragePath, "athletehub.db");
+    const currentDbPath = path.join(current.storagePath, "athlete360.db");
+    const nextDbPath = path.join(nextStoragePath, "athlete360.db");
     if (nextStoragePath !== current.storagePath && existsSync(currentDbPath)) {
       copyFileSync(currentDbPath, nextDbPath);
     }
@@ -733,15 +778,11 @@ const createWindow = async () => {
  */
 const startServices = async () => {
   try {
-    // A fresh install has not chosen a storage location yet, so the backend
-    // (and its database) must wait for the login page's location.setup call
-    // instead of starting eagerly here — starting it against a location the
-    // user has not confirmed would create the database in the wrong place.
-    const tasks = [ensureServer()];
-    if (ensureLocationConfig()) {
-      tasks.push(startBackendRuntime());
-    }
-    await Promise.all(tasks);
+    // The storage location is settled before the app runs — written by the
+    // installer, or the defaults under userData — so the backend no longer
+    // has to wait for the user to confirm one and can warm up alongside the
+    // server.
+    await Promise.all([ensureServer(), startBackendRuntime()]);
   } catch (error) {
     console.error(error);
     app.quit();
@@ -831,10 +872,10 @@ const writeRollingBackup = () => {
     const directory = backupDirectory();
     mkdirSync(directory, { recursive: true });
     const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
-    copyFileSync(source, path.join(directory, `athletehub-${stamp}.db`));
+    copyFileSync(source, path.join(directory, `athlete360-${stamp}.db`));
 
     const existing = readdirSync(directory)
-      .filter((name) => name.startsWith("athletehub-") && name.endsWith(".db"))
+      .filter((name) => name.startsWith("athlete360-") && name.endsWith(".db"))
       .toSorted();
     for (const name of existing.slice(0, -backupCount)) {
       rmSync(path.join(directory, name), { force: true });

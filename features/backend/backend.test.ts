@@ -59,9 +59,9 @@ bunDescribe("local database backend", () => {
   let database: DatabaseContext;
 
   bunBeforeEach(async () => {
-    temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "athletehub-"));
+    temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "athlete360-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(temporaryDirectory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(temporaryDirectory, "athlete360.db")}`,
     });
   });
 
@@ -88,7 +88,7 @@ bunDescribe("local database backend", () => {
 
     await database.close();
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(temporaryDirectory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(temporaryDirectory, "athlete360.db")}`,
     });
 
     bunExpect(await database.listTestRecords()).toEqual([
@@ -112,7 +112,7 @@ bunDescribe("local database backend", () => {
 
   bunTest("reopening applies no migration twice", async () => {
     await database.close();
-    const url = `file:${path.join(temporaryDirectory, "athletehub.db")}`;
+    const url = `file:${path.join(temporaryDirectory, "athlete360.db")}`;
     const raw = createClient({ url });
     const before = await raw.execute(
       `SELECT "name", "appliedAt" FROM "_athletehub_migrations"`

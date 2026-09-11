@@ -22,9 +22,9 @@ let database: DatabaseContext;
 let service: WeeklyReportService;
 
 bunBeforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-report-"));
+  directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-report-"));
   database = await createDatabaseContext({
-    databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+    databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
   });
   service = createWeeklyReportService(database.collections);
 });

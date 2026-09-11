@@ -5,7 +5,7 @@ import { AthleteProfileSkeleton } from "@/features/athlete/components/athlete-pr
 import { EditAthlete } from "@/features/athlete/components/edit-athlete";
 
 export const metadata = {
-  description: "Edit an athlete profile in AthleteHub.",
+  description: "Edit an athlete profile in SSAIT Athlete360.",
   title: "Edit athlete",
 };
 

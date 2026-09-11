@@ -1,6 +1,6 @@
-appId: com.athletehub.desktop
-productName: AthleteHub
-copyright: Copyright © 2026 AthleteHub
+appId: com.ssait.athlete360
+productName: SSAIT Athlete360
+copyright: Copyright © 2026 SSAIT
 
 directories:
   buildResources: build-resources
@@ -64,8 +64,10 @@ electronLanguages:
 npmRebuild: false
 
 # One predictable name per platform/arch so release assets are unambiguous and
-# the README download links stay stable across versions.
-artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+# the README download links stay stable across versions. Spelled out rather
+# than built from ${productName}, which now contains a space that would end up
+# percent-encoded in every download URL.
+artifactName: SSAIT-Athlete360-${version}-${os}-${arch}.${ext}
 
 publish:
   provider: github
@@ -87,7 +89,7 @@ nsis:
   perMachine: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: AthleteHub
+  shortcutName: SSAIT Athlete360
   # Adds the data/backup folder page (build-resources/installer.nsh) right
   # after the install-location page, so first-run folder choice happens
   # during the installer instead of the app's own first-launch screen.
@@ -101,47 +103,3 @@ nsis:
   # by actually running the built installer that the page and its
   # functions work correctly with this off — see build-resources/installer.nsh.
   warningsAsErrors: false
-
-mac:
-  category: public.app-category.healthcare-fitness
-  # arm64 vs x64 is chosen per runner via the CLI flag; each build copies the
-  # host's native `@libsql` binary, so cross-arch packaging is not safe here.
-  target:
-    - dmg
-    - zip
-  icon: build-resources/icon.png
-  darkModeSupport: true
-  # No Apple Developer identity is configured; signing is skipped rather than
-  # failing the build. Users clear Gatekeeper manually (see README).
-  identity: null
-  hardenedRuntime: false
-
-dmg:
-  title: ${productName} ${version}
-
-linux:
-  category: Utility
-  synopsis: Offline-first training log for athletes and coaches
-  desktop:
-    entry:
-      Name: AthleteHub
-      Categories: Utility;Sports;
-  target:
-    - target: AppImage
-      arch: [x64]
-    - target: deb
-      arch: [x64]
-    - target: tar.gz
-      arch: [x64]
-  icon: build-resources/icon.png
-
-deb:
-  depends:
-    - libgtk-3-0
-    - libnotify4
-    - libnss3
-    - libxss1
-    - libxtst6
-    - xdg-utils
-    - libatspi2.0-0
-    - libsecret-1-0

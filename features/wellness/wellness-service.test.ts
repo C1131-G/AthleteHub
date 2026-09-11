@@ -32,9 +32,9 @@ bunDescribe("wellness collection", () => {
   let service: WellnessService;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-wellness-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-wellness-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     service = createWellnessService(database.collections);
   });
@@ -90,7 +90,7 @@ bunDescribe("wellness collection", () => {
     await service.create(entryInput("2026-09-01"));
     await database.close();
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     service = createWellnessService(database.collections);
     const reloaded = await service.list();

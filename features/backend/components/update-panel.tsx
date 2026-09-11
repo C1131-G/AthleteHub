@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAppUpdate } from "@/lib/use-app-update";
+import { cn } from "@/lib/utils";
 import type { UpdateStatus } from "@/types/electron";
 
 const STATUS_LABEL = {
@@ -45,13 +46,19 @@ export const UpdatePanel = () => {
       <CardHeader>
         <CardTitle>Updates</CardTitle>
         <CardDescription>
-          AthleteHub checks for new releases in the background. Check now to
-          look immediately instead of waiting.
+          SSAIT Athlete360 checks for new releases in the background. Check now
+          to look immediately instead of waiting.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex items-center justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-sm">
+      <CardContent className="flex items-start justify-between gap-4">
+        <div className="min-w-0 space-y-1">
+          <p
+            className={cn(
+              "text-sm break-words",
+              status.state === "error" && "text-destructive"
+            )}
+            {...(status.state === "error" ? { role: "alert" } : {})}
+          >
             {message}
             {version ? ` (${version})` : ""}
           </p>
@@ -60,9 +67,16 @@ export const UpdatePanel = () => {
           ) : null}
         </div>
         {status.state === "ready" ? (
-          <Button onClick={() => install()}>Restart and install</Button>
+          <Button className="shrink-0" onClick={() => install()}>
+            Restart and install
+          </Button>
         ) : (
-          <Button disabled={busy} onClick={() => check()} variant="outline">
+          <Button
+            className="shrink-0"
+            disabled={busy}
+            onClick={() => check()}
+            variant="outline"
+          >
             {busy ? "Checking…" : "Check for updates"}
           </Button>
         )}

@@ -9,7 +9,7 @@ const NewAthletePage = () => (
 );
 
 export const metadata = {
-  description: "Create an athlete profile in AthleteHub.",
+  description: "Create an athlete profile in SSAIT Athlete360.",
   title: "Add athlete",
 };
 

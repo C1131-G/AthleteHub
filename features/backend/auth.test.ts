@@ -70,9 +70,9 @@ const seedLegacyOwner = async (databaseUrl: string) => {
 
 bunDescribe("owner authentication", () => {
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(tmpdir(), "athletehub-auth-"));
+    directory = await mkdtemp(path.join(tmpdir(), "athlete360-auth-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     auth = createAuthService(database);
   });
@@ -204,9 +204,9 @@ bunDescribe("owner authentication", () => {
     async () => {
       await database.close();
       const legacyDirectory = await mkdtemp(
-        path.join(tmpdir(), "athletehub-legacy-")
+        path.join(tmpdir(), "athlete360-legacy-")
       );
-      const legacyUrl = `file:${path.join(legacyDirectory, "athletehub.db")}`;
+      const legacyUrl = `file:${path.join(legacyDirectory, "athlete360.db")}`;
       await seedLegacyOwner(legacyUrl);
 
       const migrated = await createDatabaseContext({ databaseUrl: legacyUrl });
@@ -224,7 +224,7 @@ bunDescribe("owner authentication", () => {
       await migrated.close();
       await removeDirectory(legacyDirectory);
       database = await createDatabaseContext({
-        databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+        databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
       });
     }
   );

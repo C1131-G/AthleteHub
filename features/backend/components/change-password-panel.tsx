@@ -80,7 +80,7 @@ export const ChangePasswordPanel = () => {
       <CardHeader>
         <CardTitle>Password</CardTitle>
         <CardDescription>
-          Change the password used to unlock AthleteHub on this device.
+          Change the password used to unlock SSAIT Athlete360 on this device.
         </CardDescription>
       </CardHeader>
       <CardContent>

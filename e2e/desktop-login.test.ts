@@ -20,7 +20,7 @@ import { createDatabaseContext } from "../electron/backend";
  * between the login window and the data channels.
  *
  * The scratch profile points app.getPath("userData") at a throwaway directory
- * (via ATHLETEHUB_USER_DATA), so these tests never touch a real database and
+ * (via ATHLETE360_USER_DATA), so these tests never touch a real database and
  * get a predictable port. Leftover temp directories are not deleted: Windows
  * holds them briefly after the app exits.
  *
@@ -28,7 +28,7 @@ import { createDatabaseContext } from "../electron/backend";
  * each test boots its own server on its own port. First launch in a scratch
  * profile pays the V8 compile-cache population, hence the raised timeouts.
  */
-const USER_DATA_ENV = "ATHLETEHUB_USER_DATA";
+const USER_DATA_ENV = "ATHLETE360_USER_DATA";
 const OWNER_CREDENTIALS = {
   password: "correct horse battery staple",
   username: "owner",
@@ -36,11 +36,11 @@ const OWNER_CREDENTIALS = {
 const BOOT_BUDGET_MS = 180_000;
 
 const newScratchUserData = () =>
-  mkdtemp(path.join(tmpdir(), "athletehub-e2e-"));
+  mkdtemp(path.join(tmpdir(), "athlete360-e2e-"));
 
 const seedOwner = async (userData: string) => {
   const database = await createDatabaseContext({
-    databaseUrl: `file:${path.join(userData, "athletehub.db")}`,
+    databaseUrl: `file:${path.join(userData, "athlete360.db")}`,
   });
   const auth = createAuthService(database);
   await auth.setup(OWNER_CREDENTIALS);
@@ -120,7 +120,7 @@ playwrightTest.describe("desktop login", () => {
         ).toHaveText(/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
 
         await appWindow
-          .getByRole("button", { name: "Continue to AthleteHub" })
+          .getByRole("button", { name: "Continue to SSAIT Athlete360" })
           .click();
         await playwrightExpect(appWindow).toHaveURL(/\/dashboard/);
         // The account created on the login page is already signed in.

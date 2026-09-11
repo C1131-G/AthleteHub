@@ -31,10 +31,10 @@ bunDescribe("athlete service", () => {
   let directory: string;
   let database: DatabaseContext;
   let service: AthleteService;
-  const databaseUrl = () => `file:${path.join(directory, "athletehub.db")}`;
+  const databaseUrl = () => `file:${path.join(directory, "athlete360.db")}`;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-athlete-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-athlete-"));
     database = await createDatabaseContext({ databaseUrl: databaseUrl() });
     service = createAthleteService(database.collections);
   });

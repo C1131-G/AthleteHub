@@ -4,7 +4,7 @@ import {
   test as playwrightTest,
 } from "@playwright/test";
 
-playwrightTest.describe("AthleteHub instant navigation", () => {
+playwrightTest.describe("SSAIT Athlete360 instant navigation", () => {
   const workspaceRoutes = [
     ["dashboard", "/dashboard", "Performance dashboard"],
     ["reports", "/reports", "Reports"],
@@ -51,7 +51,7 @@ playwrightTest.describe("AthleteHub instant navigation", () => {
             ).toBeVisible();
             if (route === "/dashboard") {
               await playwrightExpect(page).toHaveTitle(
-                "Dashboard | AthleteHub"
+                "Dashboard | SSAIT Athlete360"
               );
             }
           },

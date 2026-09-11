@@ -22,9 +22,9 @@ let database: DatabaseContext;
 let service: MonthlyCycleService;
 
 bunBeforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-cycle-"));
+  directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-cycle-"));
   database = await createDatabaseContext({
-    databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+    databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
   });
   service = createMonthlyCycleService(database.collections);
 });

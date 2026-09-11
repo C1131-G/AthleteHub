@@ -36,7 +36,7 @@ const FIELD_LABEL = {
  * Shows where the database and rolling backups live and lets the owner
  * relocate either one. Changing a location re-checks the account password
  * (electron/auth.ts's verifyPassword) before moving anything, since this is
- * the only password AthleteHub asks for.
+ * the only password SSAIT Athlete360 asks for.
  */
 export const StoragePanel = () => {
   const { available, chooseFolder, location, ready, update, updating } =
@@ -87,7 +87,8 @@ export const StoragePanel = () => {
         <CardHeader>
           <CardTitle>Storage</CardTitle>
           <CardDescription>
-            Where AthleteHub keeps your data and rolling backups on this device.
+            Where SSAIT Athlete360 keeps your data and rolling backups on this
+            device.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -137,7 +138,7 @@ export const StoragePanel = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm your password</AlertDialogTitle>
             <AlertDialogDescription>
-              AthleteHub will move your{" "}
+              SSAIT Athlete360 will move your{" "}
               {pendingChange && FIELD_LABEL[pendingChange.field]} to{" "}
               <span className="break-all">{pendingChange?.path}</span> and
               restart.

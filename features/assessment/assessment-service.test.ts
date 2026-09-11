@@ -27,9 +27,9 @@ let database: DatabaseContext;
 let service: AssessmentService;
 
 bunBeforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-assess-"));
+  directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-assess-"));
   database = await createDatabaseContext({
-    databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+    databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
   });
   service = createAssessmentService(database.collections);
 });

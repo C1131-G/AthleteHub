@@ -15,7 +15,7 @@ export const WorkspaceLogout = () => {
     // session is cleared; there is no in-app login page to route to.
     const auth = desktopAuth();
     if (!auth) {
-      setError("Open the AthleteHub desktop app to log out.");
+      setError("Open the SSAIT Athlete360 desktop app to log out.");
       return;
     }
     try {

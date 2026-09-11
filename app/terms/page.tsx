@@ -7,8 +7,8 @@ const TermsPage = () => (
     <section className="flex w-full max-w-md flex-col gap-4 text-center">
       <h1 className="text-2xl font-bold">Terms of Service</h1>
       <p className="text-muted-foreground">
-        AthleteHub is provided as-is for personal training records. Your data
-        lives in the local database and its rolling backups only.
+        SSAIT Athlete360 is provided as-is for personal training records. Your
+        data lives in the local database and its rolling backups only.
       </p>
     </section>
   </main>

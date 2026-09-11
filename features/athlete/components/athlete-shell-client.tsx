@@ -66,7 +66,7 @@ export const AthleteShellClient = ({
                 className="truncate px-2 font-semibold group-data-[collapsible=icon]:hidden"
                 href="/athletes"
               >
-                AthleteHub
+                SSAIT Athlete360
               </Link>
             </SidebarHeader>
             <SidebarContent>

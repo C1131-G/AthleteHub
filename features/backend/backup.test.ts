@@ -75,7 +75,7 @@ bunDescribe("exportBackup", () => {
 
     bunExpect(downloads).toHaveLength(1);
     const [download] = downloads;
-    bunExpect(download?.filename).toMatch(/^athletehub-backup-.+\.json$/);
+    bunExpect(download?.filename).toMatch(/^athlete360-backup-.+\.json$/);
     bunExpect(download?.type).toBe("application/json");
     bunExpect(JSON.parse(download?.contents ?? "")).toEqual(bundle);
   });
@@ -86,7 +86,7 @@ bunDescribe("restoreBackup", () => {
     resetFakes();
 
     bunExpect(await restoreBackup("not json")).toEqual({
-      error: "That file is not a readable AthleteHub backup.",
+      error: "That file is not a readable SSAIT Athlete360 backup.",
     });
   });
 
@@ -102,7 +102,7 @@ bunDescribe("restoreBackup", () => {
         })
       )
     ).toEqual({
-      error: "That file is not an AthleteHub backup of this version.",
+      error: "That file is not an SSAIT Athlete360 backup of this version.",
     });
   });
 

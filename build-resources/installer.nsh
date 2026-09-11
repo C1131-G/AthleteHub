@@ -1,14 +1,22 @@
 ; Adds a custom installer page — shown right after the "choose install
-; directory" page, before files are copied — that asks where AthleteHub
+; directory" page, before files are copied — that asks where SSAIT Athlete360
 ; should store its data and where it should keep rolling backups. The
 ; app itself (electron/main.cjs, electron/location-config.ts) reads the
-; same file this writes ($APPDATA\AthleteHub\location.json) on first
+; same file this writes ($APPDATA\SSAIT Athlete360\location.json) on first
 ; launch and, finding it already configured, skips straight past its own
 ; in-app "choose a folder" screen into account setup.
 ;
 ; Skipped entirely on an update/reinstall: if location.json already
 ; exists, the page never shows and the file is never touched, so an
 ; existing install's chosen folders (and its data) are never disturbed.
+;
+; The "$APPDATA\SSAIT Athlete360" path below must stay byte-identical to
+; Electron's app.getPath("userData"), which resolves to %APPDATA%\<app name>
+; — and the app name comes from "productName" in package.json (it falls back
+; to "name", which is the lowercase slug, if productName is ever removed).
+; If the two drift apart the page still renders and still writes a file, but
+; the app reads a different path, never sees it, and silently falls back to
+; asking again on first launch.
 
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
@@ -22,7 +30,7 @@ Var AthChosenBackup
 
 !macro customInit
   StrCpy $AthLocationConfigured "0"
-  ${If} ${FileExists} "$APPDATA\AthleteHub\location.json"
+  ${If} ${FileExists} "$APPDATA\SSAIT Athlete360\location.json"
     StrCpy $AthLocationConfigured "1"
   ${EndIf}
 
@@ -66,10 +74,10 @@ Function AthLocationPageCreate
   ${EndIf}
 
   ${If} $AthChosenStorage == ""
-    StrCpy $AthChosenStorage "$APPDATA\AthleteHub"
+    StrCpy $AthChosenStorage "$APPDATA\SSAIT Athlete360"
   ${EndIf}
   ${If} $AthChosenBackup == ""
-    StrCpy $AthChosenBackup "$APPDATA\AthleteHub\backups"
+    StrCpy $AthChosenBackup "$APPDATA\SSAIT Athlete360\backups"
   ${EndIf}
 
   nsDialogs::Create 1018
@@ -78,7 +86,7 @@ Function AthLocationPageCreate
     Abort
   ${EndIf}
 
-  ${NSD_CreateLabel} 0 0u 100% 24u "Choose where AthleteHub keeps your data and rolling backups. You can change these later from within the app."
+  ${NSD_CreateLabel} 0 0u 100% 24u "Choose where SSAIT Athlete360 keeps your data and rolling backups. You can change these later from within the app."
   Pop $0
 
   ${NSD_CreateLabel} 0 32u 100% 10u "Data folder"
@@ -105,16 +113,16 @@ Function AthLocationPageLeave
   ${NSD_GetText} $AthBackupField $AthChosenBackup
 
   ${If} $AthChosenStorage == ""
-    StrCpy $AthChosenStorage "$APPDATA\AthleteHub"
+    StrCpy $AthChosenStorage "$APPDATA\SSAIT Athlete360"
   ${EndIf}
   ${If} $AthChosenBackup == ""
-    StrCpy $AthChosenBackup "$APPDATA\AthleteHub\backups"
+    StrCpy $AthChosenBackup "$APPDATA\SSAIT Athlete360\backups"
   ${EndIf}
 FunctionEnd
 
 !macro customInstall
   ${If} $AthLocationConfigured == "0"
-    CreateDirectory "$APPDATA\AthleteHub"
+    CreateDirectory "$APPDATA\SSAIT Athlete360"
     CreateDirectory "$AthChosenStorage"
     CreateDirectory "$AthChosenBackup"
 
@@ -124,7 +132,7 @@ FunctionEnd
     ${WordReplace} "$AthChosenStorage" "\" "/" "+" $1
     ${WordReplace} "$AthChosenBackup" "\" "/" "+" $2
 
-    FileOpen $0 "$APPDATA\AthleteHub\location.json" w
+    FileOpen $0 "$APPDATA\SSAIT Athlete360\location.json" w
     FileWrite $0 '{"storagePath":"$1","backupPath":"$2"}'
     FileClose $0
   ${EndIf}

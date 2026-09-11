@@ -49,7 +49,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     collections: collectionBridge(),
     location: {
       choose: () => ipcRenderer.invoke("location.choose"),
-      setup: (input) => ipcRenderer.invoke("location.setup", input),
       status: () => ipcRenderer.invoke("location.status"),
       update: (input) => ipcRenderer.invoke("location.update", input),
     },
@@ -87,6 +86,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   desktop: {
     continueToApp: (destination) =>
       ipcRenderer.invoke("app.continue", destination),
+    copyRecoveryCode: (code) =>
+      ipcRenderer.invoke("app.copyRecoveryCode", code),
+    saveRecoveryCode: (code) =>
+      ipcRenderer.invoke("app.saveRecoveryCode", code),
   },
   platform: process.platform,
 });

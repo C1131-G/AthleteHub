@@ -35,9 +35,9 @@ bunDescribe("sight mark collection", () => {
   let service: SightMarkService;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-sightmark-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-sightmark-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     service = createSightMarkService(database.collections);
   });
@@ -62,7 +62,7 @@ bunDescribe("sight mark collection", () => {
 
     await database.close();
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     service = createSightMarkService(database.collections);
     const reloaded = await service.list();

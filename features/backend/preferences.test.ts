@@ -20,7 +20,7 @@ let directory: string;
 let filePath: string;
 
 bunBeforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-prefs-"));
+  directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-prefs-"));
   filePath = path.join(directory, "preferences.json");
 });
 

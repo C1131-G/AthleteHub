@@ -13,7 +13,7 @@ import { readLocationConfig, writeLocationConfig } from "./location-config";
 const scratchDirs: string[] = [];
 
 const scratchFile = (name: string) => {
-  const dir = mkdtempSync(path.join(tmpdir(), "athletehub-location-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "athlete360-location-"));
   scratchDirs.push(dir);
   return path.join(dir, name);
 };

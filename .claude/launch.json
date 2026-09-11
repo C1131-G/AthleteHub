@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "athletehub-dev",
+      "name": "athlete360-dev",
       "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "dev"],
       "port": 3000

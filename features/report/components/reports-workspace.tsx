@@ -179,8 +179,8 @@ export const ReportsWorkspace = () => {
       <ReportActions
         columns={exportColumns}
         rows={exportRows}
-        summary="AthleteHub performance report. Open the app for the full selected tables and charts."
-        title="AthleteHub performance report"
+        summary="SSAIT Athlete360 performance report. Open the app for the full selected tables and charts."
+        title="SSAIT Athlete360 performance report"
       />
       <Card>
         <CardHeader>

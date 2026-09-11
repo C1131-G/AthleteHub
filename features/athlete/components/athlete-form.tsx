@@ -135,7 +135,7 @@ export const AthleteForm = ({ athlete }: { athlete?: Athlete }) => {
         <CardHeader>
           <CardTitle>Identity</CardTitle>
           <CardDescription>
-            Basic information used throughout AthleteHub.
+            Basic information used throughout SSAIT Athlete360.
           </CardDescription>
         </CardHeader>
         <CardContent>

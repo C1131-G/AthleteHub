@@ -41,9 +41,9 @@ bunDescribe("archery sessions", () => {
   let service: SessionService;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-session-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-session-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     service = createSessionService(database.sessions);
   });
@@ -84,7 +84,7 @@ bunDescribe("archery sessions", () => {
 
     await database.close();
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     service = createSessionService(database.sessions);
     const sessions = await service.listByAthlete("athlete-1");
@@ -139,7 +139,7 @@ bunDescribe("archery sessions", () => {
 
     await database.close();
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
     service = createSessionService(database.sessions);
     const reloaded = await service.get("session-arrows");
@@ -183,7 +183,7 @@ bunDescribe("archery sessions", () => {
       // back the shuffled third/first/second shots.
       await database.close();
       const raw = createClient({
-        url: `file:${path.join(directory, "athletehub.db")}`,
+        url: `file:${path.join(directory, "athlete360.db")}`,
       });
       await raw.batch([
         `DELETE FROM "ArcheryArrow" WHERE "endId" = 'session-order-end-1'`,
@@ -197,7 +197,7 @@ bunDescribe("archery sessions", () => {
       raw.close();
 
       database = await createDatabaseContext({
-        databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+        databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
       });
       service = createSessionService(database.sessions);
       const reloaded = await service.get("session-order");

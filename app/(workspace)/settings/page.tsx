@@ -16,8 +16,8 @@ const SettingsPage = () => (
     <div>
       <h1 className="text-3xl font-semibold">Settings</h1>
       <p className="text-muted-foreground mt-2">
-        AthleteHub stores everything on this device. Keep a backup somewhere
-        else.
+        SSAIT Athlete360 stores everything on this device. Keep a backup
+        somewhere else.
       </p>
     </div>
     <div className="space-y-2">

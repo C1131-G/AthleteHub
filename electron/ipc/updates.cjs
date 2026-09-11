@@ -1,5 +1,7 @@
 const { autoUpdater } = require("electron-updater");
 
+const { describeUpdateError } = require("./update-error.cjs");
+
 /**
  * Register update-check IPC handlers and forward electron-updater's events to
  * every trusted renderer, so the sidebar can show a "new release" indicator
@@ -40,7 +42,8 @@ const registerUpdateHandlers = ({
     try {
       return await autoUpdater.checkForUpdates();
     } catch (error) {
-      broadcast({ message: error.message, state: "error" });
+      console.error("Update check failed.", error);
+      broadcast({ message: describeUpdateError(error), state: "error" });
       return latest;
     }
   };
@@ -69,7 +72,8 @@ const registerUpdateHandlers = ({
       broadcast({ state: "ready", version: info.version });
     });
     autoUpdater.on("error", (error) => {
-      broadcast({ message: error.message, state: "error" });
+      console.error("Updater reported an error.", error);
+      broadcast({ message: describeUpdateError(error), state: "error" });
     });
 
     setTimeout(checkNow, FIRST_CHECK_DELAY_MS);

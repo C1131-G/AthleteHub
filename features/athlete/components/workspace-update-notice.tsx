@@ -18,7 +18,7 @@ export const WorkspaceUpdateNotice = () => {
     return null;
   }
 
-  const label = `Restart to install AthleteHub ${status.version}`;
+  const label = `Restart to install SSAIT Athlete360 ${status.version}`;
 
   return (
     <SidebarMenuItem>

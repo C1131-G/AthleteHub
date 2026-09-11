@@ -6,7 +6,7 @@ import {
 } from "@/features/athlete/components/athlete-profile";
 
 export const metadata = {
-  description: "View an athlete profile in AthleteHub.",
+  description: "View an athlete profile in SSAIT Athlete360.",
   title: "Athlete profile",
 };
 

@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 
 export const metadata = {
   title: {
-    default: "AthleteHub",
-    template: "%s | AthleteHub",
+    default: "SSAIT Athlete360",
+    template: "%s | SSAIT Athlete360",
   },
 };
 

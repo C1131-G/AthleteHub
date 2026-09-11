@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "AthleteHub" };
+export const metadata = { title: "SSAIT Athlete360" };
 
 /**
  * Authentication happens on the local login screen in the Electron shell, so

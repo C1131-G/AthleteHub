@@ -16,7 +16,7 @@ playwrightTest.describe("workspace logout", () => {
       await page.goto("/dashboard");
       await page.getByRole("button", { name: "Log out" }).first().click();
       await playwrightExpect(
-        page.getByText("Open the AthleteHub desktop app to log out.")
+        page.getByText("Open the SSAIT Athlete360 desktop app to log out.")
       ).toBeVisible();
       await playwrightExpect(page).toHaveURL(/\/dashboard/);
     }

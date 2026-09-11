@@ -76,9 +76,9 @@ bunDescribe("migrated collection services", () => {
   let database: DatabaseContext;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-coll-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-coll-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
   });
 
@@ -162,9 +162,9 @@ bunDescribe("cross-record rules carried over from the repositories", () => {
   let database: DatabaseContext;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-rules-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-rules-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
   });
 
@@ -249,9 +249,9 @@ bunDescribe("importing complete records", () => {
   let database: DatabaseContext;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-import-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-import-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
   });
 
@@ -307,9 +307,9 @@ bunDescribe("archiving releases a unique value", () => {
   let database: DatabaseContext;
 
   bunBeforeEach(async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), "athletehub-release-"));
+    directory = await mkdtemp(path.join(os.tmpdir(), "athlete360-release-"));
     database = await createDatabaseContext({
-      databaseUrl: `file:${path.join(directory, "athletehub.db")}`,
+      databaseUrl: `file:${path.join(directory, "athlete360.db")}`,
     });
   });
 

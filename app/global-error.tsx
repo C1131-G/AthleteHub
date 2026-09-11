@@ -10,7 +10,7 @@ const GlobalError = ({
 }) => (
   <html lang="en">
     <head>
-      <title>AthleteHub error</title>
+      <title>SSAIT Athlete360 error</title>
     </head>
     <body style={{ fontFamily: "system-ui, sans-serif", margin: 0 }}>
       <main
@@ -24,7 +24,7 @@ const GlobalError = ({
       >
         <div style={{ maxWidth: "32rem" }}>
           <h1 style={{ fontSize: "1.5rem" }}>Something went wrong</h1>
-          <p>AthleteHub could not load this page.</p>
+          <p>SSAIT Athlete360 could not load this page.</p>
           <div
             style={{
               display: "flex",

@@ -3,7 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { z } from "zod";
 
 /**
- * Where AthleteHub's database and rolling backups live, chosen once during
+ * Where SSAIT Athlete360's database and rolling backups live, chosen once during
  * first-run setup (electron/login.html) and changeable later from Settings.
  * Unlike electron/preferences.ts, an invalid or missing file means "not
  * configured yet" (null) rather than a set of defaults — callers must be able

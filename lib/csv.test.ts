@@ -74,8 +74,8 @@ bunDescribe("csv formula injection", () => {
 bunDescribe("slugifyReportFilename", () => {
   bunTest("lowercases and dashes the title", () => {
     bunExpect(
-      slugifyReportFilename("AthleteHub performance report", "csv")
-    ).toBe("athletehub-performance-report.csv");
+      slugifyReportFilename("SSAIT Athlete360 performance report", "csv")
+    ).toBe("ssait-athlete360-performance-report.csv");
   });
 
   bunTest("trims leading and trailing dashes", () => {

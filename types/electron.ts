@@ -70,16 +70,11 @@ interface ElectronPreferencesApi {
 
 export interface LocationStatus {
   backupPath: string | null;
-  configured: boolean;
   storagePath: string | null;
 }
 
 interface ElectronLocationApi {
   choose: () => Promise<string | null>;
-  setup: (input: {
-    backupPath: string;
-    storagePath: string;
-  }) => Promise<{ backupPath: string; storagePath: string }>;
   status: () => Promise<LocationStatus>;
   update: (input: {
     backupPath?: string;

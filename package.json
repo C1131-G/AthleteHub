@@ -1,5 +1,5 @@
 {
-  "name": "AthleteHub",
+  "name": "ssait-athlete360",
   "version": "0.0.6",
   "private": true,
   "description": "Offline-first training log for athletes and coaches.",
@@ -27,16 +27,14 @@
     "electron:preview": "bun run build && bun run standalone && electron electron/main.cjs --production",
     "fix": "ultracite fix",
     "instant:server": "node scripts/instant-nav-server.mjs",
-    "package": "bun run dist:prepare && electron-builder",
-    "package:dir": "bun run dist:prepare && electron-builder --dir",
-    "package:linux": "bun run dist:prepare && electron-builder --linux",
-    "package:mac": "bun run dist:prepare && electron-builder --mac",
+    "package": "bun run dist:prepare && electron-builder --win",
+    "package:dir": "bun run dist:prepare && electron-builder --win --dir",
     "package:win": "bun run dist:prepare && electron-builder --win",
     "prepare": "lefthook install",
     "pretest": "bun run prisma:generate",
     "pretypecheck": "bun run prisma:generate && next typegen",
     "prisma:generate": "prisma generate",
-    "release": "bun run dist:prepare && electron-builder --publish always",
+    "release": "bun run dist:prepare && electron-builder --win --publish always",
     "standalone": "bun scripts/prepare-standalone.mjs",
     "start": "next start",
     "test": "bun test electron features lib",
@@ -96,5 +94,6 @@
     "skills": [
       "@tanstack/*"
     ]
-  }
+  },
+  "productName": "SSAIT Athlete360"
 }
